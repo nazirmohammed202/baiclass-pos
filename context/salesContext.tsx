@@ -20,6 +20,7 @@ const SalesContext = React.createContext<SalesContextType>({
   salesHistory: [],
 });
 
+// console.log("SalesContext", SalesContext);
 export const SalesProvider: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
