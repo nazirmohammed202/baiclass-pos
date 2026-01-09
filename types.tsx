@@ -103,7 +103,7 @@ export const PRODUCT_TYPES = [
 ];
 
 export type SaleProductItem = {
-  product: string; // ObjectId
+  product: ProductDetailsType; // ObjectId
   quantity: number;
   price: number;
   total: number;
@@ -126,14 +126,18 @@ export type SaleType = {
   priceMode?: "wholesale" | "retail";
   createdAt?: Date | string;
 };
+
 export type SalePopulatedType = {
-  _id?: string;
+  _id: string;
   seller: {
     _id: string;
     name: string;
   };
-
-  branch: {
+  customer?: {
+    _id: string;
+    name: string;
+  };
+  branch?: {
     _id: string;
     name: string;
   };
@@ -147,4 +151,5 @@ export type SalePopulatedType = {
   salesType?: "credit" | "cash";
   priceMode?: "wholesale" | "retail";
   createdAt?: Date | string;
+  invoiceNumber?: string;
 };

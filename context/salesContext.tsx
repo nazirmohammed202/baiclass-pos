@@ -1,5 +1,5 @@
 "use client";
-import { SaleType } from "@/types";
+import { SalePopulatedType, SaleType } from "@/types";
 import React, { useState } from "react";
 
 type SalesContextType = {
@@ -7,8 +7,12 @@ type SalesContextType = {
   setStartDate: (startDate: string) => void;
   endDate: string;
   setEndDate: (endDate: string) => void;
-  salesHistory: SaleType[];
-  setSalesHistory: (salesHistory: SaleType[]) => void;
+  salesHistory: SalePopulatedType[];
+  setSalesHistory: (salesHistory: SalePopulatedType[]) => void;
+  searchQuery: string;
+  setSearchQuery: (searchQuery: string) => void;
+  loading: boolean;
+  setLoading: (loading: boolean) => void;
 };
 
 const SalesContext = React.createContext<SalesContextType>({
@@ -18,9 +22,12 @@ const SalesContext = React.createContext<SalesContextType>({
   setEndDate: () => {},
   setSalesHistory: () => {},
   salesHistory: [],
+  searchQuery: "",
+  setSearchQuery: () => {},
+  loading: true,
+  setLoading: () => {},
 });
 
-// console.log("SalesContext", SalesContext);
 export const SalesProvider: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
@@ -31,7 +38,9 @@ export const SalesProvider: React.FC<{
 
   const [startDate, setStartDate] = useState<string>(yesterday);
   const [endDate, setEndDate] = useState<string>(today);
-  const [salesHistory, setSalesHistory] = useState<SaleType[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [salesHistory, setSalesHistory] = useState<SalePopulatedType[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   return (
     <SalesContext.Provider
@@ -42,6 +51,10 @@ export const SalesProvider: React.FC<{
         setStartDate,
         setEndDate,
         setSalesHistory,
+        searchQuery,
+        setSearchQuery,
+        loading,
+        setLoading,
       }}
     >
       {children}

@@ -1,106 +1,59 @@
 "use client";
 
-import React, { useState } from "react";
-import { Search, Filter, Calendar, Download } from "lucide-react";
-import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { useEffect, useRef } from "react";
+import { Search, Calendar } from "lucide-react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { isoToDate, dateToIso, formatDateToDisplay } from "@/lib/date-utils";
-import { useParams } from "next/navigation";
-import { getSalesHistoryCached } from "@/lib/sale-actions";
 import { useSales } from "@/context/salesContext";
+import { useSalesHistoryActions } from "../lib/sales-history-actions";
+import { useParams } from "next/navigation";
 
-type SalesHistoryHeaderProps = {
-  onSearchChange?: (search: string) => void;
-  onDateRangeChange?: (startDate: string, endDate: string) => void;
-  onFilterChange?: (filters: {
-    salesType?: "cash" | "credit" | "all";
-    paymentMethod?: "cash" | "momo" | "all";
-  }) => void;
-  onExport?: () => void;
-};
+const SalesHistoryHeader = () => {
+  const { branchId } = useParams();
+  const {
+    startDate,
+    endDate,
+    setStartDate,
+    setEndDate,
+    setSearchQuery,
+    searchQuery,
+  } = useSales();
 
-const SalesHistoryHeader = ({
-  onSearchChange,
-  onDateRangeChange,
-  onFilterChange,
-  onExport,
-}: SalesHistoryHeaderProps) => {
-  const branchId = useParams().branchId as string;
+  const { searchSalesHistory } = useSalesHistoryActions({
+    branchId: branchId as string,
+    setDeletingId: () => {},
+    setOpenDropdownId: () => {},
+  });
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const { startDate, endDate, setStartDate, setEndDate } = useSales();
-  const [salesTypeFilter, setSalesTypeFilter] = useState<
-    "cash" | "credit" | "all"
-  >("all");
-  const [paymentMethodFilter, setPaymentMethodFilter] = useState<
-    "cash" | "momo" | "all"
-  >("all");
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
-    onSearchChange?.(value);
   };
+
+  useEffect(() => {
+    // Debounce search input
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    debounceTimerRef.current = setTimeout(() => {
+      searchSalesHistory();
+    }, 1000); // 1000ms debounce delay
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    };
+  }, [searchQuery, searchSalesHistory]);
 
   const handleStartDateChange = async (date: Date | null) => {
     const isoDate = dateToIso(date);
     setStartDate(isoDate);
-    if (isoDate) {
-      const data = await getSalesHistoryCached(
-        branchId,
-        isoDate,
-        endDate
-      ).catch((error) => console.error(error));
-
-      console.log(data);
-    }
   };
 
   const handleEndDateChange = (date: Date | null) => {
     const isoDate = dateToIso(date);
     setEndDate(isoDate);
-    if (isoDate) {
-      onDateRangeChange?.(startDate, isoDate);
-    }
   };
 
-  const handleSalesTypeChange = (type: "cash" | "credit" | "all") => {
-    setSalesTypeFilter(type);
-    onFilterChange?.({
-      salesType: type,
-      paymentMethod: paymentMethodFilter,
-    });
-  };
-
-  const handlePaymentMethodChange = (method: "cash" | "momo" | "all") => {
-    setPaymentMethodFilter(method);
-    onFilterChange?.({
-      salesType: salesTypeFilter,
-      paymentMethod: method,
-    });
-  };
-
-  const clearFilters = () => {
-    setSearchQuery("");
-    setStartDate("");
-    setEndDate("");
-    setSalesTypeFilter("all");
-    setPaymentMethodFilter("all");
-    onSearchChange?.("");
-    onDateRangeChange?.("", "");
-    onFilterChange?.({
-      salesType: "all",
-      paymentMethod: "all",
-    });
-  };
-
-  const hasActiveFilters =
-    searchQuery ||
-    startDate ||
-    endDate ||
-    salesTypeFilter !== "all" ||
-    paymentMethodFilter !== "all";
+  const hasActiveFilters = searchQuery || startDate || endDate;
 
   return (
     <div className="bg-white dark:bg-neutral-900 rounded-lg p-3 sm:p-4 mb-4 border border-gray-200 dark:border-neutral-800">
@@ -109,18 +62,6 @@ const SalesHistoryHeader = ({
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
           Sales History
         </h1>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          {onExport && (
-            <button
-              onClick={onExport}
-              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors text-sm sm:text-base font-medium"
-              aria-label="Export sales"
-            >
-              <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">Export</span>
-            </button>
-          )}
-        </div>
       </div>
 
       {/* Search and Filters */}
@@ -160,105 +101,6 @@ const SalesHistoryHeader = ({
             placeholderText="DD/MM/YYYY"
           />
         </div>
-
-        {/* Filter Dropdown */}
-        <DropdownMenu.Root open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-          <DropdownMenu.Trigger asChild>
-            <button
-              className={`flex items-center gap-2 px-3 sm:px-4 py-2 border rounded-md transition-colors text-sm sm:text-base font-medium ${
-                hasActiveFilters
-                  ? "bg-primary/10 border-primary text-primary dark:bg-primary/20"
-                  : "border-gray-200 dark:border-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-800"
-              }`}
-              aria-label="Filter sales"
-            >
-              <Filter className="w-4 h-4" />
-              <span className="hidden sm:inline">Filters</span>
-              {hasActiveFilters && (
-                <span className="w-2 h-2 bg-primary rounded-full"></span>
-              )}
-            </button>
-          </DropdownMenu.Trigger>
-
-          <DropdownMenu.Portal>
-            <DropdownMenu.Content
-              className="min-w-[240px] bg-white dark:bg-neutral-900 rounded-lg shadow-lg border border-gray-200 dark:border-neutral-800 p-3 z-50"
-              sideOffset={5}
-              align="end"
-            >
-              <div className="space-y-4">
-                {/* Sales Type Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Sales Type
-                  </label>
-                  <div className="flex flex-col gap-2">
-                    {(["all", "cash", "credit"] as const).map((type) => (
-                      <label
-                        key={type}
-                        className="flex items-center gap-2 cursor-pointer"
-                      >
-                        <input
-                          type="radio"
-                          name="salesType"
-                          checked={salesTypeFilter === type}
-                          onChange={() => handleSalesTypeChange(type)}
-                          className="w-4 h-4 text-primary focus:ring-primary"
-                        />
-                        <span className="text-sm text-gray-700 dark:text-gray-300 capitalize">
-                          {type === "all" ? "All Types" : type}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Payment Method Filter */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Payment Method
-                  </label>
-                  <div className="flex flex-col gap-2">
-                    {(["all", "cash", "momo"] as const).map((method) => (
-                      <label
-                        key={method}
-                        className="flex items-center gap-2 cursor-pointer"
-                      >
-                        <input
-                          type="radio"
-                          name="paymentMethod"
-                          checked={paymentMethodFilter === method}
-                          onChange={() => handlePaymentMethodChange(method)}
-                          className="w-4 h-4 text-primary focus:ring-primary"
-                        />
-                        <span className="text-sm text-gray-700 dark:text-gray-300 capitalize">
-                          {method === "all"
-                            ? "All Methods"
-                            : method === "momo"
-                            ? "Mobile Money"
-                            : method}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Clear Filters */}
-                {hasActiveFilters && (
-                  <button
-                    onClick={() => {
-                      clearFilters();
-                      setIsFilterOpen(false);
-                    }}
-                    className="w-full px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
-                  >
-                    Clear All Filters
-                  </button>
-                )}
-              </div>
-            </DropdownMenu.Content>
-          </DropdownMenu.Portal>
-        </DropdownMenu.Root>
       </div>
 
       {/* Active Filters Display */}
@@ -298,33 +140,6 @@ const SalesHistoryHeader = ({
                 onClick={() => handleEndDateChange(null)}
                 className="hover:text-red-600 dark:hover:text-red-400"
                 aria-label="Clear end date"
-              >
-                ×
-              </button>
-            </span>
-          )}
-          {salesTypeFilter !== "all" && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300 rounded-md text-xs capitalize">
-              Type: {salesTypeFilter}
-              <button
-                onClick={() => handleSalesTypeChange("all")}
-                className="hover:text-red-600 dark:hover:text-red-400"
-                aria-label="Clear sales type filter"
-              >
-                ×
-              </button>
-            </span>
-          )}
-          {paymentMethodFilter !== "all" && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300 rounded-md text-xs capitalize">
-              Payment:{" "}
-              {paymentMethodFilter === "momo"
-                ? "Mobile Money"
-                : paymentMethodFilter}
-              <button
-                onClick={() => handlePaymentMethodChange("all")}
-                className="hover:text-red-600 dark:hover:text-red-400"
-                aria-label="Clear payment method filter"
               >
                 ×
               </button>
