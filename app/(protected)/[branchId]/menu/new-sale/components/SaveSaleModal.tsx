@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useTransition } from "react";
 import { Printer, X, CreditCard } from "lucide-react";
 import { CustomerType } from "@/types";
-import { CartItem } from "@/hooks/useSaleTabsPersistence";
+import { CartItem } from "@/types";
 
 type SaveSaleModalProps = {
   isOpen: boolean;
@@ -15,6 +15,7 @@ type SaveSaleModalProps = {
   salesType?: "cash" | "credit";
   savingSale?: boolean;
   isSaving?: boolean;
+  isEditMode?: boolean;
 };
 
 const SaveSaleModal = ({
@@ -27,7 +28,11 @@ const SaveSaleModal = ({
   salesType = "cash",
   savingSale = false,
   isSaving = false,
+  isEditMode = false,
 }: SaveSaleModalProps) => {
+  // Normalize total to 2 decimal places
+  const normalizedTotal = parseFloat(total.toFixed(2));
+
   const [amountPaidStr, setAmountPaidStr] = useState("");
   const amountPaidInputRef = useRef<HTMLInputElement>(null);
   const [, startTransition] = useTransition();
@@ -35,7 +40,7 @@ const SaveSaleModal = ({
   useEffect(() => {
     if (isOpen) {
       startTransition(() => {
-        setAmountPaidStr(total.toFixed(2));
+        setAmountPaidStr(normalizedTotal.toFixed(2));
       });
       // Focus amount paid input after modal opens
       setTimeout(() => {
@@ -45,13 +50,13 @@ const SaveSaleModal = ({
         }
       }, 100);
     }
-  }, [isOpen, total, startTransition]);
+  }, [isOpen, normalizedTotal, startTransition]);
 
   const amountPaid = parseFloat(amountPaidStr) || 0;
-  const change = amountPaid - total;
+  const change = amountPaid - normalizedTotal;
 
   const handleSave = (shouldPrint: boolean) => {
-    if (amountPaid < total) {
+    if (amountPaid < normalizedTotal) {
       return; // Can't save if amount paid is less than total
     }
     onSave(amountPaid, shouldPrint);
@@ -79,7 +84,7 @@ const SaveSaleModal = ({
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <h2 className="text-xl font-medium text-gray-900 dark:text-gray-100">
-              Save Sale
+              {isEditMode ? "Update Sale" : "Save Sale"}
             </h2>
             {salesType === "credit" && (
               <div className="flex items-center gap-2 px-3 py-1 bg-amber-500 text-white rounded-full text-xs font-semibold">
@@ -134,7 +139,7 @@ const SaveSaleModal = ({
             <div className="border-t border-gray-200 dark:border-neutral-700 pt-2 mt-2">
               <div className="flex justify-between font-semibold text-lg">
                 <span>Total:</span>
-                <span>₵{total.toFixed(2)}</span>
+                <span>₵{normalizedTotal.toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -151,7 +156,7 @@ const SaveSaleModal = ({
               ref={amountPaidInputRef}
               type="number"
               id="amountPaid"
-              min={total}
+              min={normalizedTotal}
               step="0.01"
               value={amountPaidStr}
               onChange={(e) => setAmountPaidStr(e.target.value)}
@@ -170,7 +175,7 @@ const SaveSaleModal = ({
           </div>
 
           {/* Change */}
-          {amountPaid > total && (
+          {amountPaid > normalizedTotal && (
             <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-md">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium text-green-700 dark:text-green-400">
@@ -183,10 +188,10 @@ const SaveSaleModal = ({
             </div>
           )}
 
-          {amountPaid < total && amountPaidStr !== "" && (
+          {amountPaid < normalizedTotal && amountPaidStr !== "" && (
             <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-md">
               <p className="text-sm text-red-600 dark:text-red-400">
-                Amount paid must be at least ₵{total.toFixed(2)}
+                Amount paid must be at least ₵{normalizedTotal.toFixed(2)}
               </p>
             </div>
           )}
@@ -208,23 +213,41 @@ const SaveSaleModal = ({
                 disabled={
                   savingSale ||
                   isSaving ||
-                  amountPaid < total ||
+                  amountPaid < normalizedTotal ||
                   amountPaidStr === ""
                 }
-                className="flex-1 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                className={`flex-1 px-4 py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium ${
+                  isEditMode
+                    ? "bg-blue-600 hover:bg-blue-700 text-white"
+                    : "bg-primary text-white hover:bg-primary/90"
+                }`}
               >
-                {savingSale || isSaving ? "Saving..." : "Save Only"}
+                {savingSale || isSaving
+                  ? isEditMode
+                    ? "Updating..."
+                    : "Saving..."
+                  : isEditMode
+                  ? "Update Only"
+                  : "Save Only"}
               </button>
             </div>
             <button
               type="button"
               onClick={() => handleSave(true)}
               disabled={
-                savingSale || amountPaid < total || amountPaidStr === ""
+                savingSale ||
+                amountPaid < normalizedTotal ||
+                amountPaidStr === ""
               }
               className="w-full flex-1 px-4 py-2 border border-gray-200 dark:border-neutral-800 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {savingSale ? "Saving..." : "Save and Print"}
+              {savingSale
+                ? isEditMode
+                  ? "Updating..."
+                  : "Saving..."
+                : isEditMode
+                ? "Update and Print"
+                : "Save and Print"}
               <Printer className="w-5 h-5" />
             </button>
           </div>

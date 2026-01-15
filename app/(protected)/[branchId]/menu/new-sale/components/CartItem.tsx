@@ -1,9 +1,9 @@
 "use client";
 import React, { useState } from "react";
 import { Plus, Minus, Trash2 } from "lucide-react";
-import { CartItem as CartItemType } from "@/hooks/useSaleTabsPersistence";
+import { CartItem as CartItemType } from "@/app/(protected)/[branchId]/menu/new-sale/hooks/useSaleTabsPersistence";
 import { useStock } from "@/context/stockContext";
-import PriceSkeleton from "./skeletons/priceSkeleton";
+import PriceSkeleton from "@/components/skeletons/priceSkeleton";
 import EditCartItemModal from "./EditCartItemModal";
 
 type CartItemProps = {

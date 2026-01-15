@@ -1,12 +1,12 @@
 "use client";
 import React, { Suspense } from "react";
-import CustomerDropdownMenu from "./CustomerDropdownMenu";
-import SearchCustomer from "./SearchCustomer";
-import SearchCustomerSkeleton from "./skeletons/SearchCustomerSkeleton";
-import SearchProducts from "./SearchProducts";
-import SearchProductsSkeleton from "./skeletons/SearchProductsSkeleton";
-import SaleSettingsButton from "./SaleSettingsButton";
-import SaleSwitches from "./SaleSwitches";
+import CustomerDropdownMenu from "@/components/CustomerDropdownMenu";
+import SearchCustomer from "@/components/SearchCustomer";
+import SearchCustomerSkeleton from "@/components/skeletons/SearchCustomerSkeleton";
+import SearchProducts from "@/components/SearchProducts";
+import SearchProductsSkeleton from "@/components/skeletons/SearchProductsSkeleton";
+import SaleSettingsButton from "@/components/SaleSettingsButton";
+import SaleSwitches from "@/components/SaleSwitches";
 import { CustomerType, Product } from "@/types";
 
 type SaleTabHeaderProps = {

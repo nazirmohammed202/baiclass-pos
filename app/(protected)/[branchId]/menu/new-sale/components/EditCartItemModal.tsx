@@ -8,12 +8,12 @@ import React, {
   useRef,
 } from "react";
 import { X } from "lucide-react";
-import { CartItem as CartItemType } from "@/hooks/useSaleTabsPersistence";
+import { CartItem } from "@/types";
 
 type EditCartItemModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  item: CartItemType;
+  item: CartItem;
   onSave: (quantity: number, unitPrice: number) => void;
   focusField?: "quantity" | "unitPrice" | "subtotal";
 };

@@ -1,4 +1,4 @@
-import SaleTabs from "@/components/saleTabs";
+import SaleTabs from "@/app/(protected)/[branchId]/menu/new-sale/components/saleTabs";
 import {
   getBranchCustomers,
   getBranchProductsMetadata,

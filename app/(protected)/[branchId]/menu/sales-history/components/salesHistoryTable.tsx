@@ -8,25 +8,40 @@ import { useSales } from "@/context/salesContext";
 import { useParams } from "next/navigation";
 import SalesHistoryTableSkeleton from "./salesHistoryTableSkeleton";
 import ViewSaleModal from "./viewSaleModal";
-import { useSalesHistoryActions } from "../lib/sales-history-actions";
+import { useSalesHistoryActions } from "../hooks/useSalesHistoryActions";
 import { formatCurrency } from "@/lib/utils";
 import SalesActionDropdown, { useDropdownPortal } from "./salesActionDropdown";
+import Pagination from "./Pagination";
+import DeleteSaleModal from "./DeleteSaleModal";
+import { useToast } from "@/context/toastContext";
 
 const SalesHistoryTable = () => {
   const branchId = useParams().branchId;
-  const { salesHistory, loading } = useSales();
+  const { salesHistory, loading, pagination, limit, setLimit } = useSales();
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [viewingSale, setViewingSale] = useState<SalePopulatedType | null>(
     null
   );
+  const [deleteSaleModal, setDeleteSaleModal] =
+    useState<SalePopulatedType | null>(null);
   const dropdownRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
-  const { handleEditSale, handleDeleteSale, refreshSalesHistory } =
-    useSalesHistoryActions({
-      branchId: branchId as string,
-      setDeletingId,
-      setOpenDropdownId,
-    });
+  const {
+    handleEditSale,
+    handleDeleteSale,
+    confirmDeleteSale,
+    refreshSalesHistory,
+    loadPage,
+  } = useSalesHistoryActions({
+    branchId: branchId as string,
+    setDeletingId,
+    setOpenDropdownId,
+    onDeleteSaleRequest: (sale) => {
+      setDeleteSaleModal(sale);
+      setOpenDropdownId(null);
+    },
+  });
+  const { error: toastError, success: toastSuccess } = useToast();
 
   const { dropdownPosition, handleButtonClick, handleClose } =
     useDropdownPortal(openDropdownId, () => setOpenDropdownId(null));
@@ -34,6 +49,21 @@ const SalesHistoryTable = () => {
   useEffect(() => {
     refreshSalesHistory();
   }, [refreshSalesHistory]);
+
+  const handlePageChange = (newPage: number) => {
+    if (
+      newPage >= 1 &&
+      newPage <= pagination.pages &&
+      newPage !== pagination.page
+    ) {
+      loadPage(newPage);
+    }
+  };
+
+  const handleLimitChange = (newLimit: number) => {
+    setLimit(newLimit);
+    loadPage(1);
+  };
 
   const selectedSale = salesHistory.find((s) => s._id === openDropdownId);
 
@@ -293,6 +323,38 @@ const SalesHistoryTable = () => {
         sale={viewingSale}
         isOpen={viewingSale !== null}
         onClose={() => setViewingSale(null)}
+      />
+
+      {/* Delete Sale Modal */}
+      <DeleteSaleModal
+        sale={deleteSaleModal}
+        isOpen={deleteSaleModal !== null}
+        isDeleting={deletingId === deleteSaleModal?._id}
+        onClose={() => setDeleteSaleModal(null)}
+        onConfirm={() => {
+          if (deleteSaleModal) {
+            confirmDeleteSale(
+              deleteSaleModal,
+              () => {
+                setDeleteSaleModal(null);
+                toastSuccess("Sale deleted successfully");
+              },
+              () => {
+                toastError("Failed to delete sale");
+              }
+            );
+          }
+        }}
+      />
+
+      {/* Pagination Controls */}
+      <Pagination
+        pagination={pagination}
+        currentItemsCount={salesHistory.length}
+        loading={loading}
+        limit={limit}
+        onPageChange={handlePageChange}
+        onLimitChange={handleLimitChange}
       />
     </div>
   );

@@ -103,7 +103,7 @@ export const PRODUCT_TYPES = [
 ];
 
 export type SaleProductItem = {
-  product: ProductDetailsType; // ObjectId
+  product: string; // ObjectId
   quantity: number;
   price: number;
   total: number;
@@ -152,4 +152,21 @@ export type SalePopulatedType = {
   priceMode?: "wholesale" | "retail";
   createdAt?: Date | string;
   invoiceNumber?: string;
+};
+
+export type CartItem = {
+  product: Product;
+  quantity: number;
+  unitPrice: number; // Stored price when item was added
+  isPriceManuallyEdited?: boolean; // Track if user manually edited the price
+};
+
+export type Tab = {
+  id: string;
+  customer: CustomerType | null;
+  products: CartItem[];
+  priceType: "retail" | "wholesale";
+  salesType: "cash" | "credit";
+  saleId?: string | null; // ID of the sale being edited
+  isEditMode?: boolean; // Whether this tab is in edit mode
 };

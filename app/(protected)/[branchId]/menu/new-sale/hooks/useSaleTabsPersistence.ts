@@ -1,22 +1,7 @@
 "use client";
 
 import { useState, useEffect, useTransition, useRef } from "react";
-import { CustomerType, Product } from "@/types";
-
-export type CartItem = {
-  product: Product;
-  quantity: number;
-  unitPrice: number; // Stored price when item was added
-  isPriceManuallyEdited?: boolean; // Track if user manually edited the price
-};
-
-export type Tab = {
-  id: string;
-  customer: CustomerType | null;
-  products: CartItem[];
-  priceType: "retail" | "wholesale";
-  salesType: "cash" | "credit";
-};
+import { CartItem, CustomerType, Product, Tab } from "@/types";
 
 type StoredTab = {
   id: string;
@@ -27,7 +12,9 @@ type StoredTab = {
     unitPrice: number;
   }>;
   priceType: "retail" | "wholesale";
-  salesType?: "cash" | "credit"; // Optional for backward compatibility
+  salesType?: "cash" | "credit";
+  saleId: string | undefined | null;
+  isEditMode: boolean | undefined;
 };
 
 export const useSaleTabsPersistence = (
@@ -45,6 +32,8 @@ export const useSaleTabsPersistence = (
       products: [],
       priceType: "retail",
       salesType: "cash",
+      saleId: undefined,
+      isEditMode: false,
     },
   ]);
   const [activeTabId, setActiveTabId] = useState<string>("1");
@@ -84,6 +73,8 @@ export const useSaleTabsPersistence = (
                 : null;
             })
             .filter((item): item is CartItem => item !== null),
+          saleId: tab.saleId,
+          isEditMode: tab.isEditMode,
         }));
 
         if (loadedTabs.length > 0) {
@@ -129,6 +120,8 @@ export const useSaleTabsPersistence = (
           quantity: item.quantity,
           unitPrice: item.unitPrice,
         })),
+        saleId: tab.saleId,
+        isEditMode: tab.isEditMode,
       }));
 
       localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToStore));

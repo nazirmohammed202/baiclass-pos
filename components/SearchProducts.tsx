@@ -121,6 +121,15 @@ const SearchProducts = ({
     });
   }, [setStockMap, stockDataPromise, setGlobalStockLoading]);
 
+  // Auto-focus input when component mounts
+  useEffect(() => {
+    // Small delay to ensure the component is fully rendered
+    const timer = setTimeout(() => {
+      inputRef.current?.focus();
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   const filteredProducts = useMemo(() => {
     if (searchQuery.trim() === "") {
       return productsData || [];

@@ -6,7 +6,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { isoToDate, dateToIso, formatDateToDisplay } from "@/lib/date-utils";
 import { useSales } from "@/context/salesContext";
-import { useSalesHistoryActions } from "../lib/sales-history-actions";
+import { useSalesHistoryActions } from "../hooks/useSalesHistoryActions";
 import { useParams } from "next/navigation";
 
 const SalesHistoryHeader = () => {
@@ -20,10 +20,11 @@ const SalesHistoryHeader = () => {
     searchQuery,
   } = useSales();
 
-  const { searchSalesHistory } = useSalesHistoryActions({
+  const { searchSalesHistory, refreshSalesHistory } = useSalesHistoryActions({
     branchId: branchId as string,
     setDeletingId: () => {},
     setOpenDropdownId: () => {},
+    onDeleteSaleRequest: () => {},
   });
 
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -46,12 +47,21 @@ const SalesHistoryHeader = () => {
   const handleStartDateChange = async (date: Date | null) => {
     const isoDate = dateToIso(date);
     setStartDate(isoDate);
+    // refreshSalesHistory will reset to page 1
   };
 
   const handleEndDateChange = (date: Date | null) => {
     const isoDate = dateToIso(date);
     setEndDate(isoDate);
+    // refreshSalesHistory will reset to page 1
   };
+
+  useEffect(() => {
+    // Refresh when dates change
+    if (startDate || endDate) {
+      refreshSalesHistory();
+    }
+  }, [startDate, endDate, refreshSalesHistory]);
 
   const hasActiveFilters = searchQuery || startDate || endDate;
 

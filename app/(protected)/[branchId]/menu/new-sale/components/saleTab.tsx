@@ -3,8 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import SaleTabHeader from "./SaleTabHeader";
 import CartItem from "./CartItem";
 import SaveSaleModal from "./SaveSaleModal";
-import { CustomerType, Product } from "@/types";
-import { CartItem as CartItemType } from "./saleTabs";
+import { CartItem as CartItemType, CustomerType, Product } from "@/types";
 import { Loader2 } from "lucide-react";
 
 type SaleTabProps = {
@@ -37,6 +36,8 @@ type SaleTabProps = {
     shouldPrint: boolean
   ) => void;
   savingSale: boolean;
+  isEditMode?: boolean;
+  saleId?: string | null;
 };
 
 const SaleTab = ({
@@ -62,6 +63,8 @@ const SaleTab = ({
   onShowSalesTypeSwitchChange,
   onSaveSale,
   savingSale,
+  isEditMode = false,
+  saleId,
 }: SaleTabProps) => {
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerType | null>(
     customer
@@ -207,14 +210,20 @@ const SaleTab = ({
               <button
                 onClick={() => setIsSaveModalOpen(true)}
                 disabled={tabProducts.length === 0 || savingSale}
-                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base"
-                aria-label="Save sale"
+                className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-md transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base ${
+                  isEditMode
+                    ? "bg-blue-600 hover:bg-blue-700 text-white"
+                    : "bg-primary text-white hover:bg-primary/90"
+                }`}
+                aria-label={isEditMode ? "Update sale" : "Save sale"}
               >
                 {savingSale ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Saving...</span>
+                    <span>{isEditMode ? "Updating..." : "Saving..."}</span>
                   </>
+                ) : isEditMode ? (
+                  "Update Sale"
                 ) : (
                   "Save Sale"
                 )}
@@ -235,6 +244,7 @@ const SaleTab = ({
           total={total}
           salesType={salesType}
           savingSale={savingSale}
+          isEditMode={isEditMode}
         />
       )}
     </main>

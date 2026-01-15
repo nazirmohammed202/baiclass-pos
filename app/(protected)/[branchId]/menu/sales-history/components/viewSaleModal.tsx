@@ -7,6 +7,7 @@ import { X, Printer } from "lucide-react";
 import { useCompany } from "@/context/companyContext";
 import { useParams } from "next/navigation";
 import Image from "next/image";
+import { generateInvoiceHTML } from "../utils/generateInvoiceHTML";
 
 type ViewSaleModalProps = {
   sale: SalePopulatedType | null;
@@ -14,6 +15,15 @@ type ViewSaleModalProps = {
   onClose: () => void;
 };
 
+// Type guard for customer with extended properties
+type CustomerWithDetails = {
+  _id: string;
+  name: string;
+  address?: string;
+  phoneNumber?: string;
+};
+
+// Helper functions for modal display
 const formatCurrency = (amount: number): string => {
   return `₵${amount.toFixed(2)}`;
 };
@@ -30,12 +40,11 @@ const formatDate = (date: Date | string | undefined): string => {
   });
 };
 
-// Type guard for customer with extended properties
-type CustomerWithDetails = {
-  _id: string;
-  name: string;
-  address?: string;
-  phoneNumber?: string;
+const getProductName = (
+  product: string | { name?: string; details?: { name?: string } }
+): string => {
+  if (typeof product === "string") return "Product";
+  return product?.name || product?.details?.name || "Product";
 };
 
 const ViewSaleModal = ({ sale, isOpen, onClose }: ViewSaleModalProps) => {
@@ -88,9 +97,18 @@ const ViewSaleModal = ({ sale, isOpen, onClose }: ViewSaleModalProps) => {
     (branch) => branch._id === branchId || branch._id === sale.branch?._id
   );
 
-  // Print handler
+  // Print handler - opens new window with invoice
   const handlePrint = () => {
-    window.print();
+    const invoiceHTML = generateInvoiceHTML(sale, company, account, branchId);
+    const printWindow = window.open("", "_blank");
+
+    if (!printWindow) {
+      alert("Please allow popups to print invoices");
+      return;
+    }
+
+    printWindow.document.write(invoiceHTML);
+    printWindow.document.close();
   };
 
   const modalContent = (
@@ -236,7 +254,7 @@ const ViewSaleModal = ({ sale, isOpen, onClose }: ViewSaleModalProps) => {
                       className="border-b border-gray-100 dark:border-neutral-800"
                     >
                       <td className="py-3 px-4 text-sm text-gray-900 dark:text-gray-100">
-                        {item.product.name || "Product"}
+                        {getProductName(item.product)}
                       </td>
                       <td className="py-3 px-4 text-sm text-right text-gray-900 dark:text-gray-100">
                         {item.quantity}
