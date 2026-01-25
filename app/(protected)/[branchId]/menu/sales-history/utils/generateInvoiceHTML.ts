@@ -371,7 +371,9 @@ export const generateInvoiceHTML = (
                   : ""
               }
               <div class="product-row">
-                <span class="product-name">${productName}${type ? ` (${type})` : ""}</span>
+                <span class="product-name">${productName}${
+              type ? ` (${type})` : ""
+            }</span>
                 ${size ? `<span class="product-size">${size}</span>` : ""}
               </div>
             </div>
@@ -421,29 +423,29 @@ export const generateInvoiceHTML = (
   <script>
     (function() {
       // Wait for window to load, then trigger print
-      // window.onload = function() {
-      //   setTimeout(function() {
-      //     window.print();
-      //   }, 250);
-      // };
+      window.onload = function() {
+        setTimeout(function() {
+          window.print();
+        }, 250);
+      };
       
-      // // Close window after print dialog closes (whether printed or cancelled)
-      // window.addEventListener('afterprint', function() {
-      //   window.close();
-      // });
+      // Close window after print dialog closes (whether printed or cancelled)
+      window.addEventListener('afterprint', function() {
+        window.close();
+      });
       
-      // // Fallback: Close window if afterprint doesn't fire (some browsers don't support it)
-      // // This ensures the window closes even if the event isn't supported
-      // var fallbackClose = setTimeout(function() {
-      //   if (!window.closed) {
-      //     window.close();
-      //   }
-      // }, 2000);
+      // Fallback: Close window if afterprint doesn't fire (some browsers don't support it)
+      // This ensures the window closes even if the event isn't supported
+      var fallbackClose = setTimeout(function() {
+        if (!window.closed) {
+          window.close();
+        }
+      }, 2000);
       
-      // // Clear fallback if afterprint fires
-      // window.addEventListener('afterprint', function() {
-      //   clearTimeout(fallbackClose);
-      // }, { once: true });
+      // Clear fallback if afterprint fires
+      window.addEventListener('afterprint', function() {
+        clearTimeout(fallbackClose);
+      }, { once: true });
     })();
   </script>
 </body>

@@ -5,6 +5,7 @@ import CartItem from "./CartItem";
 import SaveSaleModal from "./SaveSaleModal";
 import { CartItem as CartItemType, CustomerType, Product } from "@/types";
 import { Loader2 } from "lucide-react";
+import { formatDateToDisplay } from "@/lib/date-utils";
 
 type SaleTabProps = {
   customer: CustomerType | null;
@@ -38,6 +39,7 @@ type SaleTabProps = {
   savingSale: boolean;
   isEditMode?: boolean;
   saleId?: string | null;
+  saleDate?: string; // ISO date string (YYYY-MM-DD)
 };
 
 const SaleTab = ({
@@ -65,6 +67,7 @@ const SaleTab = ({
   savingSale,
   isEditMode = false,
   saleId,
+  saleDate,
 }: SaleTabProps) => {
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerType | null>(
     customer
@@ -211,17 +214,27 @@ const SaleTab = ({
                 onClick={() => setIsSaveModalOpen(true)}
                 disabled={tabProducts.length === 0 || savingSale}
                 className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-md transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base ${
-                  isEditMode
+                  saleDate
+                    ? "bg-amber-600 hover:bg-amber-700 text-white"
+                    : isEditMode
                     ? "bg-blue-600 hover:bg-blue-700 text-white"
                     : "bg-primary text-white hover:bg-primary/90"
                 }`}
-                aria-label={isEditMode ? "Update sale" : "Save sale"}
+                aria-label={
+                  saleDate
+                    ? `Save sale for ${formatDateToDisplay(saleDate)}`
+                    : isEditMode
+                    ? "Update sale"
+                    : "Save sale"
+                }
               >
                 {savingSale ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
                     <span>{isEditMode ? "Updating..." : "Saving..."}</span>
                   </>
+                ) : saleDate ? (
+                  `Save Sale (${formatDateToDisplay(saleDate)})`
                 ) : isEditMode ? (
                   "Update Sale"
                 ) : (
@@ -245,6 +258,7 @@ const SaleTab = ({
           salesType={salesType}
           savingSale={savingSale}
           isEditMode={isEditMode}
+          saleDate={saleDate}
         />
       )}
     </main>

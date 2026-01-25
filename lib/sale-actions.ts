@@ -3,7 +3,7 @@
 import { handleError } from "@/utils/errorHandlers";
 import { extractToken } from "./auth-actions";
 import api from "@/config/api";
-import { SalePopulatedType, SaleType } from "@/types";
+import { CustomDateSalePayload, SalePopulatedType, SaleType } from "@/types";
 import { cacheLife, cacheTag, updateTag } from "next/cache";
 import { getTodayDate } from "./date-utils";
 
@@ -14,6 +14,32 @@ export const createNewSale = async (
   try {
     const token = await extractToken();
     await api.post(`/sales/create/${branchId}`, sale, {
+      headers: { "x-auth-token": token },
+    });
+    const today = getTodayDate();
+    updateTag(`sale:today:${branchId}:${today}`);
+
+    return {
+      success: true,
+      error: null,
+    };
+  } catch (error: unknown) {
+    const errorMessage = handleError(error);
+
+    return {
+      error: errorMessage,
+      success: false,
+    };
+  }
+};
+
+export const createCustomDateSale = async (
+  sale: CustomDateSalePayload,
+  branchId: string
+): Promise<{ success: boolean; error: string | null }> => {
+  try {
+    const token = await extractToken();
+    await api.post(`/sales/create/custom-date-sale/${branchId}`, sale, {
       headers: { "x-auth-token": token },
     });
     const today = getTodayDate();
@@ -59,11 +85,17 @@ export const getSalesHistoryCached = async (
   );
   return response.data;
 };
+
+
+
+
 export const getTodaySales = async (
   branchId: string
 ): Promise<SalePopulatedType[]> => {
+
   const token = await extractToken();
-  const today = getTodayDate();
+  const today = getTodayDate()
+
   const getTodaySalesCached = async (branchId: string, today: string) => {
     "use cache";
     cacheLife("days");

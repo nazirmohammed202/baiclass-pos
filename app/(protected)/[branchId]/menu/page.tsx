@@ -19,7 +19,7 @@ const Dashboard = async () => {
     {
       name: "Custom Date",
       icon: "ShoppingCart",
-      route: "/custom-date-sale",
+      route: "/new-sale?customDate=true",
       description: "Enter sales for a specific date ",
     },
     {
@@ -31,7 +31,7 @@ const Dashboard = async () => {
     {
       name: "Sales Reports",
       icon: "ChartBar",
-      route: "/sales-reports",
+      route: "/sales-report",
       description: "Generate sales performance reports",
     },
   ];

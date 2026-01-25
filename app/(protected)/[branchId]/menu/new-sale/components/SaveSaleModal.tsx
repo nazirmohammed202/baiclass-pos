@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useTransition } from "react";
 import { Printer, X, CreditCard } from "lucide-react";
 import { CustomerType } from "@/types";
 import { CartItem } from "@/types";
+import { formatDateToDisplay } from "@/lib/date-utils";
 
 type SaveSaleModalProps = {
   isOpen: boolean;
@@ -16,6 +17,7 @@ type SaveSaleModalProps = {
   savingSale?: boolean;
   isSaving?: boolean;
   isEditMode?: boolean;
+  saleDate?: string; // ISO date string (YYYY-MM-DD)
 };
 
 const SaveSaleModal = ({
@@ -29,6 +31,7 @@ const SaveSaleModal = ({
   savingSale = false,
   isSaving = false,
   isEditMode = false,
+  saleDate,
 }: SaveSaleModalProps) => {
   // Normalize total to 2 decimal places
   const normalizedTotal = parseFloat(total.toFixed(2));
@@ -217,7 +220,9 @@ const SaveSaleModal = ({
                   amountPaidStr === ""
                 }
                 className={`flex-1 px-4 py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium ${
-                  isEditMode
+                  saleDate
+                    ? "bg-amber-600 hover:bg-amber-700 text-white"
+                    : isEditMode
                     ? "bg-blue-600 hover:bg-blue-700 text-white"
                     : "bg-primary text-white hover:bg-primary/90"
                 }`}
@@ -226,6 +231,8 @@ const SaveSaleModal = ({
                   ? isEditMode
                     ? "Updating..."
                     : "Saving..."
+                  : saleDate
+                  ? `Save Only (${formatDateToDisplay(saleDate)})`
                   : isEditMode
                   ? "Update Only"
                   : "Save Only"}
@@ -239,12 +246,18 @@ const SaveSaleModal = ({
                 amountPaid < normalizedTotal ||
                 amountPaidStr === ""
               }
-              className="w-full flex-1 px-4 py-2 border border-gray-200 dark:border-neutral-800 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className={`w-full flex-1 px-4 py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium ${
+                saleDate
+                  ? "bg-amber-600 hover:bg-amber-700 text-white border-0"
+                  : "border border-gray-200 dark:border-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800"
+              }`}
             >
               {savingSale
                 ? isEditMode
                   ? "Updating..."
                   : "Saving..."
+                : saleDate
+                ? `Save and Print (${formatDateToDisplay(saleDate)})`
                 : isEditMode
                 ? "Update and Print"
                 : "Save and Print"}

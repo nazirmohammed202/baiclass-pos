@@ -9,7 +9,12 @@ import {
   SaleType,
   Tab,
 } from "@/types";
-import { createNewSale, getSaleById, updateSale } from "@/lib/sale-actions";
+import {
+  createNewSale,
+  createCustomDateSale,
+  getSaleById,
+  updateSale,
+} from "@/lib/sale-actions";
 import { useToast } from "@/context/toastContext";
 import { handleError } from "@/utils/errorHandlers";
 
@@ -365,34 +370,64 @@ export const useSaleTabsActions = ({
         toastError("Please select a customer for credit sales");
         return;
       }
-      const sale: SaleType = {
-        seller: account ? account._id : "",
-        company: company ? company._id : "",
-        branch: branchId,
-        customer: customer ? customer._id : undefined,
-        products: cartItems.map((item) => ({
-          product: item.product.details._id,
-          quantity: item.quantity,
-          price: item.unitPrice,
-          total: item.unitPrice * item.quantity,
-        })),
-        total: parseFloat(total.toFixed(2)),
-        discount: 0,
-        paid: amountPaid,
-        due: total - amountPaid > 0 ? total - amountPaid : 0,
-        paymentMethod: "cash",
-        note: "",
-        salesType: activeTab.salesType,
-        priceMode: priceType,
-      };
       try {
         setSavingSale(true);
 
         // Check if we're updating an existing sale
         const isEditMode = activeTab.isEditMode && activeTab.saleId;
-        const response = isEditMode
-          ? await updateSale(activeTab.saleId as string, sale)
-          : await createNewSale(sale, branchId);
+
+        // Check if we have a custom date (and not in edit mode)
+        const customDate = activeTab.saleDate;
+        const hasCustomDate = customDate && !isEditMode;
+
+        let response;
+        if (hasCustomDate && customDate) {
+          // Use custom date sale endpoint
+          const customDateSale = {
+            seller: account ? account._id : "",
+            company: company ? company._id : "",
+            branch: branchId,
+            customer: customer ? customer._id : undefined,
+            products: cartItems.map((item) => ({
+              product: item.product.details._id,
+              quantity: item.quantity,
+              price: item.unitPrice,
+              total: item.unitPrice * item.quantity,
+            })),
+            date: customDate, // ISO date string (YYYY-MM-DD)
+            total: parseFloat(total.toFixed(2)),
+            note: "",
+            salesType: activeTab.salesType,
+            priceMode: priceType,
+          };
+          response = await createCustomDateSale(customDateSale, branchId);
+        } else {
+          // Use regular sale endpoint
+          const sale: SaleType = {
+            seller: account ? account._id : "",
+            company: company ? company._id : "",
+            branch: branchId,
+            customer: customer ? customer._id : undefined,
+            products: cartItems.map((item) => ({
+              product: item.product.details._id,
+              quantity: item.quantity,
+              price: item.unitPrice,
+              total: item.unitPrice * item.quantity,
+            })),
+            total: parseFloat(total.toFixed(2)),
+            discount: 0,
+            paid: amountPaid,
+            due: total - amountPaid > 0 ? total - amountPaid : 0,
+            paymentMethod: "cash",
+            note: "",
+            salesType: activeTab.salesType,
+            priceMode: priceType,
+            ...(activeTab.saleDate && { createdAt: activeTab.saleDate }),
+          };
+          response = isEditMode
+            ? await updateSale(activeTab.saleId as string, sale)
+            : await createNewSale(sale, branchId);
+        }
 
         setSavingSale(false);
         if (response.success) {
@@ -413,6 +448,7 @@ export const useSaleTabsActions = ({
                     salesType: "cash",
                     isEditMode: false,
                     saleId: undefined,
+                    saleDate: undefined,
                   }
                 : tab
             )

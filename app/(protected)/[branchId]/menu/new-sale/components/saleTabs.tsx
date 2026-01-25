@@ -18,6 +18,9 @@ import { useCompany } from "@/context/companyContext";
 import { useSaleTabsActions } from "@/app/(protected)/[branchId]/menu/new-sale/hooks/useSaleTabActions";
 import StockPriceUpdater from "./StockPriceUpdater";
 import TodaySalesSidebar from "./TodaySalesSidebar";
+import DatePickerModal from "./DatePickerModal";
+import { formatDateToDisplay } from "@/lib/date-utils";
+import { Calendar } from "lucide-react";
 
 const SaleTabs = ({
   customers,
@@ -33,6 +36,7 @@ const SaleTabs = ({
   const router = useRouter();
   const pathname = usePathname();
   const saleId = searchParams.get("saleId");
+  const customDate = searchParams.get("customDate");
   const branchId = params.branchId as string;
   const productsData = use(products);
   const { account, company } = useCompany();
@@ -60,6 +64,9 @@ const SaleTabs = ({
 
   // State for sidebar visibility
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // State for date picker modal
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
   // Use custom hook for sale tabs actions
   const {
@@ -129,6 +136,24 @@ const SaleTabs = ({
     router,
   ]);
 
+  // Show date picker when customDate is present in URL
+  useEffect(() => {
+    if (!customDate || !isHydrated) return;
+
+    // Remove customDate from URL and show date picker
+    const newSearchParams = new URLSearchParams(searchParams.toString());
+    newSearchParams.delete("customDate");
+    const newUrl = newSearchParams.toString()
+      ? `${pathname}?${newSearchParams.toString()}`
+      : pathname;
+    router.replace(newUrl);
+
+    // Use setTimeout to avoid synchronous state update in effect
+    setTimeout(() => {
+      setIsDatePickerOpen(true);
+    }, 0);
+  }, [customDate, isHydrated, searchParams, pathname, router]);
+
   // Create handler for pending product save
   const handlePendingProductSave =
     createPendingProductSaveHandler(pendingProduct);
@@ -138,10 +163,21 @@ const SaleTabs = ({
     await loadSale(saleId);
   };
 
+  // Handler for date selection
+  const handleDateConfirm = (date: string) => {
+    // Update the active tab with the selected date
+    setTabs((prevTabs) =>
+      prevTabs.map((tab) =>
+        tab.id === activeTabId ? { ...tab, saleDate: date } : tab
+      )
+    );
+    setIsDatePickerOpen(false);
+  };
+
   return (
     <div className="h-full flex flex-col relative">
       {/* Tabs Header */}
-      <section className="flex items-center gap-1  overflow-x-auto">
+      <section className="flex items-end gap-1  overflow-x-auto">
         {tabs.map((tab) => (
           <div
             key={tab.id}
@@ -159,23 +195,39 @@ const SaleTabs = ({
               }
             `}
           >
-            <span
-              className={`text-sm whitespace-nowrap ${
-                activeTabId === tab.id
-                  ? tab.salesType === "credit"
-                    ? "font-bold text-amber-700 dark:text-amber-400"
-                    : "font-bold text-primary"
-                  : tab.salesType === "credit"
-                  ? "text-amber-600 dark:text-amber-400"
-                  : "text-gray-500"
-              }`}
-            >
-              {tab.isEditMode
-                ? `Edit Sale${tab.customer ? ` - ${tab.customer.name}` : ""}`
-                : tab.customer
-                ? tab.customer.name
-                : "New Sale"}
-            </span>
+            <div className="flex flex-col items-start gap-1">
+              <span
+                className={`text-sm whitespace-nowrap ${
+                  activeTabId === tab.id
+                    ? tab.salesType === "credit"
+                      ? "font-bold text-amber-700 dark:text-amber-400"
+                      : "font-bold text-primary"
+                    : tab.salesType === "credit"
+                    ? "text-amber-600 dark:text-amber-400"
+                    : "text-gray-500"
+                }`}
+              >
+                {tab.isEditMode
+                  ? `Edit Sale${tab.customer ? ` - ${tab.customer.name}` : ""}`
+                  : tab.customer
+                  ? tab.customer.name
+                  : "New Sale"}
+              </span>
+              {tab.saleDate && activeTabId === tab.id && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveTabId(tab.id);
+                    setIsDatePickerOpen(true);
+                  }}
+                  className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors"
+                  title="Click to change date"
+                >
+                  <Calendar className="w-3 h-3" />
+                  <span>{formatDateToDisplay(tab.saleDate)}</span>
+                </button>
+              )}
+            </div>
             {tabs.length > 1 && (
               <button
                 onClick={(e) => handleCloseTab(tab.id, e)}
@@ -186,25 +238,28 @@ const SaleTabs = ({
             )}
           </div>
         ))}
-        <button
-          onClick={handleAddTab}
-          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors shrink-0"
-          aria-label="Add new tab"
-        >
-          <Plus className="w-4 h-4" />
-        </button>
-        <button
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className={`p-2 rounded-lg transition-colors shrink-0 ${
-            isSidebarOpen
-              ? "bg-primary text-white hover:bg-primary/90"
-              : "hover:bg-gray-100 dark:hover:bg-neutral-800"
-          }`}
-          aria-label="Toggle sales history sidebar"
-          title="Today's Sales"
-        >
-          <History className="w-4 h-4" />
-        </button>
+
+        <div className="flex h-full gap-2">
+          <button
+            onClick={handleAddTab}
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors shrink-0"
+            aria-label="Add new tab"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className={`p-2 rounded-lg transition-colors shrink-0 ${
+              isSidebarOpen
+                ? "bg-primary text-white hover:bg-primary/90"
+                : "hover:bg-gray-100 dark:hover:bg-neutral-800"
+            }`}
+            aria-label="Toggle sales history sidebar"
+            title="Today's Sales"
+          >
+            <History className="w-4 h-4" />
+          </button>
+        </div>
       </section>
 
       {/* Active Tab Content */}
@@ -258,6 +313,7 @@ const SaleTabs = ({
             savingSale={savingSale}
             isEditMode={activeTab.isEditMode || false}
             saleId={activeTab.saleId}
+            saleDate={activeTab.saleDate}
           />
         </StockProvider>
 
@@ -293,6 +349,14 @@ const SaleTabs = ({
           focusField="quantity"
         />
       )}
+
+      {/* Date Picker Modal */}
+      <DatePickerModal
+        isOpen={isDatePickerOpen}
+        onClose={() => setIsDatePickerOpen(false)}
+        onConfirm={handleDateConfirm}
+        initialDate={activeTab.saleDate}
+      />
     </div>
   );
 };

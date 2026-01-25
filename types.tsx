@@ -169,4 +169,37 @@ export type Tab = {
   salesType: "cash" | "credit";
   saleId?: string | null; // ID of the sale being edited
   isEditMode?: boolean; // Whether this tab is in edit mode
+  saleDate?: string; // ISO date string (YYYY-MM-DD) for custom date sales
 };
+
+export type CustomDateSalePayload = {
+  seller: string;
+  company: string;
+  branch: string;
+  products: Array<{
+    product: string;
+    quantity: number;
+    price: number;
+    total: number;
+  }>;
+  date: string | Date;
+  total: number;
+  note?: string;
+  salesType: "credit" | "cash";
+  priceMode: "wholesale" | "retail";
+  customer?: string;
+};
+
+
+export type DailySalesSummary = {
+  eachDay: Array<{
+    date: string; // ISO date string (YYYY-MM-DD)
+    totalSales: number;
+    creditSales: number;
+    cashSales: number;
+  }>
+  totalSales: string;
+  creditSales: string;
+  cashSales: string;
+};
+

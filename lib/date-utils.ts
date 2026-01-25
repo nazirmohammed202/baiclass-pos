@@ -32,10 +32,42 @@ export const formatDateToDisplay = (isoDate: string): string => {
   return `${day}/${month}/${year}`;
 };
 
+/**
+ * Formats an ISO date string (YYYY-MM-DD) to "Day, DD/MM/YYYY" format
+ * @param isoDate - ISO date string in format YYYY-MM-DD
+ * @returns Formatted date string in "Day, DD/MM/YYYY" format or empty string if input is empty
+ */
+export const formatDateToDisplayWithDay = (isoDate: string): string => {
+  if (!isoDate) return "";
+  const date = isoToDate(isoDate);
+  if (!date) return "";
+  
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const dayName = days[date.getDay()];
+  const formattedDate = formatDateToDisplay(isoDate);
+  return `${dayName}, ${formattedDate}`;
+};
+
 export const getTodayDate = (): string => {
   const today = new Date();
   const year = today.getFullYear();
   const month = String(today.getMonth() + 1).padStart(2, "0");
   const day = String(today.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+};
+
+/**
+ * Gets the date range for the last N days
+ * @param days - Number of days to go back
+ * @returns Object with startDate and endDate as ISO strings
+ */
+export const getLastNDays = (days: number): { startDate: string; endDate: string } => {
+  const today = new Date();
+  const startDate = new Date(today);
+  startDate.setDate(today.getDate() - (days - 1)); // Include today, so - (days - 1)
+  
+  return {
+    startDate: dateToIso(startDate),
+    endDate: getTodayDate(),
+  };
 };

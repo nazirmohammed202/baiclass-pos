@@ -15,6 +15,7 @@ type StoredTab = {
   salesType?: "cash" | "credit";
   saleId: string | undefined | null;
   isEditMode: boolean | undefined;
+  saleDate?: string;
 };
 
 export const useSaleTabsPersistence = (
@@ -75,6 +76,7 @@ export const useSaleTabsPersistence = (
             .filter((item): item is CartItem => item !== null),
           saleId: tab.saleId,
           isEditMode: tab.isEditMode,
+          saleDate: tab.saleDate,
         }));
 
         if (loadedTabs.length > 0) {
@@ -122,6 +124,7 @@ export const useSaleTabsPersistence = (
         })),
         saleId: tab.saleId,
         isEditMode: tab.isEditMode,
+        saleDate: tab.saleDate,
       }));
 
       localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToStore));

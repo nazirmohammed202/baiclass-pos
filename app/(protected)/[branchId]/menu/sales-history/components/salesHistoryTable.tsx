@@ -151,7 +151,7 @@ const SalesHistoryTable = () => {
                   {formatCurrency(sale.total)}
                 </td>
                 <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">
-                  {formatCurrency(sale.paid)}
+                  {formatCurrency(sale.paid || 0)}
                 </td>
                 <td className="px-4 py-3 text-sm">
                   <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium capitalize bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
@@ -299,7 +299,7 @@ const SalesHistoryTable = () => {
                   Paid
                 </span>
                 <p className="text-sm text-gray-900 dark:text-gray-100">
-                  {formatCurrency(sale.paid)}
+                  {formatCurrency(sale.paid || 0)}
                 </p>
               </div>
             </div>
