@@ -8,3 +8,8 @@ export function cn(...inputs: ClassValue[]) {
 export const formatCurrency = (amount: number): string => {
   return `₵${amount.toFixed(2)}`;
 };
+
+
+export const formatCurrencyToDisplay = (amount: number): string => {
+  return `₵${amount.toFixed(2)}`;
+};

@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Package, Users, User, Info } from "lucide-react";
-import { formatDateToDisplayWithDay } from "@/lib/date-utils";
+import { dateToIso, formatDateToDisplayWithDay, isoToDate } from "@/lib/date-utils";
 import { getSalesHistoryCached } from "@/lib/sale-actions";
 import { SalePopulatedType } from "@/types";
 import { formatCurrency } from "@/lib/utils";
@@ -362,13 +362,15 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
             Back to Report
           </button>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
-            Sales for {formatDateToDisplayWithDay(date)}
+            Sales for {dateToIso(new Date(date))}
           </h1>
         </div>
         <SalesHistoryTableSkeleton />
       </div>
     );
   }
+
+  console.log(isoToDate(date))
 
   return (
     <div className="space-y-4 p-2">
@@ -425,11 +427,12 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
             </div>
           </div>
         </div>
-        {/* Total Sales */}
+
+        {/* Total Cash Sales */}
         <div className="bg-white dark:bg-neutral-900 rounded-lg p-5">
           <div className="flex items-start justify-between mb-3">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              TOTAL SALES
+              TOTAL CASH SALES
             </p>
             <InfoTooltip content="The total revenue from all sales transactions for this day">
               <Info className="w-4 h-4 text-gray-400 cursor-help" />
@@ -455,11 +458,12 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
             </div>
           </div>
         </div>
-        {/* Total Sales */}
+
+        {/* Total Credit Sales */}
         <div className="bg-white dark:bg-neutral-900 rounded-lg p-5">
           <div className="flex items-start justify-between mb-3">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              TOTAL SALES
+              TOTAL CREDIT SALES
             </p>
             <InfoTooltip content="The total revenue from all sales transactions for this day">
               <Info className="w-4 h-4 text-gray-400 cursor-help" />
@@ -485,11 +489,79 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
             </div>
           </div>
         </div>
+
+
+
+
         {/* Total Sales */}
         <div className="bg-white dark:bg-neutral-900 rounded-lg p-5">
           <div className="flex items-start justify-between mb-3">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              TOTAL SALES
+              GROSS PROFIT
+            </p>
+            <InfoTooltip content="The total revenue from all sales transactions for this day">
+              <Info className="w-4 h-4 text-gray-400 cursor-help" />
+            </InfoTooltip>
+          </div>
+          <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+            {formatCurrency(summaryStats.totalSales)}
+          </p>
+          <div className="mt-2 flex gap-2 items-end">
+            <div>
+              <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Daily Target</p>
+              <p className="font-medium">$20,000.20</p>
+            </div>
+
+            <div className="w-full flex flex-col items-end gap-1">
+              <p className="text-xs font-medium text-orange-400">50% Completed</p>
+              <div className="w-full h-4 bg-gray-200 dark:bg-neutral-700 rounded-sm overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-sm transition-all"
+                  style={{ width: "30%" }}
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        {/* Total Sales */}
+        <div className="bg-white dark:bg-neutral-900 rounded-lg p-5">
+          <div className="flex items-start justify-between mb-3">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              EXPENSES
+            </p>
+            <InfoTooltip content="The total revenue from all sales transactions for this day">
+              <Info className="w-4 h-4 text-gray-400 cursor-help" />
+            </InfoTooltip>
+          </div>
+          <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+            {formatCurrency(summaryStats.totalSales)}
+          </p>
+          <div className="mt-2 flex gap-2 items-end">
+            <div>
+              <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Daily Target</p>
+              <p className="font-medium">$20,000.20</p>
+            </div>
+
+            <div className="w-full flex flex-col items-end gap-1">
+              <p className="text-xs font-medium text-orange-400">50% Completed</p>
+              <div className="w-full h-4 bg-gray-200 dark:bg-neutral-700 rounded-sm overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-sm transition-all"
+                  style={{ width: "30%" }}
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        {/* Total Sales */}
+        <div className="bg-white dark:bg-neutral-900 rounded-lg p-5">
+          <div className="flex items-start justify-between mb-3">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              TOTAL E-PAYMENT
             </p>
             <InfoTooltip content="The total revenue from all sales transactions for this day">
               <Info className="w-4 h-4 text-gray-400 cursor-help" />

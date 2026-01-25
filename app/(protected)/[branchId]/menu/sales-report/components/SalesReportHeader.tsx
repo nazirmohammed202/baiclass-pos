@@ -1,4 +1,5 @@
 "use client";
+
 import { Calendar, Download } from "lucide-react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -6,18 +7,18 @@ import { isoToDate, dateToIso, formatDateToDisplay, getLastNDays } from "@/lib/d
 import { useSalesReport } from "../hooks/useSalesReport";
 import { useEffect } from "react";
 
-const SalesReportHeader = () => {
+type SalesReportHeaderProps = ReturnType<typeof useSalesReport>;
 
-  const {
-    startDate,
-    endDate,
-    setStartDate,
-    setEndDate,
-    exportToCSV,
-    dailySummary,
-    loading,
-    refreshReport,
-  } = useSalesReport();
+const SalesReportHeader = ({
+  startDate,
+  endDate,
+  setStartDate,
+  setEndDate,
+  exportToCSV,
+  dailySummary,
+  loading,
+  refreshReport,
+}: SalesReportHeaderProps) => {
 
   const handleStartDateChange = async (date: Date | null) => {
     const isoDate = dateToIso(date);

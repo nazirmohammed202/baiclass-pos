@@ -1,11 +1,9 @@
-import SalesReportHeader from "./components/SalesReportHeader";
-import DailySalesTable from "./components/DailySalesTable";
+import SalesReportClient from "./components/SalesReportClient";
 
-const SalesReportPage = async ({ }: { params: { branchId: string } }) => {
+const SalesReportPage = async ({}: { params: { branchId: string } }) => {
   return (
     <div>
-      <SalesReportHeader />
-      <DailySalesTable />
+      <SalesReportClient />
     </div>
   );
 };

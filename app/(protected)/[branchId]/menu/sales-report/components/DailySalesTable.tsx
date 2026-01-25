@@ -1,10 +1,16 @@
 "use client";
 
+import { formatCurrencyToDisplay } from "@/lib/utils";
 import { useSalesReport } from "../hooks/useSalesReport";
-import { formatDateToDisplayWithDay } from "@/lib/date-utils";
+import { dateToIso, formatDateToDisplayWithDay } from "@/lib/date-utils";
 
-const DailySalesTable = () => {
-  const { dailySummary, loading, navigateToDayDetail, } = useSalesReport();
+type DailySalesTableProps = ReturnType<typeof useSalesReport>;
+
+const DailySalesTable = ({
+  dailySummary,
+  loading,
+  navigateToDayDetail,
+}: DailySalesTableProps) => {
 
 
 
@@ -57,7 +63,7 @@ const DailySalesTable = () => {
             {dailySummary.eachDay.map((day) => (
               <tr
                 key={day.date}
-                onClick={() => navigateToDayDetail(day.date)}
+                onClick={() => navigateToDayDetail(dateToIso(new Date(day.date)))}
                 className="cursor-pointer hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors"
               >
                 <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -76,18 +82,18 @@ const DailySalesTable = () => {
             ))}
             {/* Grand Total Row */}
             <tr className="bg-gray-50 dark:bg-neutral-800 font-semibold border-t-2 border-gray-300 dark:border-neutral-600">
-              <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-gray-100">
+              <td className="px-4 py-3 whitespace-nowrap text-xl  font-bold text-gray-900 dark:text-gray-100">
                 TOTAL
               </td>
-              <td className="px-4 py-3 whitespace-nowrap text-sm text-right font-bold text-gray-900 dark:text-gray-100">
-                {dailySummary.totalSales}
+              <td className="px-4 py-3 whitespace-nowrap text-xl text-right font-bold text-gray-900 dark:text-gray-100">
+                {formatCurrencyToDisplay(Number(dailySummary.totalSales))}
               </td>
 
-              <td className="px-4 py-3 whitespace-nowrap text-sm text-right font-bold text-gray-900 dark:text-gray-100">
-                {dailySummary.cashSales}
+              <td className="px-4 py-3 whitespace-nowrap text-xl text-right font-bold text-gray-900 dark:text-gray-100">
+                {formatCurrencyToDisplay(Number(dailySummary.cashSales))}
               </td>
-              <td className="px-4 py-3 whitespace-nowrap text-sm text-right font-bold text-gray-900 dark:text-gray-100">
-                {dailySummary.creditSales}
+              <td className="px-4 py-3 whitespace-nowrap text-xl text-right font-bold text-gray-900 dark:text-gray-100">
+                {formatCurrencyToDisplay(Number(dailySummary.creditSales))}
               </td>
             </tr>
           </tbody>
@@ -108,7 +114,7 @@ const DailySalesTable = () => {
               </div>
               <div className="text-right">
                 <div className="font-semibold text-gray-900 dark:text-gray-100">
-                  {day.totalSales}
+                  {formatCurrencyToDisplay(Number(day.totalSales))}
                 </div>
                 <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 </div>
@@ -119,13 +125,13 @@ const DailySalesTable = () => {
                 <span className="text-xs text-gray-500 dark:text-gray-400">
                   Cash:{" "}
                 </span>
-                {day.cashSales}
+                {formatCurrencyToDisplay(Number(day.cashSales))}
               </div>
               <div>
                 <span className="text-xs text-gray-500 dark:text-gray-400">
                   Credit:{" "}
                 </span>
-                {day.creditSales}
+                {formatCurrencyToDisplay(Number(day.creditSales))}
               </div>
             </div>
           </div>
@@ -138,7 +144,7 @@ const DailySalesTable = () => {
             </div>
             <div className="text-right">
               <div className="font-bold text-gray-900 dark:text-gray-100">
-                {dailySummary.totalSales}
+                {formatCurrencyToDisplay(Number(dailySummary.totalSales))}
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               </div>
@@ -149,13 +155,13 @@ const DailySalesTable = () => {
               <span className="text-xs text-gray-500 dark:text-gray-400">
                 Cash:{" "}
               </span>
-              {dailySummary.cashSales}
+              {formatCurrencyToDisplay(Number(dailySummary.cashSales))}
             </div>
             <div>
               <span className="text-xs text-gray-500 dark:text-gray-400">
                 Credit:{" "}
               </span>
-              {dailySummary.creditSales}
+              {formatCurrencyToDisplay(Number(dailySummary.creditSales))}
             </div>
           </div>
         </div>
