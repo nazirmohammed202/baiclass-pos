@@ -6,6 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const formatCurrency = (amount: number): string => {
+
   return `₵${amount.toFixed(2)}`;
 };
 
@@ -13,3 +14,6 @@ export const formatCurrency = (amount: number): string => {
 export const formatCurrencyToDisplay = (amount: number): string => {
   return `₵${amount.toFixed(2)}`;
 };
+
+export const fmt = (s: string | undefined) =>
+  formatCurrency(Number(s ?? "0"));

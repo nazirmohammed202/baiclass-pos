@@ -71,3 +71,11 @@ export const getLastNDays = (days: number): { startDate: string; endDate: string
     endDate: getTodayDate(),
   };
 };
+
+/** Returns the previous day as ISO (YYYY-MM-DD) for a given ISO date. */
+export const getYesterdayIso = (isoDate: string): string => {
+  const d = isoToDate(isoDate);
+  if (!d) return "";
+  d.setDate(d.getDate() - 1);
+  return dateToIso(d);
+};

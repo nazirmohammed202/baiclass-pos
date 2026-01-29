@@ -3,11 +3,13 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Package, Users, User, Info } from "lucide-react";
-import { dateToIso, formatDateToDisplayWithDay, isoToDate } from "@/lib/date-utils";
+import { formatDateToDisplayWithDay, getYesterdayIso } from "@/lib/date-utils";
 import { getSalesHistoryCached } from "@/lib/sale-actions";
-import { SalePopulatedType } from "@/types";
-import { formatCurrency } from "@/lib/utils";
+import { getDailySalesReport } from "@/lib/saleShift-actions";
+import { DailySalesReport, SalePopulatedType } from "@/types";
+import { fmt, formatCurrency } from "@/lib/utils";
 import { useToast } from "@/context/toastContext";
+import { handleError } from "@/utils/errorHandlers";
 import ViewSaleModal from "../../sales-history/components/viewSaleModal";
 import SalesHistoryTableSkeleton from "../../sales-history/components/salesHistoryTableSkeleton";
 import InfoTooltip from "@/components/ui/tooltip";
@@ -75,6 +77,8 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
   const { error: toastError } = useToast();
 
   const [sales, setSales] = useState<SalePopulatedType[]>([]);
+  const [dailyReport, setDailyReport] = useState<DailySalesReport | null>(null);
+  const [yesterdayReport, setYesterdayReport] = useState<DailySalesReport | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [viewingSale, setViewingSale] = useState<SalePopulatedType | null>(
     null
@@ -283,45 +287,56 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
   ];
 
   useEffect(() => {
-    const fetchDaySales = async () => {
+    const fetchDayData = async () => {
       if (!date || !branchId) return;
 
       setLoading(true);
       try {
-        const allSales: SalePopulatedType[] = [];
-        let page = 1;
-        let hasMore = true;
-
-        while (hasMore) {
-          const data = await getSalesHistoryCached(
-            branchId as string,
-            date,
-            date,
-            "",
-            page,
-            100
-          );
-
-          allSales.push(...data.sales);
-
-          if (data.sales.length < 100 || page >= data.pagination.pages) {
-            hasMore = false;
-          } else {
-            page++;
-          }
-        }
+        const yesterdayIso = getYesterdayIso(date);
+        const [allSales, report, yReport] = await Promise.all([
+          (async () => {
+            const list: SalePopulatedType[] = [];
+            let page = 1;
+            let hasMore = true;
+            while (hasMore) {
+              const data = await getSalesHistoryCached(
+                branchId as string,
+                date,
+                date,
+                "",
+                page,
+                100
+              );
+              list.push(...data.sales);
+              if (data.sales.length < 100 || page >= data.pagination.pages) {
+                hasMore = false;
+              } else {
+                page++;
+              }
+            }
+            return list;
+          })(),
+          getDailySalesReport(branchId as string, date),
+          yesterdayIso
+            ? getDailySalesReport(branchId as string, yesterdayIso).catch(() => null)
+            : Promise.resolve(null),
+        ]);
 
         setSales(allSales);
+        setDailyReport(report);
+        setYesterdayReport(yReport ?? null);
       } catch (error) {
-        console.error("Failed to fetch day sales:", error);
-        toastError("Failed to load sales for this day");
+        console.error("Failed to fetch day data:", error);
+        toastError(handleError(error));
         setSales([]);
+        setDailyReport(null);
+        setYesterdayReport(null);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchDaySales();
+    fetchDayData();
   }, [date, branchId, toastError]);
 
   const handleBack = () => {
@@ -330,25 +345,8 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
 
   const calculatePercentage = (value: number, total: number) => {
     if (total === 0) return 0;
-    return (value / total) * 100;
+    return Number(((value / total) * 100).toFixed(2));
   };
-
-  // Calculate percentage of total for progress bars
-  const cashPercentage = calculatePercentage(
-    summaryStats.cashSales,
-    summaryStats.totalSales
-  );
-  const creditPercentage = calculatePercentage(
-    summaryStats.creditSales,
-    summaryStats.totalSales
-  );
-  const outstandingPercentage =
-    summaryStats.totalSales > 0
-      ? calculatePercentage(
-        summaryStats.outstandingCredit,
-        summaryStats.totalSales
-      )
-      : 0;
 
   if (loading) {
     return (
@@ -362,7 +360,7 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
             Back to Report
           </button>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
-            Sales for {dateToIso(new Date(date))}
+            Sales for {formatDateToDisplayWithDay(date)}
           </h1>
         </div>
         <SalesHistoryTableSkeleton />
@@ -370,7 +368,39 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
     );
   }
 
-  console.log(isoToDate(date))
+  const report = dailyReport;
+
+  // Calculate percentages for progress bars
+  const totalSalesNum = Number(report?.totalSales ?? "0");
+  const cashSalesNum = Number(report?.totalCashSales ?? "0");
+  const creditSalesNum = Number(report?.totalCreditSales ?? "0");
+  const cashPercentage = totalSalesNum > 0 ? (cashSalesNum / totalSalesNum) * 100 : 0;
+  const creditPercentage = totalSalesNum > 0 ? (creditSalesNum / totalSalesNum) * 100 : 0;
+  const ePaymentNum = Number(report?.totalElectronicPayments ?? "0");
+  const ePaymentPercentage = cashSalesNum > 0 ? (ePaymentNum / cashSalesNum) * 100 : 0;
+  const grossProfitNum = Number(report?.grossProfit ?? "0");
+  const expensesNum = Number(report?.totalExpenses ?? "0");
+  const netProfitNum = grossProfitNum - expensesNum;
+
+  const yesterdayTotalNum = Number(yesterdayReport?.totalSales ?? "0");
+  const growthPercent =
+    yesterdayTotalNum > 0
+      ? ((totalSalesNum - yesterdayTotalNum) / yesterdayTotalNum) * 100
+      : totalSalesNum > 0
+        ? 100
+        : 0;
+
+  const growthDoughnutData =
+    totalSalesNum === 0 && yesterdayTotalNum === 0
+      ? [
+          { name: "Yesterday", value: 1 },
+          { name: "Today", value: 1 },
+        ]
+      : [
+          { name: "Yesterday", value: yesterdayTotalNum || 0 },
+          { name: "Today", value: totalSalesNum || 0 },
+        ];
+  const hasGrowthData = totalSalesNum > 0 || yesterdayTotalNum > 0;
 
   return (
     <div className="space-y-4 p-2">
@@ -396,198 +426,414 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
       </section>
 
       {/* Summary Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Sales */}
-        <div className="bg-white dark:bg-neutral-900 rounded-lg p-5">
-          <div className="flex items-start justify-between mb-3">
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              TOTAL SALES
-            </p>
-            <InfoTooltip content="The total revenue from all sales transactions for this day">
-              <Info className="w-4 h-4 text-gray-400 cursor-help" />
-            </InfoTooltip>
-          </div>
-          <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
-            {formatCurrency(summaryStats.totalSales)}
-          </p>
-          <div className="mt-2 flex gap-2 items-end">
-            <div>
-              <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Daily Target</p>
-              <p className="font-medium">$20,000.20</p>
-            </div>
+      <section className="flex gap-4">
 
-            <div className="w-full flex flex-col items-end gap-1">
-              <p className="text-xs font-medium text-orange-400">50% Completed</p>
-              <div className="w-full h-4 bg-gray-200 dark:bg-neutral-700 rounded-sm overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-3/4">
+          {/* Total Sales */}
+          <div className="bg-white dark:bg-neutral-900 rounded-lg p-5">
+            <div className="flex items-start justify-between mb-3">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                TOTAL SALES
+              </p>
+              <InfoTooltip content="The total revenue from all sales transactions for this day">
+                <Info className="w-4 h-4 text-gray-400 cursor-help" />
+              </InfoTooltip>
+            </div>
+            <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              {fmt(report?.totalSales)}
+            </p>
+            <div className="mt-2 flex gap-2 items-end">
+              <div>
+                <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Daily Target</p>
+                <p className="font-medium">{fmt(report?.dailySalesTarget)}</p>
+              </div>
+
+              <div className="w-full flex flex-col items-end gap-1">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{calculatePercentage(Number(report?.totalSales), Number(report?.dailySalesTarget))}% Completed</p>
+                <div className="w-full h-4 bg-gray-200 dark:bg-neutral-700 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary rounded transition-all brightness-150"
+                    style={{ width: `${calculatePercentage(Number(report?.totalSales), Number(report?.dailySalesTarget))}%` }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Total Cash Sales */}
+          <div className="bg-white dark:bg-neutral-900 rounded-lg p-5">
+            <div className="flex items-start justify-between mb-3">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                TOTAL CASH SALES
+              </p>
+              <InfoTooltip content="Total revenue from cash sales for this day">
+                <Info className="w-4 h-4 text-gray-400 cursor-help" />
+              </InfoTooltip>
+            </div>
+            <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100 mb-3">
+              {fmt(report?.totalCashSales)}
+            </p>
+            <div className="mt-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  {cashPercentage.toFixed(1)}% ({fmt(report?.totalCashSales)}) of Total
+                </p>
+              </div>
+              <div className="w-full h-4 bg-gray-200 dark:bg-neutral-700 rounded overflow-hidden">
                 <div
-                  className="h-full bg-primary rounded-sm transition-all"
-                  style={{ width: "30%" }}
+                  className="h-full bg-green-600 dark:bg-green-500 rounded-full transition-all"
+                  style={{ width: `${Math.min(cashPercentage, 100)}%` }}
                 ></div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Total Cash Sales */}
-        <div className="bg-white dark:bg-neutral-900 rounded-lg p-5">
-          <div className="flex items-start justify-between mb-3">
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              TOTAL CASH SALES
-            </p>
-            <InfoTooltip content="The total revenue from all sales transactions for this day">
-              <Info className="w-4 h-4 text-gray-400 cursor-help" />
-            </InfoTooltip>
-          </div>
-          <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
-            {formatCurrency(summaryStats.totalSales)}
-          </p>
-          <div className="mt-2 flex gap-2 items-end">
-            <div>
-              <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Daily Target</p>
-              <p className="font-medium">$20,000.20</p>
+          {/* Total Credit Sales */}
+          <div className="bg-white dark:bg-neutral-900 rounded-lg p-5">
+            <div className="flex items-start justify-between mb-3">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                TOTAL CREDIT SALES
+              </p>
+              <InfoTooltip content="Total revenue from credit sales for this day">
+                <Info className="w-4 h-4 text-gray-400 cursor-help" />
+              </InfoTooltip>
             </div>
-
-            <div className="w-full flex flex-col items-end gap-1">
-              <p className="text-xs font-medium text-orange-400">50% Completed</p>
-              <div className="w-full h-4 bg-gray-200 dark:bg-neutral-700 rounded-sm overflow-hidden">
+            <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100 mb-3">
+              {fmt(report?.totalCreditSales)}
+            </p>
+            <div className="mt-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  {creditPercentage.toFixed(1)}% ({fmt(report?.totalCreditSales)}) of Total
+                </p>
+              </div>
+              <div className="w-full h-4 bg-gray-200 dark:bg-neutral-700 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-primary rounded-sm transition-all"
-                  style={{ width: "30%" }}
+                  className="h-full bg-amber-600 dark:bg-amber-500 rounded-full transition-all"
+                  style={{ width: `${Math.min(creditPercentage, 100)}%` }}
                 ></div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Total Credit Sales */}
-        <div className="bg-white dark:bg-neutral-900 rounded-lg p-5">
-          <div className="flex items-start justify-between mb-3">
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              TOTAL CREDIT SALES
-            </p>
-            <InfoTooltip content="The total revenue from all sales transactions for this day">
-              <Info className="w-4 h-4 text-gray-400 cursor-help" />
-            </InfoTooltip>
-          </div>
-          <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
-            {formatCurrency(summaryStats.totalSales)}
-          </p>
-          <div className="mt-2 flex gap-2 items-end">
-            <div>
-              <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Daily Target</p>
-              <p className="font-medium">$20,000.20</p>
+
+
+
+          {/* Total E-Payment */}
+          <div className="bg-white dark:bg-neutral-900 rounded-lg p-5">
+            <div className="flex items-start justify-between mb-3">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                TOTAL E-PAYMENT
+              </p>
+              <InfoTooltip content="Total e-payment (MoMo, etc.) for this day">
+                <Info className="w-4 h-4 text-gray-400 cursor-help" />
+              </InfoTooltip>
             </div>
-
-            <div className="w-full flex flex-col items-end gap-1">
-              <p className="text-xs font-medium text-orange-400">50% Completed</p>
-              <div className="w-full h-4 bg-gray-200 dark:bg-neutral-700 rounded-sm overflow-hidden">
+            <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100 mb-3">
+              {fmt(report?.totalElectronicPayments)}
+            </p>
+            <div className="mt-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  {ePaymentPercentage.toFixed(1)}% ({fmt(report?.totalElectronicPayments)}) of Cash Sales
+                </p>
+              </div>
+              <div className="w-full h-4 bg-gray-200 dark:bg-neutral-700 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-primary rounded-sm transition-all"
-                  style={{ width: "30%" }}
+                  className="h-full bg-green-600 dark:bg-green-500 rounded-full transition-all"
+                  style={{ width: `${Math.min(ePaymentPercentage, 100)}%` }}
                 ></div>
               </div>
             </div>
           </div>
-        </div>
 
-
-
-
-        {/* Total Sales */}
-        <div className="bg-white dark:bg-neutral-900 rounded-lg p-5">
-          <div className="flex items-start justify-between mb-3">
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              GROSS PROFIT
+          {/* Products Sold */}
+          <div className="bg-white dark:bg-neutral-900 rounded-lg p-5">
+            <div className="flex items-start justify-between mb-3">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                PRODUCTS SOLD
+              </p>
+              <InfoTooltip content="Total number of products sold this day">
+                <Info className="w-4 h-4 text-gray-400 cursor-help" />
+              </InfoTooltip>
+            </div>
+            <p className="text-6xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              {report?.totalProductsSold ?? 0}
             </p>
-            <InfoTooltip content="The total revenue from all sales transactions for this day">
-              <Info className="w-4 h-4 text-gray-400 cursor-help" />
-            </InfoTooltip>
           </div>
-          <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
-            {formatCurrency(summaryStats.totalSales)}
-          </p>
-          <div className="mt-2 flex gap-2 items-end">
-            <div>
-              <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Daily Target</p>
-              <p className="font-medium">$20,000.20</p>
+
+          {/* Average Sale */}
+          <div className="bg-white dark:bg-neutral-900 rounded-lg p-5">
+            <div className="flex items-start justify-between mb-3">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                AVERAGE SALE
+              </p>
+              <InfoTooltip content="Total number of products sold this day">
+                <Info className="w-4 h-4 text-gray-400 cursor-help" />
+              </InfoTooltip>
             </div>
-
-            <div className="w-full flex flex-col items-end gap-1">
-              <p className="text-xs font-medium text-orange-400">50% Completed</p>
-              <div className="w-full h-4 bg-gray-200 dark:bg-neutral-700 rounded-sm overflow-hidden">
-                <div
-                  className="h-full bg-primary rounded-sm transition-all"
-                  style={{ width: "30%" }}
-                ></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-
-        {/* Total Sales */}
-        <div className="bg-white dark:bg-neutral-900 rounded-lg p-5">
-          <div className="flex items-start justify-between mb-3">
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              EXPENSES
+            <p className="text-6xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              {fmt(report?.averageSale)}
             </p>
-            <InfoTooltip content="The total revenue from all sales transactions for this day">
-              <Info className="w-4 h-4 text-gray-400 cursor-help" />
-            </InfoTooltip>
-          </div>
-          <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
-            {formatCurrency(summaryStats.totalSales)}
-          </p>
-          <div className="mt-2 flex gap-2 items-end">
-            <div>
-              <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Daily Target</p>
-              <p className="font-medium">$20,000.20</p>
-            </div>
-
-            <div className="w-full flex flex-col items-end gap-1">
-              <p className="text-xs font-medium text-orange-400">50% Completed</p>
-              <div className="w-full h-4 bg-gray-200 dark:bg-neutral-700 rounded-sm overflow-hidden">
-                <div
-                  className="h-full bg-primary rounded-sm transition-all"
-                  style={{ width: "30%" }}
-                ></div>
-              </div>
-            </div>
           </div>
         </div>
 
-
-        {/* Total Sales */}
-        <div className="bg-white dark:bg-neutral-900 rounded-lg p-5">
-          <div className="flex items-start justify-between mb-3">
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              TOTAL E-PAYMENT
+        <div className="flex flex-col gap-4 w-1/4">
+          {/* Gross Profit */}
+          <div className="bg-white dark:bg-neutral-900 rounded-lg p-5 border border-gray-200 dark:border-neutral-800">
+            <div className="flex items-start justify-between mb-3">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                GROSS PROFIT
+              </p>
+              <InfoTooltip content="Gross profit (revenue minus cost of goods) for this day">
+                <Info className="w-4 h-4 text-gray-400 cursor-help" />
+              </InfoTooltip>
+            </div>
+            <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100">
+              {fmt(report?.grossProfit)}
             </p>
-            <InfoTooltip content="The total revenue from all sales transactions for this day">
-              <Info className="w-4 h-4 text-gray-400 cursor-help" />
-            </InfoTooltip>
           </div>
-          <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
-            {formatCurrency(summaryStats.totalSales)}
-          </p>
-          <div className="mt-2 flex gap-2 items-end">
-            <div>
-              <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Daily Target</p>
-              <p className="font-medium">$20,000.20</p>
-            </div>
 
-            <div className="w-full flex flex-col items-end gap-1">
-              <p className="text-xs font-medium text-orange-400">50% Completed</p>
-              <div className="w-full h-4 bg-gray-200 dark:bg-neutral-700 rounded-sm overflow-hidden">
-                <div
-                  className="h-full bg-primary rounded-sm transition-all"
-                  style={{ width: "30%" }}
-                ></div>
-              </div>
+          {/* Expenses */}
+          <div className="bg-white dark:bg-neutral-900 rounded-lg p-5 border border-gray-200 dark:border-neutral-800">
+            <div className="flex items-start justify-between mb-3">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                EXPENSES
+              </p>
+              <InfoTooltip content="Total expenses for this day">
+                <Info className="w-4 h-4 text-gray-400 cursor-help" />
+              </InfoTooltip>
             </div>
+            <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100">
+              {fmt(report?.totalExpenses)}
+            </p>
+          </div>
+
+          {/* Net Profit */}
+          <div className="bg-white dark:bg-neutral-900 rounded-lg p-5 border border-gray-200 dark:border-neutral-800">
+            <div className="flex items-start justify-between mb-3">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                NET PROFIT
+              </p>
+              <InfoTooltip content="Gross profit minus expenses for this day">
+                <Info className="w-4 h-4 text-gray-400 cursor-help" />
+              </InfoTooltip>
+            </div>
+            <p
+              className={`text-3xl font-semibold ${netProfitNum >= 0
+                ? "text-green-600 dark:text-green-500"
+                : "text-red-600 dark:text-red-500"
+                }`}
+            >
+              {formatCurrency(netProfitNum)}
+            </p>
           </div>
         </div>
-      </div>
+      </section>
+
+
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Recent Sales */}
+        <div className="lg:col-span-2 bg-white dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 overflow-hidden">
+          <div className="p-4 border-b border-gray-200 dark:border-neutral-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Recent Sales
+            </h3>
+          </div>
+          {sales.length === 0 ? (
+            <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+              <p className="text-lg font-medium">No sales found for this day</p>
+            </div>
+          ) : (
+            <>
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 dark:bg-neutral-800 border-b border-gray-200 dark:border-neutral-700">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Invoice
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Customer
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Items
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Total
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Type
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Time
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-neutral-700">
+                    {sales.map((sale) => {
+                      const saleDate = sale.createdAt
+                        ? typeof sale.createdAt === "string"
+                          ? new Date(sale.createdAt)
+                          : sale.createdAt
+                        : null;
+                      const timeStr = saleDate
+                        ? saleDate.toLocaleTimeString("en-US", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: true,
+                        })
+                        : "-";
+
+                      return (
+                        <tr
+                          key={sale._id}
+                          onClick={() => setViewingSale(sale)}
+                          className="cursor-pointer hover:bg-gray-50 dark:hover:bg-neutral-800/50 transition-colors"
+                        >
+                          <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {sale.invoiceNumber || sale._id.slice(-8)}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                            {sale.customer?.name || "Walk-in"}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                            {sale.products.length}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-gray-100">
+                            {formatCurrency(sale.total)}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            <span
+                              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${sale.salesType === "credit"
+                                ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+                                : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                                }`}
+                            >
+                              {sale.salesType === "credit" ? "Credit" : "Cash"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                            {timeStr}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="md:hidden">
+                {sales.map((sale) => {
+                  const saleDate = sale.createdAt
+                    ? typeof sale.createdAt === "string"
+                      ? new Date(sale.createdAt)
+                      : sale.createdAt
+                    : null;
+                  const timeStr = saleDate
+                    ? saleDate.toLocaleTimeString("en-US", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hour12: true,
+                    })
+                    : "-";
+
+                  return (
+                    <div
+                      key={sale._id}
+                      onClick={() => setViewingSale(sale)}
+                      className="p-4 border-b border-gray-200 dark:border-neutral-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-neutral-800/50 transition-colors"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {sale.invoiceNumber || sale._id.slice(-8)}
+                          </div>
+                          <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            {sale.customer?.name || "Walk-in"}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                            {formatCurrency(sale.total)}
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            {timeStr}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span
+                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${sale.salesType === "credit"
+                            ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+                            : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                            }`}
+                        >
+                          {sale.salesType === "credit" ? "Credit" : "Cash"}
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {sale.products.length} item
+                          {sale.products.length !== 1 ? "s" : ""}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Growth vs Yesterday Doughnut */}
+        <div className="bg-white dark:bg-neutral-900 rounded-lg p-4">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            Growth vs Yesterday
+          </h3>
+          {!hasGrowthData && (
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              No sales data for today or yesterday
+            </p>
+          )}
+          <ResponsiveContainer width="100%" height={160}>
+            <PieChart>
+              <Pie
+                data={growthDoughnutData}
+                cx="50%"
+                cy="48%"
+                startAngle={180}
+                endAngle={0}
+                innerRadius={34}
+                outerRadius={82}
+                dataKey="value"
+                nameKey="name"
+                label={({ name, percent }) =>
+                  hasGrowthData
+                    ? `${name} ${((percent || 0) * 100).toFixed(0)}%`
+                    : name
+                }
+              >
+                <Cell fill="#9ca3af" stroke="none" />
+                <Cell fill={COLORS[0]} stroke="none" />
+              </Pie>
+              <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+            </PieChart>
+          </ResponsiveContainer>
+          {hasGrowthData && (
+            <p
+              className={`text-center text-sm font-semibold mt-1 ${
+                growthPercent >= 0
+                  ? "text-green-600 dark:text-green-500"
+                  : "text-red-600 dark:text-red-500"
+              }`}
+            >
+              {growthPercent >= 0 ? "+" : ""}
+              {growthPercent.toFixed(1)}% vs yesterday
+            </p>
+          )}
+        </div>
+      </section>
+
+
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -904,156 +1150,6 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
         </div>
       )}
 
-      {/* All Sales Table */}
-      <div className="bg-white dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 overflow-hidden">
-        <div className="p-4 border-b border-gray-200 dark:border-neutral-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            All Sales
-          </h3>
-        </div>
-        {sales.length === 0 ? (
-          <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-            <p className="text-lg font-medium">No sales found for this day</p>
-          </div>
-        ) : (
-          <>
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 dark:bg-neutral-800 border-b border-gray-200 dark:border-neutral-700">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Invoice
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Customer
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Items
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Total
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Type
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Time
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-neutral-700">
-                  {sales.map((sale) => {
-                    const saleDate = sale.createdAt
-                      ? typeof sale.createdAt === "string"
-                        ? new Date(sale.createdAt)
-                        : sale.createdAt
-                      : null;
-                    const timeStr = saleDate
-                      ? saleDate.toLocaleTimeString("en-US", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        hour12: true,
-                      })
-                      : "-";
-
-                    return (
-                      <tr
-                        key={sale._id}
-                        onClick={() => setViewingSale(sale)}
-                        className="cursor-pointer hover:bg-gray-50 dark:hover:bg-neutral-800/50 transition-colors"
-                      >
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
-                          {sale.invoiceNumber || sale._id.slice(-8)}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                          {sale.customer?.name || "Walk-in"}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-                          {sale.products.length}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-gray-100">
-                          {formatCurrency(sale.total)}
-                        </td>
-                        <td className="px-4 py-3 text-sm">
-                          <span
-                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${sale.salesType === "credit"
-                              ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
-                              : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                              }`}
-                          >
-                            {sale.salesType === "credit" ? "Credit" : "Cash"}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-                          {timeStr}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="md:hidden">
-              {sales.map((sale) => {
-                const saleDate = sale.createdAt
-                  ? typeof sale.createdAt === "string"
-                    ? new Date(sale.createdAt)
-                    : sale.createdAt
-                  : null;
-                const timeStr = saleDate
-                  ? saleDate.toLocaleTimeString("en-US", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    hour12: true,
-                  })
-                  : "-";
-
-                return (
-                  <div
-                    key={sale._id}
-                    onClick={() => setViewingSale(sale)}
-                    className="p-4 border-b border-gray-200 dark:border-neutral-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-neutral-800/50 transition-colors"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                          {sale.invoiceNumber || sale._id.slice(-8)}
-                        </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                          {sale.customer?.name || "Walk-in"}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                          {formatCurrency(sale.total)}
-                        </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          {timeStr}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 mt-2">
-                      <span
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${sale.salesType === "credit"
-                          ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
-                          : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                          }`}
-                      >
-                        {sale.salesType === "credit" ? "Credit" : "Cash"}
-                      </span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        {sale.products.length} item
-                        {sale.products.length !== 1 ? "s" : ""}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
-      </div>
 
       {/* View Sale Modal */}
       {viewingSale && (

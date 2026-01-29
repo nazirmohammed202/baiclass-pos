@@ -234,45 +234,27 @@ export const useSaleTabsActions = ({
             unitPrice !== undefined
               ? unitPrice
               : priceType === "wholesale"
-              ? stockItem?.wholesalePrice ??
+                ? stockItem?.wholesalePrice ??
                 product.wholesalePrice ??
                 product.basePrice ??
                 0
-              : stockItem?.retailPrice ??
+                : stockItem?.retailPrice ??
                 product.retailPrice ??
                 product.basePrice ??
                 0;
 
-          // Check if product already exists in cart
-          const existingItemIndex = tab.products.findIndex(
-            (item) => item.product.details._id === product.details._id
-          );
-
-          if (existingItemIndex >= 0) {
-            // Increase quantity if product already exists (keep existing unitPrice and manual edit flag)
-            const newProducts = [...tab.products];
-            newProducts[existingItemIndex] = {
-              ...newProducts[existingItemIndex],
-              quantity: newProducts[existingItemIndex].quantity + quantity,
-              // Preserve isPriceManuallyEdited flag
-            };
-            return { ...tab, products: newProducts };
-          } else {
-            // Add new product with quantity and captured price
-            // Mark as manually edited if unitPrice was provided
-            return {
-              ...tab,
-              products: [
-                ...tab.products,
-                {
-                  product,
-                  quantity,
-                  unitPrice: finalUnitPrice,
-                  isPriceManuallyEdited: unitPrice !== undefined,
-                },
-              ],
-            };
-          }
+          return {
+            ...tab,
+            products: [
+              ...tab.products,
+              {
+                product,
+                quantity,
+                unitPrice: finalUnitPrice,
+                isPriceManuallyEdited: unitPrice !== undefined,
+              },
+            ],
+          };
         })
       );
     },
@@ -329,11 +311,11 @@ export const useSaleTabsActions = ({
         tabs.map((tab) =>
           tab.id === activeTabId
             ? {
-                ...tab,
-                products: tab.products.map((item, i) =>
-                  i === index ? { ...item, quantity: newQuantity } : item
-                ),
-              }
+              ...tab,
+              products: tab.products.map((item, i) =>
+                i === index ? { ...item, quantity: newQuantity } : item
+              ),
+            }
             : tab
         )
       );
@@ -347,9 +329,9 @@ export const useSaleTabsActions = ({
         tabs.map((tab) =>
           tab.id === activeTabId
             ? {
-                ...tab,
-                products: tab.products.filter((_, i) => i !== index),
-              }
+              ...tab,
+              products: tab.products.filter((_, i) => i !== index),
+            }
             : tab
         )
       );
@@ -364,7 +346,8 @@ export const useSaleTabsActions = ({
       total: number,
       amountPaid: number,
       priceType: "retail" | "wholesale",
-      shouldPrint: boolean
+      shouldPrint: boolean,
+      paymentMethod: "cash" | "momo"
     ) => {
       if (activeTab.salesType === "credit" && !customer) {
         toastError("Please select a customer for credit sales");
@@ -399,6 +382,7 @@ export const useSaleTabsActions = ({
             note: "",
             salesType: activeTab.salesType,
             priceMode: priceType,
+            paymentMethod: paymentMethod,
           };
           response = await createCustomDateSale(customDateSale, branchId);
         } else {
@@ -418,7 +402,8 @@ export const useSaleTabsActions = ({
             discount: 0,
             paid: amountPaid,
             due: total - amountPaid > 0 ? total - amountPaid : 0,
-            paymentMethod: "cash",
+            paymentMethod:
+              paymentMethod,
             note: "",
             salesType: activeTab.salesType,
             priceMode: priceType,
@@ -442,14 +427,14 @@ export const useSaleTabsActions = ({
             prevTabs.map((tab) =>
               tab.id === activeTabId
                 ? {
-                    ...tab,
-                    products: [],
-                    customer: null,
-                    salesType: "cash",
-                    isEditMode: false,
-                    saleId: undefined,
-                    saleDate: undefined,
-                  }
+                  ...tab,
+                  products: [],
+                  customer: null,
+                  salesType: "cash",
+                  isEditMode: false,
+                  saleId: undefined,
+                  saleDate: undefined,
+                }
                 : tab
             )
           );
@@ -461,7 +446,7 @@ export const useSaleTabsActions = ({
         }
         toastError(
           response.error ??
-            (isEditMode ? "Failed to update sale" : "Failed to create sale")
+          (isEditMode ? "Failed to update sale" : "Failed to create sale")
         );
       } catch (error) {
         setSavingSale(false);
@@ -523,18 +508,18 @@ export const useSaleTabsActions = ({
         tabs.map((tab) =>
           tab.id === activeTabId
             ? {
-                ...tab,
-                products: tab.products.map((item, i) =>
-                  i === index
-                    ? {
-                        ...item,
-                        quantity,
-                        unitPrice,
-                        isPriceManuallyEdited: true,
-                      }
-                    : item
-                ),
-              }
+              ...tab,
+              products: tab.products.map((item, i) =>
+                i === index
+                  ? {
+                    ...item,
+                    quantity,
+                    unitPrice,
+                    isPriceManuallyEdited: true,
+                  }
+                  : item
+              ),
+            }
             : tab
         )
       );

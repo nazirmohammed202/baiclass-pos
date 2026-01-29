@@ -34,7 +34,8 @@ type SaleTabProps = {
     total: number,
     amountPaid: number,
     priceType: "retail" | "wholesale",
-    shouldPrint: boolean
+    shouldPrint: boolean,
+    paymentMethod: "cash" | "momo"
   ) => void;
   savingSale: boolean;
   isEditMode?: boolean;
@@ -117,7 +118,7 @@ const SaleTab = ({
     return sum + item.unitPrice * item.quantity;
   }, 0);
 
-  const handleSaveSale = (amountPaid: number, shouldPrint: boolean) => {
+  const handleSaveSale = (amountPaid: number, shouldPrint: boolean, paymentMethod: "cash" | "momo") => {
     if (onSaveSale) {
       onSaveSale(
         selectedCustomer,
@@ -125,7 +126,8 @@ const SaleTab = ({
         total,
         amountPaid,
         priceType,
-        shouldPrint
+        shouldPrint,
+        paymentMethod
       );
       setIsSaveModalOpen(false);
     }
@@ -213,19 +215,18 @@ const SaleTab = ({
               <button
                 onClick={() => setIsSaveModalOpen(true)}
                 disabled={tabProducts.length === 0 || savingSale}
-                className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-md transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base ${
-                  saleDate
+                className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-md transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base ${saleDate
                     ? "bg-amber-600 hover:bg-amber-700 text-white"
                     : isEditMode
-                    ? "bg-blue-600 hover:bg-blue-700 text-white"
-                    : "bg-primary text-white hover:bg-primary/90"
-                }`}
+                      ? "bg-blue-600 hover:bg-blue-700 text-white"
+                      : "bg-primary text-white hover:bg-primary/90"
+                  }`}
                 aria-label={
                   saleDate
                     ? `Save sale for ${formatDateToDisplay(saleDate)}`
                     : isEditMode
-                    ? "Update sale"
-                    : "Save sale"
+                      ? "Update sale"
+                      : "Save sale"
                 }
               >
                 {savingSale ? (

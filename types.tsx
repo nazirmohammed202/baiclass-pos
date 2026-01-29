@@ -187,6 +187,7 @@ export type CustomDateSalePayload = {
   note?: string;
   salesType: "credit" | "cash";
   priceMode: "wholesale" | "retail";
+  paymentMethod: "cash" | "momo";
   customer?: string;
 };
 
@@ -201,5 +202,18 @@ export type DailySalesSummary = {
   totalSales: string;
   creditSales: string;
   cashSales: string;
+};
+
+export type DailySalesReport = {
+  totalSales: string;
+  totalCashSales: string;
+  totalCreditSales: string;
+  totalExpenses: string;
+  grossProfit: string;
+  totalProductsSold: string;
+  totalElectronicPayments: string;
+  dailySalesTarget: string;
+  totalPaymentsReceived: string;
+  averageSale: string;
 };
 

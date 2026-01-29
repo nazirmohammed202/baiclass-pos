@@ -184,12 +184,11 @@ const SaleTabs = ({
             onClick={() => setActiveTabId(tab.id)}
             className={`
               flex items-center gap-2 px-5 py-4 rounded-t cursor-pointer transition-colors relative
-              ${
-                activeTabId === tab.id
-                  ? tab.salesType === "credit"
-                    ? "bg-amber-50 dark:bg-amber-900/20 "
-                    : "bg-white dark:bg-neutral-900 "
-                  : tab.salesType === "credit"
+              ${activeTabId === tab.id
+                ? tab.salesType === "credit"
+                  ? "bg-amber-50 dark:bg-amber-900/20 "
+                  : "bg-white dark:bg-neutral-900 "
+                : tab.salesType === "credit"
                   ? "bg-amber-100/50 dark:bg-amber-900/10 hover:bg-amber-200/50 dark:hover:bg-amber-900/20"
                   : "bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700"
               }
@@ -197,21 +196,20 @@ const SaleTabs = ({
           >
             <div className="flex flex-col items-start gap-1">
               <span
-                className={`text-sm whitespace-nowrap ${
-                  activeTabId === tab.id
+                className={`text-sm whitespace-nowrap ${activeTabId === tab.id
                     ? tab.salesType === "credit"
                       ? "font-bold text-amber-700 dark:text-amber-400"
                       : "font-bold text-primary"
                     : tab.salesType === "credit"
-                    ? "text-amber-600 dark:text-amber-400"
-                    : "text-gray-500"
-                }`}
+                      ? "text-amber-600 dark:text-amber-400"
+                      : "text-gray-500"
+                  }`}
               >
                 {tab.isEditMode
                   ? `Edit Sale${tab.customer ? ` - ${tab.customer.name}` : ""}`
                   : tab.customer
-                  ? tab.customer.name
-                  : "New Sale"}
+                    ? tab.customer.name
+                    : "New Sale"}
               </span>
               {tab.saleDate && activeTabId === tab.id && (
                 <button
@@ -249,11 +247,10 @@ const SaleTabs = ({
           </button>
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className={`p-2 rounded-lg transition-colors shrink-0 ${
-              isSidebarOpen
+            className={`p-2 rounded-lg transition-colors shrink-0 ${isSidebarOpen
                 ? "bg-primary text-white hover:bg-primary/90"
                 : "hover:bg-gray-100 dark:hover:bg-neutral-800"
-            }`}
+              }`}
             aria-label="Toggle sales history sidebar"
             title="Today's Sales"
           >
@@ -299,7 +296,8 @@ const SaleTabs = ({
               total,
               amountPaid,
               priceType,
-              shouldPrint
+              shouldPrint,
+              paymentMethod
             ) =>
               handleSaveSale(
                 customer,
@@ -307,7 +305,8 @@ const SaleTabs = ({
                 total,
                 amountPaid,
                 priceType,
-                shouldPrint
+                shouldPrint,
+                paymentMethod
               )
             }
             savingSale={savingSale}
@@ -336,13 +335,13 @@ const SaleTabs = ({
             unitPrice:
               pendingProduct.priceType === "wholesale"
                 ? pendingProduct.stockItem?.wholesalePrice ??
-                  pendingProduct.product.wholesalePrice ??
-                  pendingProduct.product.basePrice ??
-                  0
+                pendingProduct.product.wholesalePrice ??
+                pendingProduct.product.basePrice ??
+                0
                 : pendingProduct.stockItem?.retailPrice ??
-                  pendingProduct.product.retailPrice ??
-                  pendingProduct.product.basePrice ??
-                  0,
+                pendingProduct.product.retailPrice ??
+                pendingProduct.product.basePrice ??
+                0,
             isPriceManuallyEdited: false,
           }}
           onSave={handlePendingProductSave}

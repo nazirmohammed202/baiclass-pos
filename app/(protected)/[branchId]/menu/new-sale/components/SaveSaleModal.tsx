@@ -9,7 +9,7 @@ import { formatDateToDisplay } from "@/lib/date-utils";
 type SaveSaleModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (amountPaid: number, shouldPrint: boolean) => void;
+  onSave: (amountPaid: number, shouldPrint: boolean, paymentMethod: "cash" | "momo") => void;
   customer: CustomerType | null;
   cartItems: CartItem[];
   total: number;
@@ -37,6 +37,7 @@ const SaveSaleModal = ({
   const normalizedTotal = parseFloat(total.toFixed(2));
 
   const [amountPaidStr, setAmountPaidStr] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "momo">("cash");
   const amountPaidInputRef = useRef<HTMLInputElement>(null);
   const [, startTransition] = useTransition();
 
@@ -44,6 +45,7 @@ const SaveSaleModal = ({
     if (isOpen) {
       startTransition(() => {
         setAmountPaidStr(normalizedTotal.toFixed(2));
+        setPaymentMethod("cash"); // Reset to cash when modal opens
       });
       // Focus amount paid input after modal opens
       setTimeout(() => {
@@ -62,7 +64,7 @@ const SaveSaleModal = ({
     if (amountPaid < normalizedTotal) {
       return; // Can't save if amount paid is less than total
     }
-    onSave(amountPaid, shouldPrint);
+    onSave(amountPaid, shouldPrint, paymentMethod);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -147,6 +149,25 @@ const SaveSaleModal = ({
             </div>
           </div>
 
+          {/* Payment Method */}
+          <div>
+            <label
+              htmlFor="paymentMethod"
+              className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+            >
+              Payment Method
+            </label>
+            <select
+              id="paymentMethod"
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value as "cash" | "momo")}
+              className="w-full px-4 py-2 border border-gray-200 dark:border-neutral-800 rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            >
+              <option value="cash">Cash</option>
+              <option value="momo">MoMo</option>
+            </select>
+          </div>
+
           {/* Amount Paid */}
           <div>
             <label
@@ -219,23 +240,22 @@ const SaveSaleModal = ({
                   amountPaid < normalizedTotal ||
                   amountPaidStr === ""
                 }
-                className={`flex-1 px-4 py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium ${
-                  saleDate
+                className={`flex-1 px-4 py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium ${saleDate
                     ? "bg-amber-600 hover:bg-amber-700 text-white"
                     : isEditMode
-                    ? "bg-blue-600 hover:bg-blue-700 text-white"
-                    : "bg-primary text-white hover:bg-primary/90"
-                }`}
+                      ? "bg-blue-600 hover:bg-blue-700 text-white"
+                      : "bg-primary text-white hover:bg-primary/90"
+                  }`}
               >
                 {savingSale || isSaving
                   ? isEditMode
                     ? "Updating..."
                     : "Saving..."
                   : saleDate
-                  ? `Save Only (${formatDateToDisplay(saleDate)})`
-                  : isEditMode
-                  ? "Update Only"
-                  : "Save Only"}
+                    ? `Save Only (${formatDateToDisplay(saleDate)})`
+                    : isEditMode
+                      ? "Update Only"
+                      : "Save Only"}
               </button>
             </div>
             <button
@@ -246,21 +266,20 @@ const SaveSaleModal = ({
                 amountPaid < normalizedTotal ||
                 amountPaidStr === ""
               }
-              className={`w-full flex-1 px-4 py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium ${
-                saleDate
+              className={`w-full flex-1 px-4 py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium ${saleDate
                   ? "bg-amber-600 hover:bg-amber-700 text-white border-0"
                   : "border border-gray-200 dark:border-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800"
-              }`}
+                }`}
             >
               {savingSale
                 ? isEditMode
                   ? "Updating..."
                   : "Saving..."
                 : saleDate
-                ? `Save and Print (${formatDateToDisplay(saleDate)})`
-                : isEditMode
-                ? "Update and Print"
-                : "Save and Print"}
+                  ? `Save and Print (${formatDateToDisplay(saleDate)})`
+                  : isEditMode
+                    ? "Update and Print"
+                    : "Save and Print"}
               <Printer className="w-5 h-5" />
             </button>
           </div>
