@@ -2,10 +2,19 @@
 
 import api from "@/config/api";
 import { cacheLife, cacheTag, updateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { ProductDetailsType } from "@/types";
 import { extractToken } from "./auth-actions";
 import { handleError } from "@/utils/errorHandlers";
+
+export type UpdateProductDetailsPayload = {
+  name?: string;
+  manufacturer?: string;
+  nickname?: string;
+  size?: string;
+  type?: string;
+};
 
 export const getAllProducts = async (companyId: string) => {
   const token = (await cookies()).get("__baiclass")?.value;
@@ -49,6 +58,7 @@ export const addSystemProductsToBranch = async (
       }
     );
     updateTag("branch-products-metadata:" + branchId);
+    revalidatePath(`/${branchId}/menu/stock`);
     return {
       success: true,
       error: null,
@@ -90,8 +100,27 @@ export const createNewProduct = async (formData: FormData) => {
 
     // Invalidate branch products cache
     updateTag("branch-products-metadata:" + branchId);
+    revalidatePath(`/${branchId}/menu/stock`);
   } catch (error: unknown) {
     const errorMessage = handleError(error);
     throw new Error(errorMessage);
+  }
+};
+
+export const updateProductDetails = async (
+  productId: string,
+  branchId: string,
+  payload: UpdateProductDetailsPayload
+): Promise<{ success: boolean; error: string | null }> => {
+  try {
+    const token = await extractToken();
+    await api.patch(`/products/update/details/${productId}`, payload, {
+      headers: { "x-auth-token": token },
+    });
+    updateTag("branch-products-metadata:" + branchId);
+    revalidatePath(`/${branchId}/menu/stock`);
+    return { success: true, error: null };
+  } catch (error: unknown) {
+    return { success: false, error: handleError(error) };
   }
 };

@@ -1,7 +1,8 @@
 import React from "react";
 import { MenuCard } from "@/components/MenuCard";
 
-type SaleItem = {
+
+type MenuItem = {
   name: string;
   icon: string;
   route: string;
@@ -9,7 +10,7 @@ type SaleItem = {
 };
 
 const Dashboard = async () => {
-  const salesList: SaleItem[] = [
+  const salesList: MenuItem[] = [
     {
       name: "New Sale",
       icon: "ShoppingCart",
@@ -36,15 +37,53 @@ const Dashboard = async () => {
     },
   ];
 
-  // await new Promise((resolve) => setTimeout(resolve, 8000));
+  const inventoryList: MenuItem[] = [
+    {
+      name: "View Stock",
+      icon: "Package",
+      route: "/stock",
+      description: "View and manage product stock levels",
+    },
+    {
+      name: "Receive Stock",
+      icon: "PackagePlus",
+      route: "/stock/receive",
+      description: "Receive stock from a supplier",
+    },
+    {
+      name: "Stock History",
+      icon: "History",
+      route: "/stock/history",
+      description: "View the history of stock movements",
+    },
+    {
+      name: "Stock Report",
+      icon: "ClipboardList",
+      route: "/stock/report",
+      description: "Generate stock and inventory reports",
+    },
+  ];
+
+
 
   return (
-    <main className="p-3 sm:p-4 lg:p-6">
-      <p className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">Sales</p>
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-        {salesList.map((saleItem: SaleItem, index: number) => (
-          <MenuCard key={index} saleItem={saleItem} />
-        ))}
+    <main className="p-3 sm:p-4 lg:p-6 space-y-8">
+      <section>
+        <p className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">Sales</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+          {salesList.map((saleItem, index) => (
+            <MenuCard key={`sales-${index}`} saleItem={saleItem} />
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <p className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">Inventory</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+          {inventoryList.map((item, index) => (
+            <MenuCard key={`inventory-${index}`} saleItem={item} />
+          ))}
+        </div>
       </section>
     </main>
   );

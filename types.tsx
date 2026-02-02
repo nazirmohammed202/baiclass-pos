@@ -215,5 +215,7 @@ export type DailySalesReport = {
   dailySalesTarget: string;
   totalPaymentsReceived: string;
   averageSale: string;
+  recentSales: SalePopulatedType[];
+  topProducts: ProductDetailsType[];
 };
 

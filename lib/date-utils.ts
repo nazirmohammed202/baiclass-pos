@@ -41,7 +41,7 @@ export const formatDateToDisplayWithDay = (isoDate: string): string => {
   if (!isoDate) return "";
   const date = isoToDate(isoDate);
   if (!date) return "";
-  
+
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const dayName = days[date.getDay()];
   const formattedDate = formatDateToDisplay(isoDate);
@@ -65,7 +65,7 @@ export const getLastNDays = (days: number): { startDate: string; endDate: string
   const today = new Date();
   const startDate = new Date(today);
   startDate.setDate(today.getDate() - (days - 1)); // Include today, so - (days - 1)
-  
+
   return {
     startDate: dateToIso(startDate),
     endDate: getTodayDate(),

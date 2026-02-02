@@ -14,14 +14,9 @@ import ViewSaleModal from "../../sales-history/components/viewSaleModal";
 import SalesHistoryTableSkeleton from "../../sales-history/components/salesHistoryTableSkeleton";
 import InfoTooltip from "@/components/ui/tooltip";
 import {
-  BarChart,
-  Bar,
   PieChart,
   Pie,
   Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
@@ -393,13 +388,13 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
   const growthDoughnutData =
     totalSalesNum === 0 && yesterdayTotalNum === 0
       ? [
-          { name: "Yesterday", value: 1 },
-          { name: "Today", value: 1 },
-        ]
+        { name: "Yesterday", value: 1 },
+        { name: "Today", value: 1 },
+      ]
       : [
-          { name: "Yesterday", value: yesterdayTotalNum || 0 },
-          { name: "Today", value: totalSalesNum || 0 },
-        ];
+        { name: "Yesterday", value: yesterdayTotalNum || 0 },
+        { name: "Today", value: totalSalesNum || 0 },
+      ];
   const hasGrowthData = totalSalesNum > 0 || yesterdayTotalNum > 0;
 
   return (
@@ -794,16 +789,17 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
               No sales data for today or yesterday
             </p>
           )}
-          <ResponsiveContainer width="100%" height={160}>
+          <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Pie
                 data={growthDoughnutData}
                 cx="50%"
-                cy="48%"
+                cy="88%"
                 startAngle={180}
                 endAngle={0}
                 innerRadius={34}
                 outerRadius={82}
+                cornerRadius={50}
                 dataKey="value"
                 nameKey="name"
                 label={({ name, percent }) =>
@@ -820,11 +816,10 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
           </ResponsiveContainer>
           {hasGrowthData && (
             <p
-              className={`text-center text-sm font-semibold mt-1 ${
-                growthPercent >= 0
-                  ? "text-green-600 dark:text-green-500"
-                  : "text-red-600 dark:text-red-500"
-              }`}
+              className={`text-center text-sm font-semibold mt-1 ${growthPercent >= 0
+                ? "text-green-600 dark:text-green-500"
+                : "text-red-600 dark:text-red-500"
+                }`}
             >
               {growthPercent >= 0 ? "+" : ""}
               {growthPercent.toFixed(1)}% vs yesterday
@@ -838,17 +833,17 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="bg-white dark:bg-neutral-900 rounded-lg p-4 border border-gray-200 dark:border-neutral-800">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-            Sales Type
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 ">
+            Sales Type Breakdown
           </h3>
-          <ResponsiveContainer width="100%" height={250}>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">This chart shows the breakdown of sales by type.</p>
+          <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Pie
                 data={salesTypeData}
                 cx="50%"
                 cy="50%"
                 outerRadius={80}
-                fill="#8884d8"
                 dataKey="value"
                 label={({ name, percent }) =>
                   `${name} ${((percent || 0) * 100).toFixed(0)}%`
@@ -867,9 +862,10 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
         </div>
 
         <div className="bg-white dark:bg-neutral-900 rounded-lg p-4 border border-gray-200 dark:border-neutral-800">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-            Payment Method
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 ">
+            Payment Method Breakdown
           </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">This chart shows the breakdown of sales by payment method.</p>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie
@@ -886,7 +882,7 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
                 {paymentMethodData.map((entry, index) => (
                   <Cell
                     key={`cell-${index}`}
-                    fill={COLORS[(index + 2) % COLORS.length]}
+                    fill={COLORS[(index) % COLORS.length]}
                   />
                 ))}
               </Pie>
@@ -896,9 +892,10 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
         </div>
 
         <div className="bg-white dark:bg-neutral-900 rounded-lg p-4 border border-gray-200 dark:border-neutral-800">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 ">
             Price Mode
           </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">This chart shows the breakdown of sales by price mode.</p>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie
@@ -915,7 +912,7 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
                 {priceModeData.map((entry, index) => (
                   <Cell
                     key={`cell-${index}`}
-                    fill={COLORS[(index + 4) % COLORS.length]}
+                    fill={COLORS[(index) % COLORS.length]}
                   />
                 ))}
               </Pie>
@@ -925,22 +922,60 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
         </div>
       </div>
 
-      {/* Hourly Chart */}
+      {/* Hourly Sales Heat Map */}
       <div className="bg-white dark:bg-neutral-900 rounded-lg p-4 border border-gray-200 dark:border-neutral-800">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
           Hourly Sales
         </h3>
-        <ResponsiveContainer width="100%" height={350}>
-          <BarChart data={hourlyBreakdown}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="hourLabel" />
-            <YAxis
-              tickFormatter={(value) => `₵${(value / 1000).toFixed(0)}k`}
-            />
-            <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-            <Bar dataKey="sales" fill="#008080" />
-          </BarChart>
-        </ResponsiveContainer>
+        <div className="space-y-2">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Sales by hour (darker = higher)
+          </p>
+          {(() => {
+            const maxSales = Math.max(
+              ...hourlyBreakdown.map((h) => h.sales),
+              1
+            );
+            return (
+              <div className="grid grid-cols-12 sm:grid-cols-24 gap-0.5 sm:gap-1">
+                {hourlyBreakdown.map((hour) => {
+                  const intensity =
+                    maxSales > 0 ? hour.sales / maxSales : 0;
+                  const opacity = 0.12 + 0.88 * intensity;
+                  return (
+                    <div
+                      key={hour.hour}
+                      title={`${hour.hourLabel}: ${formatCurrency(hour.sales)}`}
+                      className={`aspect-square min-h-[28px] sm:min-h-[32px] rounded-sm transition-colors ${
+                        intensity === 0
+                          ? "bg-gray-200 dark:bg-neutral-700"
+                          : ""
+                      }`}
+                      style={
+                        intensity > 0
+                          ? {
+                              backgroundColor: `rgba(194, 65, 12, ${opacity})`,
+                            }
+                          : undefined
+                      }
+                    >
+                      <span className="sr-only">
+                        {hour.hourLabel} {formatCurrency(hour.sales)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+          <div className="flex justify-between text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 mt-1 px-0.5">
+            <span>12 AM</span>
+            <span>6 AM</span>
+            <span>12 PM</span>
+            <span>6 PM</span>
+            <span>11 PM</span>
+          </div>
+        </div>
       </div>
 
       {/* Top Products */}

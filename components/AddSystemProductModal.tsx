@@ -19,6 +19,7 @@ type AddSystemProductModalProps = {
   onClose: () => void;
   systemProducts: ProductDetailsType[];
   branchProducts: Product[];
+  onSuccess?: () => void;
 };
 
 const AddSystemProductModal = ({
@@ -26,6 +27,7 @@ const AddSystemProductModal = ({
   onClose,
   systemProducts,
   branchProducts,
+  onSuccess,
 }: AddSystemProductModalProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(
@@ -42,7 +44,7 @@ const AddSystemProductModal = ({
     return systemProducts.filter(
       (product) =>
         !branchProducts.some(
-          (branchProduct) => branchProduct.details._id === product._id
+          (branchProduct) => branchProduct.details?._id === product._id
         )
     );
   }, [systemProducts, branchProducts]);
@@ -102,6 +104,7 @@ const AddSystemProductModal = ({
       try {
         await addSystemProductsToBranch(formData);
         toastSuccess("Products added successfully");
+        onSuccess?.();
       } catch (error) {
         toastError(handleError(error));
       }
@@ -179,16 +182,14 @@ const AddSystemProductModal = ({
                     <div
                       key={product._id}
                       onClick={() => toggleProductSelection(product._id)}
-                      className={`p-3 hover:bg-gray-100 dark:hover:bg-neutral-800 cursor-pointer border-b border-gray-100 dark:border-neutral-800 last:border-b-0 transition-colors flex items-center gap-3 ${
-                        isSelected ? "bg-primary/10" : ""
-                      }`}
+                      className={`p-3 hover:bg-gray-100 dark:hover:bg-neutral-800 cursor-pointer border-b border-gray-100 dark:border-neutral-800 last:border-b-0 transition-colors flex items-center gap-3 ${isSelected ? "bg-primary/10" : ""
+                        }`}
                     >
                       <div
-                        className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 ${
-                          isSelected
+                        className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 ${isSelected
                             ? "bg-primary border-primary"
                             : "border-gray-300 dark:border-neutral-600"
-                        }`}
+                          }`}
                       >
                         {isSelected && <Check className="w-3 h-3 text-white" />}
                       </div>

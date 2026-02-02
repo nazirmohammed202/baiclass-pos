@@ -67,7 +67,6 @@ const SaleTab = ({
   onSaveSale,
   savingSale,
   isEditMode = false,
-  saleId,
   saleDate,
 }: SaleTabProps) => {
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerType | null>(
@@ -216,10 +215,10 @@ const SaleTab = ({
                 onClick={() => setIsSaveModalOpen(true)}
                 disabled={tabProducts.length === 0 || savingSale}
                 className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-md transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base ${saleDate
-                    ? "bg-amber-600 hover:bg-amber-700 text-white"
-                    : isEditMode
-                      ? "bg-blue-600 hover:bg-blue-700 text-white"
-                      : "bg-primary text-white hover:bg-primary/90"
+                  ? "bg-amber-600 hover:bg-amber-700 text-white"
+                  : isEditMode
+                    ? "bg-blue-600 hover:bg-blue-700 text-white"
+                    : "bg-primary text-white hover:bg-primary/90"
                   }`}
                 aria-label={
                   saleDate
