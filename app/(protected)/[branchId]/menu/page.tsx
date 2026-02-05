@@ -47,13 +47,13 @@ const Dashboard = async () => {
     {
       name: "Receive Stock",
       icon: "PackagePlus",
-      route: "/stock/receive",
+      route: "/receive-stock",
       description: "Receive stock from a supplier",
     },
     {
       name: "Stock History",
       icon: "History",
-      route: "/stock/history",
+      route: "/stock-history",
       description: "View the history of stock movements",
     },
     {

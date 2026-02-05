@@ -12,6 +12,7 @@ import EditPriceModal from "./EditPriceModal";
 import EditProductDetailsModal from "./EditProductDetailsModal";
 import RemoveProductModal from "./RemoveProductModal";
 import StockActionDropdown, { useStockDropdownPortal } from "./StockActionDropdown";
+import StockEmptyState from "./StockEmptyState";
 import { useCompany } from "@/context/companyContext";
 import AddNewProductModal from "@/components/AddNewProductModal";
 import AddSystemProductModal from "@/components/AddSystemProductModal";
@@ -103,43 +104,24 @@ const StockTable = ({ branchId, products: productsPromise, stockData: stockDataP
   // ─────────────────────────────────────────────────────────────────────────
   if (products.length === 0) {
     return (
-      <div className="bg-white dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 overflow-hidden">
-        <StockHeader
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          onAddClick={() => setIsAddDropdownOpen(true)}
-          onAddNewProduct={openAddNewProductModal}
-          onAddSystemProduct={openAddSystemProductModal}
-          isAddDropdownOpen={isAddDropdownOpen}
-          setIsAddDropdownOpen={setIsAddDropdownOpen}
-          productTypes={[]}
-          selectedTypes={[]}
-          onToggleType={() => { }}
-          onClearTypes={() => { }}
-          stockFilter={stockFilter}
-          onStockFilterChange={setStockFilter}
-          onExportToExcel={handleExportToExcel}
-          stockCounts={{ all: 0, outOfStock: 0, lowStock: 0, inStock: 0 }}
-        />
-        <div className="p-12 text-center text-gray-500 dark:text-gray-400">
-          <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
-          <p className="text-lg font-medium">No products in stock</p>
-          <p className="text-sm mt-2">
-            Use &quot;Add products&quot; to add system products or create a new product.
-          </p>
-        </div>
-        <AddNewProductModal
-          isOpen={isNewProductModalOpen}
-          onClose={() => setIsNewProductModalOpen(false)}
-        />
-        <AddSystemProductModal
-          isOpen={isSystemProductModalOpen}
-          onClose={() => setIsSystemProductModalOpen(false)}
-          systemProducts={allSystemProducts ?? []}
-          branchProducts={products}
-          onSuccess={() => router.refresh()}
-        />
-      </div>
+      <StockEmptyState
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        stockFilter={stockFilter}
+        setStockFilter={setStockFilter}
+        isAddDropdownOpen={isAddDropdownOpen}
+        setIsAddDropdownOpen={setIsAddDropdownOpen}
+        openAddNewProductModal={openAddNewProductModal}
+        openAddSystemProductModal={openAddSystemProductModal}
+        handleExportToExcel={handleExportToExcel}
+        isNewProductModalOpen={isNewProductModalOpen}
+        setIsNewProductModalOpen={setIsNewProductModalOpen}
+        isSystemProductModalOpen={isSystemProductModalOpen}
+        setIsSystemProductModalOpen={setIsSystemProductModalOpen}
+        allSystemProducts={allSystemProducts}
+        products={products}
+        onSuccess={() => router.refresh()}
+      />
     );
   }
 

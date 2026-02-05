@@ -176,6 +176,7 @@ const SaleTabs = ({
 
   return (
     <div className="h-full flex flex-col relative">
+      <h1 className="text-2xl font-bold mb-1">Make a Sale</h1>
       {/* Tabs Header */}
       <section className="flex items-end gap-1  overflow-x-auto">
         {tabs.map((tab) => (
@@ -197,12 +198,12 @@ const SaleTabs = ({
             <div className="flex flex-col items-start gap-1">
               <span
                 className={`text-sm whitespace-nowrap ${activeTabId === tab.id
-                    ? tab.salesType === "credit"
-                      ? "font-bold text-amber-700 dark:text-amber-400"
-                      : "font-bold text-primary"
-                    : tab.salesType === "credit"
-                      ? "text-amber-600 dark:text-amber-400"
-                      : "text-gray-500"
+                  ? tab.salesType === "credit"
+                    ? "font-bold text-amber-700 dark:text-amber-400"
+                    : "font-bold text-primary"
+                  : tab.salesType === "credit"
+                    ? "text-amber-600 dark:text-amber-400"
+                    : "text-gray-500"
                   }`}
               >
                 {tab.isEditMode
@@ -248,8 +249,8 @@ const SaleTabs = ({
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             className={`p-2 rounded-lg transition-colors shrink-0 ${isSidebarOpen
-                ? "bg-primary text-white hover:bg-primary/90"
-                : "hover:bg-gray-100 dark:hover:bg-neutral-800"
+              ? "bg-primary text-white hover:bg-primary/90"
+              : "hover:bg-gray-100 dark:hover:bg-neutral-800"
               }`}
             aria-label="Toggle sales history sidebar"
             title="Today's Sales"

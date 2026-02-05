@@ -141,7 +141,9 @@ export const useStockDropdownPortal = (
 
   useEffect(() => {
     if (!openDropdownId) {
-      setDropdownPosition(null);
+      Promise.resolve().then(() => {
+        setDropdownPosition(null);
+      });
     }
   }, [openDropdownId]);
 

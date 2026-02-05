@@ -36,12 +36,14 @@ const EditProductDetailsModal = ({
   useEffect(() => {
     if (isOpen && product?.details) {
       const d = product.details;
-      setName(d.name ?? "");
-      setManufacturer(d.manufacturer ?? "");
-      setNickname(d.nickname ?? "");
-      setSize(d.size ?? "");
-      setType(d.type ?? "");
-      setErrors({});
+      Promise.resolve().then(() => {
+        setName(d.name ?? "");
+        setManufacturer(d.manufacturer ?? "");
+        setNickname(d.nickname ?? "");
+        setSize(d.size ?? "");
+        setType(d.type ?? "");
+        setErrors({});
+      });
     }
   }, [isOpen, product]);
 
@@ -105,9 +107,8 @@ const EditProductDetailsModal = ({
                 setName(e.target.value);
                 setErrors((p) => ({ ...p, name: "" }));
               }}
-              className={`w-full px-4 py-2 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary ${
-                errors.name ? "border-red-500" : "border-gray-200 dark:border-neutral-800"
-              }`}
+              className={`w-full px-4 py-2 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary ${errors.name ? "border-red-500" : "border-gray-200 dark:border-neutral-800"
+                }`}
               placeholder="Product name"
             />
             {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
@@ -123,9 +124,8 @@ const EditProductDetailsModal = ({
                 setManufacturer(e.target.value);
                 setErrors((p) => ({ ...p, manufacturer: "" }));
               }}
-              className={`w-full px-4 py-2 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary ${
-                errors.manufacturer ? "border-red-500" : "border-gray-200 dark:border-neutral-800"
-              }`}
+              className={`w-full px-4 py-2 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary ${errors.manufacturer ? "border-red-500" : "border-gray-200 dark:border-neutral-800"
+                }`}
               placeholder="Manufacturer"
             />
             {errors.manufacturer && (
@@ -166,9 +166,8 @@ const EditProductDetailsModal = ({
                 setType(e.target.value);
                 setErrors((p) => ({ ...p, type: "" }));
               }}
-              className={`w-full px-4 py-2 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary ${
-                errors.type ? "border-red-500" : "border-gray-200 dark:border-neutral-800"
-              }`}
+              className={`w-full px-4 py-2 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary ${errors.type ? "border-red-500" : "border-gray-200 dark:border-neutral-800"
+                }`}
             >
               <option value="">Select type</option>
               {PRODUCT_TYPES.map((t) => (

@@ -24,12 +24,10 @@ const EditThresholdModal = ({
 
   useEffect(() => {
     if (isOpen && product) {
-      setThresholdStr(
-        product.lowStockThreshold !== undefined && product.lowStockThreshold !== null
-          ? String(product.lowStockThreshold)
-          : "5"
-      );
-      setError(null);
+      Promise.resolve().then(() => {
+        setThresholdStr(String(product.lowStockThreshold));
+        setError(null);
+      });
     }
   }, [isOpen, product]);
 
@@ -98,9 +96,8 @@ const EditThresholdModal = ({
               setError(null);
             }}
             onKeyDown={(e) => e.key === "Enter" && handleSave()}
-            className={`w-full px-4 py-2 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary ${
-              error ? "border-red-500" : "border-gray-200 dark:border-neutral-800"
-            }`}
+            className={`w-full px-4 py-2 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary ${error ? "border-red-500" : "border-gray-200 dark:border-neutral-800"
+              }`}
           />
           {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
         </div>

@@ -38,6 +38,19 @@ export type BranchType = {
   _id: string;
   name: string;
   address: string;
+  settings: {
+    retailPricePercentage: number; // between 0 and 1
+    wholesalePricePercentage: number; // between 0 and 1
+    roundRetailPrices: boolean;
+    roundWholesalePrices: boolean;
+    wholesaleEnabled: boolean;
+    retailEnabled: boolean;
+    currency: string;
+    isWarehouse: boolean;
+    suspended: boolean;
+    creditEnabled: boolean;
+    dailySalesTarget: number;
+  },
 };
 
 export type CustomerType = {
@@ -45,6 +58,16 @@ export type CustomerType = {
   name: string;
   address: string;
   phoneNumber: string;
+};
+
+export type SupplierType = {
+  _id: string;
+  name: string;
+  address?: string;
+  phoneNumbers?: string[];
+  email?: string;
+  outStandingBalance: number;
+  totalProcurement: number;
 };
 
 export type ProductDetailsType = {
@@ -72,7 +95,7 @@ export type Product = {
     date: Date | string;
   }>;
   supplier?: string | undefined;
-  lowStockThreshold: number | undefined;
+  lowStockThreshold: number;
   expiryDates?: (Date | string)[] | null;
 };
 
@@ -172,6 +195,30 @@ export type Tab = {
   saleDate?: string; // ISO date string (YYYY-MM-DD) for custom date sales
 };
 
+export type ReceiveStockItem = {
+  product: Product;
+  quantity: number;
+  unitPrice: number; // basePrice
+  wholesalePrice?: number;
+  retailPrice?: number;
+  isPriceManuallyEdited?: boolean;
+  isWholesalePriceManuallyEdited?: boolean;
+  isRetailPriceManuallyEdited?: boolean;
+  discount?: number; // percentage discount for this item (0-100)
+};
+
+export type ReceiveStockTab = {
+  id: string;
+  supplier: SupplierType | null;
+  items: ReceiveStockItem[];
+  discountType: "percentage" | "fixed" | null;
+  discountValue: number; // percentage (0-100) or fixed amount in currency
+  paymentType: "cash" | "credit";
+  receiveDate: string; // ISO date string (YYYY-MM-DD) - required
+  isEditMode?: boolean;
+  inventoryId?: string;
+};
+
 export type CustomDateSalePayload = {
   seller: string;
   company: string;
@@ -217,5 +264,45 @@ export type DailySalesReport = {
   averageSale: string;
   recentSales: SalePopulatedType[];
   topProducts: ProductDetailsType[];
+};
+
+export type InventoryProductItem = {
+  product: ProductDetailsType;
+  quantity: number;
+  basePrice: number;
+  wholesalePrice?: number;
+  retailPrice?: number;
+  discount?: number;
+  total: number;
+};
+
+export type InventoryHistoryType = {
+  _id: string;
+  receivedBy: {
+    _id: string;
+    name: string;
+  };
+  supplier?: {
+    _id: string;
+    name: string;
+  };
+  branch?: {
+    _id: string;
+    name: string;
+  };
+  products: InventoryProductItem[];
+  totalCost: number;
+  paymentType: "cash" | "credit";
+  paymentMethod?: "cash" | "momo";
+  invoiceDate: string;
+  discountType?: "percentage" | "fixed" | null;
+  discountValue?: number;
+  note?: string;
+  createdAt?: Date | string;
+  reversed: boolean;
+  reversedAt: Date | string;
+  reversedBy: string;
+  replacedBy: string;
+  replacesReceipt: string;
 };
 
