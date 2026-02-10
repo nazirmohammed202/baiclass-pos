@@ -4,7 +4,7 @@ import { handleError } from "@/utils/errorHandlers";
 import { extractToken } from "./auth-actions";
 import api from "@/config/api";
 import { CustomDateSalePayload, SalePopulatedType, SaleType } from "@/types";
-import { cacheLife, cacheTag, updateTag } from "next/cache";
+import { cacheLife, cacheTag, updateTag, } from "next/cache";
 import { getTodayDate } from "./date-utils";
 
 export const createNewSale = async (

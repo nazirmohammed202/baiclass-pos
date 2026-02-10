@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Plus, X, History } from "lucide-react";
 import SaleTab from "@/app/(protected)/[branchId]/menu/new-sale/components/saleTab";
 import { CustomerType, Product } from "@/types";
@@ -37,8 +37,10 @@ const SaleTabs = ({
   const pathname = usePathname();
   const saleId = searchParams.get("saleId");
   const customDate = searchParams.get("customDate");
+  const customerId = searchParams.get("customerId");
   const branchId = params.branchId as string;
   const productsData = use(products);
+  const customersData = use(customers);
   const { account, company } = useCompany();
 
   // Use custom hook for localStorage persistence
@@ -67,6 +69,9 @@ const SaleTabs = ({
 
   // State for date picker modal
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+
+  // Prevent double-processing customerId from URL
+  const processedCustomerIdRef = useRef<string | null>(null);
 
   // Use custom hook for sale tabs actions
   const {
@@ -154,6 +159,51 @@ const SaleTabs = ({
     }, 0);
   }, [customDate, isHydrated, searchParams, pathname, router]);
 
+  // Add tab with preselected customer when customerId is present in URL
+  useEffect(() => {
+    if (!customerId || !isHydrated) return;
+    if (processedCustomerIdRef.current === customerId) return;
+    processedCustomerIdRef.current = customerId;
+
+    const removeCustomerIdFromUrl = () => {
+      const newSearchParams = new URLSearchParams(searchParams.toString());
+      newSearchParams.delete("customerId");
+      const newUrl = newSearchParams.toString()
+        ? `${pathname}?${newSearchParams.toString()}`
+        : pathname;
+      router.replace(newUrl);
+    };
+
+    const customer = customersData.find((c) => c._id === customerId);
+    if (!customer) {
+      removeCustomerIdFromUrl();
+      return;
+    }
+
+    // Check if there's already a tab with this customer and no products - switch to it
+    const existingTab = tabs.find(
+      (tab) => tab.customer?._id === customerId && tab.products.length === 0
+    );
+    if (existingTab) {
+      setActiveTabId(existingTab.id);
+      removeCustomerIdFromUrl();
+      return;
+    }
+
+    handleAddTab(customer);
+    removeCustomerIdFromUrl();
+  }, [
+    customerId,
+    isHydrated,
+    customersData,
+    tabs,
+    handleAddTab,
+    setActiveTabId,
+    searchParams,
+    pathname,
+    router,
+  ]);
+
   // Create handler for pending product save
   const handlePendingProductSave =
     createPendingProductSaveHandler(pendingProduct);
@@ -240,7 +290,7 @@ const SaleTabs = ({
 
         <div className="flex h-full gap-2">
           <button
-            onClick={handleAddTab}
+            onClick={() => handleAddTab()}
             className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors shrink-0"
             aria-label="Add new tab"
           >

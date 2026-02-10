@@ -59,9 +59,26 @@ const Dashboard = async () => {
     {
       name: "Stock Report",
       icon: "ClipboardList",
-      route: "/stock/report",
+      route: "/stock-report",
       description: "Generate stock and inventory reports",
     },
+  ];
+
+  const customersAndSuppliersList: MenuItem[] = [
+    {
+      name: "View Customers",
+      icon: "User",
+      route: "/customers",
+      description: "View and manage your customers",
+    },
+
+    {
+      name: "View Suppliers",
+      icon: "Building2",
+      route: "/suppliers",
+      description: "View and manage your suppliers",
+    },
+
   ];
 
 
@@ -82,6 +99,15 @@ const Dashboard = async () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
           {inventoryList.map((item, index) => (
             <MenuCard key={`inventory-${index}`} saleItem={item} />
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <p className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">Customers and Suppliers</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+          {customersAndSuppliersList.map((item, index) => (
+            <MenuCard key={`customers-and-suppliers-${index}`} saleItem={item} />
           ))}
         </div>
       </section>

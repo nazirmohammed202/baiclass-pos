@@ -182,17 +182,20 @@ export const useSaleTabsActions = ({
     ]
   );
 
-  const handleAddTab = useCallback(() => {
-    const newTab: Tab = {
-      id: Date.now().toString(),
-      customer: null,
-      products: [],
-      priceType: "retail",
-      salesType: "cash",
-    };
-    setTabs([...tabs, newTab]);
-    setActiveTabId(newTab.id);
-  }, [tabs, setTabs, setActiveTabId]);
+  const handleAddTab = useCallback(
+    (customer?: CustomerType | null) => {
+      const newTab: Tab = {
+        id: Date.now().toString(),
+        customer: customer ?? null,
+        products: [],
+        priceType: "retail",
+        salesType: customer ? "credit" : "cash",
+      };
+      setTabs([...tabs, newTab]);
+      setActiveTabId(newTab.id);
+    },
+    [tabs, setTabs, setActiveTabId]
+  );
 
   const handleCloseTab = useCallback(
     (tabId: string, e: React.MouseEvent) => {

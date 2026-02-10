@@ -1,7 +1,7 @@
 "use client";
 import { usePathname, useRouter } from "next/navigation";
 import React from "react";
-import { ChartBarIcon, HistoryIcon, PackageIcon, PackagePlusIcon, ClipboardListIcon, AlertTriangleIcon, ShoppingCartIcon } from "lucide-react";
+import { ChartBarIcon, HistoryIcon, PackageIcon, PackagePlusIcon, ClipboardListIcon, AlertTriangleIcon, ShoppingCartIcon, Building2Icon, UserIcon } from "lucide-react";
 
 type MenuCardProps = {
   saleItem: {
@@ -50,6 +50,10 @@ const RenderIcon = ({ icon }: { icon: string }) => {
       return <ClipboardListIcon className={iconClass} size={iconSize} />;
     case "AlertTriangle":
       return <AlertTriangleIcon className={iconClass} size={iconSize} />;
+    case "User":
+      return <UserIcon className={iconClass} size={iconSize} />;
+    case "Building2":
+      return <Building2Icon className={iconClass} size={iconSize} />;
     default:
       return null;
   }

@@ -38,6 +38,7 @@ export type BranchType = {
   _id: string;
   name: string;
   address: string;
+  phoneNumber: string;
   settings: {
     retailPricePercentage: number; // between 0 and 1
     wholesalePricePercentage: number; // between 0 and 1
@@ -57,7 +58,44 @@ export type CustomerType = {
   _id: string;
   name: string;
   address: string;
+  city: string;
   phoneNumber: string;
+  sales: string[];
+  totalCreditPurchase: number;
+  due: number;
+  creditLimit: number;
+  payments: string[];
+  createdBy: string;
+  company: string;
+  branch: string;
+};
+
+export type CustomersBalanceDueType = {
+  _id: string;
+  due: number;
+};
+export type PaymentType = {
+  receivedBy: string;
+  customer: string;
+  amount: number;
+  balanceBefore: number;
+  balanceAfter: number;
+  note: string;
+  paymentMethod: "cash" | "momo" | "cheque";
+  company: string;
+  branch: string;
+  momoName: string;
+  transactionId: string;
+  receiptNumber: string;
+  date: Date | string;
+  cheque: {
+    bank: string;
+    branch: string;
+    number: string;
+    date: Date | string;
+  };
+  paymentType: "supplier" | "customer";
+  createdAt: Date | string;
 };
 
 export type SupplierType = {
