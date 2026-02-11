@@ -67,7 +67,7 @@ const SuppliersTable = forwardRef<SuppliersTableRef, SuppliersTableProps>(functi
   };
 
   const displaySuppliers = showOnlyDebtors
-    ? suppliers.filter((s) => (s.outStandingBalance ?? 0) > 0)
+    ? suppliers.filter((s) => (s.totalOutstandingBalance ?? 0) > 0)
     : suppliers;
 
   const getPhoneDisplay = (s: SupplierType) =>
@@ -81,7 +81,7 @@ const SuppliersTable = forwardRef<SuppliersTableRef, SuppliersTableProps>(functi
       s.name || "—",
       getPhoneDisplay(s),
       s.address || "—",
-      formatCurrency(Number(s.outStandingBalance ?? 0)),
+      formatCurrency(Number(s.totalOutstandingBalance ?? 0)),
     ]);
     const escapeCSV = (v: string) => (v.includes(",") || v.includes('"') || v.includes("\n") ? `"${v.replace(/"/g, '""')}"` : v);
     const csv = [headers.map(escapeCSV).join(","), ...rows.map((r) => r.map(escapeCSV).join(","))].join("\n");
@@ -100,7 +100,7 @@ const SuppliersTable = forwardRef<SuppliersTableRef, SuppliersTableProps>(functi
       s.name || "",
       getPhoneDisplay(s),
       s.address || "",
-      (s.outStandingBalance ?? 0).toString(),
+      (s.totalOutstandingBalance ?? 0).toString(),
     ]);
     const escapeCSV = (v: string) => (v.includes(",") || v.includes('"') || v.includes("\n") ? `"${v.replace(/"/g, '""')}"` : v);
     const csv = "\uFEFF" + [headers.map(escapeCSV).join(","), ...rows.map((r) => r.map(escapeCSV).join(","))].join("\n");
@@ -161,7 +161,7 @@ const SuppliersTable = forwardRef<SuppliersTableRef, SuppliersTableProps>(functi
                   <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{getPhoneDisplay(supplier)}</td>
                   <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{supplier.address || "—"}</td>
                   <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">
-                    {formatCurrency(Number(supplier.outStandingBalance ?? 0))}
+                    {formatCurrency(Number(supplier.totalOutstandingBalance ?? 0))}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <div
@@ -201,7 +201,7 @@ const SuppliersTable = forwardRef<SuppliersTableRef, SuppliersTableProps>(functi
                   <p className="font-medium text-gray-900 dark:text-gray-100">{supplier.name || "—"}</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">{getPhoneDisplay(supplier)}</p>
                   {supplier.address ? <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{supplier.address}</p> : null}
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Due: {formatCurrency(Number(supplier.outStandingBalance ?? 0))}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Due: {formatCurrency(Number(supplier.totalOutstandingBalance ?? 0))}</p>
                 </div>
                 <div
                   className="relative"

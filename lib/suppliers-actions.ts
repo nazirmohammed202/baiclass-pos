@@ -15,6 +15,7 @@ export type CreateSupplierPayload = {
   address?: string;
   phoneNumbers?: string[];
   email?: string;
+  branch: string;
 };
 
 export const createSupplier = async (

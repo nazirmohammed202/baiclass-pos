@@ -74,7 +74,7 @@ export default function EditSupplierModal({
       <div className="fixed inset-0 bg-black/50" onClick={onClose} aria-hidden="true" />
       <div className="relative bg-white dark:bg-neutral-900 rounded-lg shadow-xl max-w-md w-full mx-4 overflow-hidden">
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-neutral-800">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Edit Customer</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Edit Supplier</h2>
           <button onClick={onClose} className="p-1 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" aria-label="Close">
             <X className="w-5 h-5" />
           </button>

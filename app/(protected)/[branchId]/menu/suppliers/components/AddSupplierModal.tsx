@@ -44,6 +44,7 @@ export default function AddSupplierModal({
         phoneNumbers: phones,
         address: address.trim() || undefined,
         email: email.trim() || undefined,
+        branch: branchId,
       },
       branchId
     );
