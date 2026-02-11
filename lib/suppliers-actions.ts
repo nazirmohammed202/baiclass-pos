@@ -3,7 +3,7 @@
 import { handleError } from "@/utils/errorHandlers";
 import { extractToken } from "./auth-actions";
 import api from "@/config/api";
-import { PaymentType, SupplierType } from "@/types";
+import { InventoryHistoryType, PaymentType, SupplierType } from "@/types";
 import { revalidatePath, updateTag } from "next/cache";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -156,18 +156,8 @@ export const deleteSupplier = async (
 // Supplier procurements & payments (for profile)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type SupplierProcurementType = {
-  _id: string;
-  total?: number;
-  paid?: number;
-  due?: number;
-  invoiceNumber?: string;
-  salesType?: string;
-  createdAt?: Date | string;
-};
-
 type GetSupplierProcurementsResponse = {
-  procurements: SupplierProcurementType[];
+  procurements: InventoryHistoryType[];
   pagination: { total: number; page: number; limit: number; pages: number };
 };
 
@@ -179,7 +169,7 @@ export const getSupplierProcurements = async (
 ): Promise<GetSupplierProcurementsResponse> => {
   const token = await extractToken();
   const response = await api.get(
-    `/procurements/read/supplier/${supplierId}/${branchId}?page=${page}&limit=${limit}`,
+    `/suppliers/read/${supplierId}/procurements/${branchId}?page=${page}&limit=${limit}`,
     { headers: { "x-auth-token": token } }
   );
   return { ...response.data } as GetSupplierProcurementsResponse;

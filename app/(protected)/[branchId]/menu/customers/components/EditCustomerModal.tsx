@@ -28,13 +28,13 @@ export default function EditCustomerModal({
 
   useEffect(() => {
     if (customer) {
-      queueMicrotask(() => {
+      Promise.resolve().then(() => {
         setName(customer.name ?? "");
         setPhoneNumber(customer.phoneNumber ?? "");
         setAddress(customer.address ?? "");
       });
     }
-    queueMicrotask(() => {
+    Promise.resolve().then(() => {
       setError(null);
     });
   }, [customer, setName, setPhoneNumber, setAddress]);

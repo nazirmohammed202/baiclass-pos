@@ -104,7 +104,7 @@ export type SupplierType = {
   address?: string;
   phoneNumbers?: string[];
   email?: string;
-  outStandingBalance: number;
+  totalOutstandingBalance: number;
   totalProcurement: number;
 };
 

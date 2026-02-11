@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { PaymentType } from "@/types";
+import { InventoryHistoryType, PaymentType } from "@/types";
 import { getSupplierProcurements, getSupplierPayments } from "@/lib/suppliers-actions";
-import type { SupplierProcurementType } from "@/lib/suppliers-actions";
 
 export type SupplierProfilePagination = {
   total: number;
@@ -20,7 +19,7 @@ type UseSupplierProfileParams = {
 };
 
 export function useSupplierProfile({ supplierId, branchId }: UseSupplierProfileParams) {
-  const [procurements, setProcurements] = useState<SupplierProcurementType[]>([]);
+  const [procurements, setProcurements] = useState<InventoryHistoryType[]>([]);
   const [payments, setPayments] = useState<PaymentType[]>([]);
   const [procurementsPagination, setProcurementsPagination] = useState<SupplierProfilePagination | null>(null);
   const [paymentsPagination, setPaymentsPagination] = useState<SupplierProfilePagination | null>(null);
@@ -36,8 +35,11 @@ export function useSupplierProfile({ supplierId, branchId }: UseSupplierProfileP
 
   useEffect(() => {
     let cancelled = false;
-    setProcurementsLoading(true);
-    setProcurementsError(null);
+    Promise.resolve().then(() => {
+      if (!cancelled) setProcurementsLoading(true);
+      if (!cancelled) setProcurementsError(null);
+    });
+
     getSupplierProcurements(supplierId, branchId, procurementsPage, procurementsLimit)
       .then((res) => {
         if (!cancelled) {
@@ -60,8 +62,11 @@ export function useSupplierProfile({ supplierId, branchId }: UseSupplierProfileP
 
   useEffect(() => {
     let cancelled = false;
-    setPaymentsLoading(true);
-    setPaymentsError(null);
+    Promise.resolve().then(() => {
+      setPaymentsLoading(true);
+      setPaymentsError(null);
+    })
+
     getSupplierPayments(supplierId, branchId, paymentsPage, paymentsLimit)
       .then((res) => {
         if (!cancelled) {

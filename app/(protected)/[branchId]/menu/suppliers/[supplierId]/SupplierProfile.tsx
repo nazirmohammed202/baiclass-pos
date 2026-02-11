@@ -16,8 +16,9 @@ import {
   FileText,
   Printer,
   Copy,
+  MoreVertical,
 } from "lucide-react";
-import { BranchType, PaymentType, SupplierType } from "@/types";
+import { BranchType, InventoryHistoryType, PaymentType, SupplierType } from "@/types";
 import { formatCurrency } from "@/lib/utils";
 import { useSupplierProfile } from "./hooks/useSupplierProfile";
 import ProfileTablePagination from "./components/ProfileTablePagination";
@@ -26,6 +27,10 @@ import SupplierStatement, { SupplierStatementRef } from "./components/SupplierSt
 import { printPaymentReceipt } from "@/app/(protected)/[branchId]/menu/customers/[customerId]/utils/printPaymentReceipt";
 import { use } from "react";
 import { useToast } from "@/context/toastContext";
+import ProcurementActionDropdown, { useDropdownPortal } from "./components/ProcurementActionDropdown";
+import ViewInventoryModal from "@/app/(protected)/[branchId]/menu/stock-history/components/ViewInventoryModal";
+import DeleteInventoryModal from "@/app/(protected)/[branchId]/menu/stock-history/components/DeleteInventoryModal";
+import { deleteInventory } from "@/lib/inventory-actions";
 
 type SupplierProfileProps = {
   branchId: string;
@@ -49,7 +54,7 @@ export default function SupplierProfile({ branchId, supplierPromise, branchPromi
   const router = useRouter();
   const supplier = use(supplierPromise);
   const bid = (params?.branchId as string) || branchId;
-  const { success: toastSuccess } = useToast();
+  const { success: toastSuccess, error: toastError } = useToast();
   const statementRef = useRef<SupplierStatementRef>(null);
 
   const {
@@ -72,6 +77,34 @@ export default function SupplierProfile({ branchId, supplierPromise, branchPromi
 
   const [recordPaymentOpen, setRecordPaymentOpen] = useState(false);
   const [statementOpen, setStatementOpen] = useState(false);
+  const [openProcurementDropdownId, setOpenProcurementDropdownId] = useState<string | null>(null);
+  const [deletingProcurementId, setDeletingProcurementId] = useState<string | null>(null);
+  const [viewingProcurement, setViewingProcurement] = useState<InventoryHistoryType | null>(null);
+  const [deleteProcurementModal, setDeleteProcurementModal] = useState<InventoryHistoryType | null>(null);
+
+  const { dropdownPosition: procurementDropdownPosition, handleButtonClick: handleProcurementButtonClick, handleClose: handleProcurementDropdownClose } = useDropdownPortal(openProcurementDropdownId, () => setOpenProcurementDropdownId(null));
+
+  const selectedProcurement = procurements.find((p) => p._id === openProcurementDropdownId) ?? null;
+
+  const handleEditProcurement = (proc: InventoryHistoryType) => {
+    router.push(`/${bid}/menu/receive-stock?inventoryId=${proc._id}`);
+  };
+
+  const handleConfirmDeleteProcurement = async () => {
+    if (!deleteProcurementModal) return;
+    setDeletingProcurementId(deleteProcurementModal._id);
+    const result = await deleteInventory(deleteProcurementModal._id, bid);
+    setDeletingProcurementId(null);
+    if (result.success) {
+      setDeleteProcurementModal(null);
+      setOpenProcurementDropdownId(null);
+      refreshProfile();
+      router.refresh();
+      toastSuccess("Stock receipt deleted");
+    } else {
+      toastError(result.error ?? "Failed to delete receipt");
+    }
+  };
 
   const fullAddress = supplier.address || "—";
   const phoneDisplay = Array.isArray(supplier.phoneNumbers) && supplier.phoneNumbers.length > 0
@@ -159,7 +192,7 @@ export default function SupplierProfile({ branchId, supplierPromise, branchPromi
                 Record Payment
               </button>
               <Link
-                href={`/${bid}/menu/receive-stock`}
+                href={`/${bid}/menu/receive-stock?supplierId=${supplier._id}`}
                 className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 dark:border-neutral-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-800"
               >
                 <Package className="w-4 h-4" />
@@ -195,7 +228,7 @@ export default function SupplierProfile({ branchId, supplierPromise, branchPromi
             <span className="text-xs font-semibold uppercase tracking-wider">Outstanding</span>
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
-            {formatCurrency(Number(supplier.outStandingBalance ?? 0))}
+            {formatCurrency(Number(supplier.totalOutstandingBalance ?? 0))}
           </p>
         </div>
         <div className="bg-white dark:bg-neutral-900 rounded-lg p-5">
@@ -241,25 +274,41 @@ export default function SupplierProfile({ branchId, supplierPromise, branchPromi
                 <thead className="bg-gray-50 dark:bg-neutral-800 border-b border-gray-200 dark:border-neutral-700">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Date</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Invoice</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Total</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Paid</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Due</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Invoice date</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Total cost</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Type</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-neutral-700">
                   {procurements.map((proc) => (
-                    <tr key={proc._id} className="hover:bg-gray-50 dark:hover:bg-neutral-800/50">
+                    <tr
+                      key={proc._id}
+                      className="hover:bg-gray-50 dark:hover:bg-neutral-800/50 cursor-pointer transition-colors"
+                      onClick={() => setViewingProcurement(proc)}
+                    >
                       <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{formatDate(proc.createdAt)}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{proc.invoiceNumber ?? "—"}</td>
-                      <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{formatCurrency(proc.total ?? 0)}</td>
-                      <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{formatCurrency(proc.paid ?? 0)}</td>
-                      <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{formatCurrency(proc.due ?? 0)}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{proc.invoiceDate ? new Date(proc.invoiceDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "—"}</td>
+                      <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{formatCurrency(proc.totalCost ?? 0)}</td>
                       <td className="px-4 py-3">
-                        <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium capitalize bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
-                          {proc.salesType ?? "—"}
+                        <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium capitalize ${proc.paymentType === "credit" ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300" : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"}`}>
+                          {proc.paymentType ?? "—"}
                         </span>
+                      </td>
+                      <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                        <div className="relative inline-block">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleProcurementButtonClick(e, proc._id);
+                              setOpenProcurementDropdownId(openProcurementDropdownId === proc._id ? null : proc._id);
+                            }}
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-md text-gray-400 hover:text-primary hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors"
+                            aria-label="Actions"
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -279,6 +328,34 @@ export default function SupplierProfile({ branchId, supplierPromise, branchPromi
           )}
         </div>
       </div>
+
+      <ProcurementActionDropdown
+        openDropdownId={openProcurementDropdownId}
+        dropdownPosition={procurementDropdownPosition}
+        procurement={selectedProcurement}
+        deletingId={deletingProcurementId}
+        onView={setViewingProcurement}
+        onEdit={handleEditProcurement}
+        onDelete={(proc) => {
+          setDeleteProcurementModal(proc);
+          setOpenProcurementDropdownId(null);
+        }}
+        onClose={handleProcurementDropdownClose}
+      />
+
+      <ViewInventoryModal
+        inventory={viewingProcurement}
+        isOpen={!!viewingProcurement}
+        onClose={() => setViewingProcurement(null)}
+      />
+
+      <DeleteInventoryModal
+        inventory={deleteProcurementModal}
+        isOpen={!!deleteProcurementModal}
+        isDeleting={deletingProcurementId === deleteProcurementModal?._id}
+        onClose={() => setDeleteProcurementModal(null)}
+        onConfirm={handleConfirmDeleteProcurement}
+      />
 
       <div className="bg-white dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 overflow-hidden">
         <div className="p-4 border-b border-gray-200 dark:border-neutral-800 flex items-center justify-between flex-wrap gap-2">
@@ -381,7 +458,7 @@ export default function SupplierProfile({ branchId, supplierPromise, branchPromi
         supplierId={supplier._id}
         branchId={bid}
         supplierName={supplier.name || "Supplier"}
-        dueBalance={Number(supplier.outStandingBalance ?? 0)}
+        dueBalance={Number(supplier.totalOutstandingBalance ?? 0)}
       />
     </div>
   );

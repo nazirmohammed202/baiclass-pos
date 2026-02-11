@@ -2,10 +2,9 @@
 
 import { useRef, useImperativeHandle, forwardRef, use } from "react";
 import { Printer } from "lucide-react";
-import { BranchType, PaymentType, SupplierType } from "@/types";
+import { BranchType, InventoryHistoryType, PaymentType, SupplierType } from "@/types";
 import { formatCurrency } from "@/lib/utils";
 import Image from "next/image";
-import type { SupplierProcurementType } from "@/lib/suppliers-actions";
 
 function formatDate(date: Date | string | undefined): string {
   if (!date) return "—";
@@ -20,7 +19,7 @@ function formatDate(date: Date | string | undefined): string {
 
 type SupplierStatementProps = {
   supplier: SupplierType;
-  procurements: SupplierProcurementType[];
+  procurements: InventoryHistoryType[];
   payments: PaymentType[];
   fullAddress: string;
   isOpen: boolean;
@@ -99,7 +98,7 @@ const SupplierStatement = forwardRef<SupplierStatementRef, SupplierStatementProp
             </div>
             <h1 className="text-2xl font-bold mb-4">Statement — {supplier.name}</h1>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 24, fontSize: 14 }}>
-              <div><strong>Outstanding:</strong> {formatCurrency(Number(supplier.outStandingBalance ?? 0))}</div>
+              <div><strong>Outstanding:</strong> {formatCurrency(Number(supplier.totalOutstandingBalance ?? 0))}</div>
               <div><strong>Total Procurement:</strong> {formatCurrency(Number(supplier.totalProcurement ?? 0))}</div>
             </div>
             <h2 style={{ fontWeight: 600, marginTop: 16, marginBottom: 8 }}>Procurements</h2>
@@ -107,20 +106,18 @@ const SupplierStatement = forwardRef<SupplierStatementRef, SupplierStatementProp
               <thead>
                 <tr style={{ borderBottom: "1px solid #e5e7eb" }}>
                   <th style={{ textAlign: "left", padding: "4px 8px" }}>Date</th>
-                  <th style={{ textAlign: "left", padding: "4px 8px" }}>Invoice</th>
-                  <th style={{ textAlign: "right", padding: "4px 8px" }}>Total</th>
-                  <th style={{ textAlign: "right", padding: "4px 8px" }}>Paid</th>
-                  <th style={{ textAlign: "right", padding: "4px 8px" }}>Due</th>
+                  <th style={{ textAlign: "left", padding: "4px 8px" }}>Invoice date</th>
+                  <th style={{ textAlign: "right", padding: "4px 8px" }}>Total cost</th>
+                  <th style={{ textAlign: "left", padding: "4px 8px" }}>Type</th>
                 </tr>
               </thead>
               <tbody>
                 {procurements.map((s) => (
                   <tr key={s._id} style={{ borderBottom: "1px solid #e5e7eb" }}>
                     <td style={{ padding: "4px 8px" }}>{formatDate(s.createdAt)}</td>
-                    <td style={{ padding: "4px 8px" }}>{s.invoiceNumber ?? "—"}</td>
-                    <td style={{ padding: "4px 8px", textAlign: "right" }}>{formatCurrency(s.total ?? 0)}</td>
-                    <td style={{ padding: "4px 8px", textAlign: "right" }}>{formatCurrency(s.paid ?? 0)}</td>
-                    <td style={{ padding: "4px 8px", textAlign: "right" }}>{formatCurrency(s.due ?? 0)}</td>
+                    <td style={{ padding: "4px 8px" }}>{s.invoiceDate ? new Date(s.invoiceDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "—"}</td>
+                    <td style={{ padding: "4px 8px", textAlign: "right" }}>{formatCurrency(s.totalCost ?? 0)}</td>
+                    <td style={{ padding: "4px 8px" }}>{s.paymentType ?? "—"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -162,7 +159,7 @@ const SupplierStatement = forwardRef<SupplierStatementRef, SupplierStatementProp
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
                   <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 p-3">
                     <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">Outstanding</p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">{formatCurrency(Number(supplier.outStandingBalance ?? 0))}</p>
+                    <p className="text-lg font-bold text-gray-900 dark:text-white">{formatCurrency(Number(supplier.totalOutstandingBalance ?? 0))}</p>
                   </div>
                   <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 p-3">
                     <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">Total Procurement</p>

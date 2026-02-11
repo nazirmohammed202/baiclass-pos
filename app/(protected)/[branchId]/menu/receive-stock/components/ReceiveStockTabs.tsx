@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Plus, X, Calendar, History } from "lucide-react";
 import ReceiveStockTab from "./ReceiveStockTab";
 import { BranchType, Product, SupplierType } from "@/types";
@@ -32,6 +32,7 @@ const ReceiveStockTabs = ({
   const router = useRouter();
   const pathname = usePathname();
   const inventoryId = searchParams.get("inventoryId");
+  const supplierId = searchParams.get("supplierId");
   const branchId = params.branchId as string;
   const productsData = use(products);
   const suppliersData = use(suppliers);
@@ -69,6 +70,7 @@ const ReceiveStockTabs = ({
 
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const appliedSupplierIdRef = useRef<string | null>(null);
 
   const {
     handleAddTab,
@@ -140,6 +142,33 @@ const ReceiveStockTabs = ({
     tabs,
     loadInventory,
     setActiveTabId,
+    searchParams,
+    pathname,
+    router,
+  ]);
+
+  // Pre-populate supplier when supplierId is present in URL (e.g. from supplier profile)
+  useEffect(() => {
+    if (!supplierId || !isHydrated || suppliersData.length === 0) return;
+    if (appliedSupplierIdRef.current === supplierId) return;
+
+    const supplier = suppliersData.find((s) => s._id === supplierId);
+    if (!supplier) return;
+
+    appliedSupplierIdRef.current = supplierId;
+    handleSupplierChange(supplier);
+
+    const newSearchParams = new URLSearchParams(searchParams.toString());
+    newSearchParams.delete("supplierId");
+    const newUrl = newSearchParams.toString()
+      ? `${pathname}?${newSearchParams.toString()}`
+      : pathname;
+    router.replace(newUrl);
+  }, [
+    supplierId,
+    isHydrated,
+    suppliersData,
+    handleSupplierChange,
     searchParams,
     pathname,
     router,
