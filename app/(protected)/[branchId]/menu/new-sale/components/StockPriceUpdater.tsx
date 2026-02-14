@@ -2,12 +2,12 @@
 
 import { useEffect } from "react";
 import { useStock } from "@/context/stockContext";
-import { Tab } from "@/types";
+import { PriceType, Tab } from "@/types";
 
 type StockPriceUpdaterProps = {
   setTabs: (tabs: Tab[] | ((prev: Tab[]) => Tab[])) => void;
   activeTabId: string;
-  priceType: "retail" | "wholesale";
+  priceType: PriceType;
 };
 
 const StockPriceUpdater = ({
@@ -34,18 +34,35 @@ const StockPriceUpdater = ({
           if (!stockItem) return item;
 
           // Calculate new price based on priceType
-          const newPrice =
-            priceType === "wholesale"
-              ? stockItem.wholesalePrice ??
+          let newPrice: number;
+          switch (priceType) {
+            case "credit":
+              newPrice =
+                stockItem.creditPrice ??
+                stockItem.retailPrice ??
+                stockItem.basePrice ??
+                item.product.creditPrice ??
+                item.product.retailPrice ??
+                item.product.basePrice ??
+                0;
+              break;
+            case "wholesale":
+              newPrice =
+                stockItem.wholesalePrice ??
                 stockItem.basePrice ??
                 item.product.wholesalePrice ??
                 item.product.basePrice ??
-                0
-              : stockItem.retailPrice ??
+                0;
+              break;
+            case "retail":
+            default:
+              newPrice =
+                stockItem.retailPrice ??
                 stockItem.basePrice ??
                 item.product.retailPrice ??
                 item.product.basePrice ??
                 0;
+          }
 
           // Only update if price changed and is not 0
           if (newPrice > 0 && newPrice !== item.unitPrice) {

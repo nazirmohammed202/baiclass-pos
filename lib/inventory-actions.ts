@@ -14,6 +14,7 @@ export type CreateReceiveStockPayload = {
     basePrice: number;
     wholesalePrice?: number;
     retailPrice?: number;
+    creditPrice?: number;
     discount?: number; // item-level discount percentage
     total: number; // item total after discount applied
   }>;
@@ -225,7 +226,7 @@ export const deleteInventory = async (
 ): Promise<{ success: boolean; error: string | null }> => {
   try {
     const token = await extractToken();
-    await api.delete(`/inventory/${inventoryId}`, {
+    await api.delete(`/inventory/delete/${inventoryId}`, {
       headers: { "x-auth-token": token },
     });
 

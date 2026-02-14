@@ -4,14 +4,14 @@ import { Plus, Minus, Trash2 } from "lucide-react";
 import { useStock } from "@/context/stockContext";
 import PriceSkeleton from "@/components/skeletons/priceSkeleton";
 import EditCartItemModal from "./EditCartItemModal";
-import { CartItem as CartItemType } from "@/types";
+import { CartItem as CartItemType, PriceType } from "@/types";
 type CartItemProps = {
   item: CartItemType;
   index: number;
   onUpdateQuantity?: (index: number, quantity: number) => void;
   onRemoveProduct?: (index: number) => void;
   onUpdateItem?: (index: number, quantity: number, unitPrice: number) => void;
-  priceType?: "retail" | "wholesale";
+  priceType?: PriceType;
 };
 
 const CartItem = ({

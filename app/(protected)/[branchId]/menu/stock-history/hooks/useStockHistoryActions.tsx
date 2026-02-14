@@ -124,6 +124,7 @@ export const useStockHistoryActions = ({
 
       const response = await deleteInventory(inventory._id, branchId);
 
+
       if (response.success) {
         onSuccess();
         refreshStockHistory();

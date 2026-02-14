@@ -60,14 +60,14 @@ export type CustomerType = {
   address: string;
   city: string;
   phoneNumber: string;
-  sales: string[];
-  totalCreditPurchase: number;
-  due: number;
-  creditLimit: number;
-  payments: string[];
-  createdBy: string;
-  company: string;
-  branch: string;
+  sales?: string[];
+  totalCreditPurchase?: number;
+  due?: number;
+  creditLimit?: number;
+  payments?: string[];
+  createdBy?: string;
+  company?: string;
+  branch?: string;
 };
 
 export type CustomersBalanceDueType = {
@@ -124,11 +124,16 @@ export type Product = {
   retailPrice: number | undefined;
   basePrice: number | undefined;
   wholesalePrice: number | undefined;
+  creditPrice: number | undefined;
   retailPriceHistory: Array<{
     price: number;
     date: Date | string;
   }>;
   wholesalePriceHistory: Array<{
+    price: number;
+    date: Date | string;
+  }>;
+  creditPriceHistory: Array<{
     price: number;
     date: Date | string;
   }>;
@@ -170,6 +175,8 @@ export type SaleProductItem = {
   total: number;
 };
 
+export type PriceType = "retail" | "wholesale" | "credit";
+
 export type SaleType = {
   _id?: string;
   seller: string; // ObjectId
@@ -184,7 +191,7 @@ export type SaleType = {
   paymentMethod: "cash" | "momo";
   note?: string;
   salesType?: "credit" | "cash";
-  priceMode?: "wholesale" | "retail";
+  priceMode?: PriceType;
   createdAt?: Date | string;
 };
 
@@ -213,6 +220,9 @@ export type SalePopulatedType = {
   priceMode?: "wholesale" | "retail";
   createdAt?: Date | string;
   invoiceNumber?: string;
+  reversed?: boolean;
+  reversedAt?: Date | string;
+  reversedBy?: string;
 };
 
 export type CartItem = {
@@ -226,7 +236,7 @@ export type Tab = {
   id: string;
   customer: CustomerType | null;
   products: CartItem[];
-  priceType: "retail" | "wholesale";
+  priceType: PriceType;
   salesType: "cash" | "credit";
   saleId?: string | null; // ID of the sale being edited
   isEditMode?: boolean; // Whether this tab is in edit mode
@@ -239,9 +249,11 @@ export type ReceiveStockItem = {
   unitPrice: number; // basePrice
   wholesalePrice?: number;
   retailPrice?: number;
+  creditPrice?: number;
   isPriceManuallyEdited?: boolean;
   isWholesalePriceManuallyEdited?: boolean;
   isRetailPriceManuallyEdited?: boolean;
+  isCreditPriceManuallyEdited?: boolean;
   discount?: number; // percentage discount for this item (0-100)
 };
 
@@ -271,7 +283,7 @@ export type CustomDateSalePayload = {
   total: number;
   note?: string;
   salesType: "credit" | "cash";
-  priceMode: "wholesale" | "retail";
+  priceMode: PriceType;
   paymentMethod: "cash" | "momo";
   customer?: string;
 };

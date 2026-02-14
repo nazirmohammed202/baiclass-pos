@@ -11,6 +11,7 @@ import { getBranchCustomers } from "./branch-actions";
 export type CreateCustomerPayload = {
   name: string;
   address?: string;
+  city?: string;
   phoneNumber?: string;
 };
 
@@ -153,7 +154,7 @@ export const deleteCustomer = async (
 ): Promise<{ success: boolean; error: string | null }> => {
   try {
     const token = await extractToken();
-    await api.delete(`/customers/delete/${customerId}`, {
+    await api.delete(`/customers/delete/${customerId}/${branchId}`, {
       headers: { "x-auth-token": token },
     });
 

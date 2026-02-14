@@ -34,10 +34,31 @@ export function useDropdownPortal(
       }
       const button = e.currentTarget as HTMLElement;
       const rect = button.getBoundingClientRect();
-      setDropdownPosition({
-        top: rect.bottom + window.scrollY + 4,
-        left: rect.right - 160,
-      });
+      
+      // Dropdown dimensions (approximate)
+      const dropdownHeight = 130; // ~3 menu items
+      const dropdownWidth = 160;
+      
+      // Check if there's enough space below
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      
+      let top: number;
+      if (spaceBelow < dropdownHeight && spaceAbove > dropdownHeight) {
+        // Position above the button
+        top = rect.top + window.scrollY - dropdownHeight - 4;
+      } else {
+        // Position below the button (default)
+        top = rect.bottom + window.scrollY + 4;
+      }
+      
+      // Ensure dropdown doesn't go off the left edge
+      let left = rect.right - dropdownWidth;
+      if (left < 8) {
+        left = 8;
+      }
+      
+      setDropdownPosition({ top, left });
     },
     [openDropdownId, onClose]
   );

@@ -1,24 +1,24 @@
 "use client";
 import React, { Suspense } from "react";
-import CustomerDropdownMenu from "@/components/CustomerDropdownMenu";
-import SearchCustomer from "@/components/SearchCustomer";
+import CustomerDropdownMenu from "@/app/(protected)/[branchId]/menu/new-sale/components/CustomerDropdownMenu";
+import SearchCustomer from "@/app/(protected)/[branchId]/menu/new-sale/components/SearchCustomer";
 import SearchCustomerSkeleton from "@/components/skeletons/SearchCustomerSkeleton";
-import SearchProducts from "@/components/SearchProducts";
+import SearchProducts from "@/app/(protected)/[branchId]/menu/new-sale/components/SearchProducts";
 import SearchProductsSkeleton from "@/components/skeletons/SearchProductsSkeleton";
-import SaleSettingsButton from "@/components/SaleSettingsButton";
-import SaleSwitches from "@/components/SaleSwitches";
-import { CustomerType, Product } from "@/types";
+import SaleSettingsButton from "@/app/(protected)/[branchId]/menu/new-sale/components/SaleSettingsButton";
+import SaleSwitches from "@/app/(protected)/[branchId]/menu/new-sale/components/SaleSwitches";
+import { CustomerType, PriceType, Product } from "@/types";
 
 type SaleTabHeaderProps = {
   selectedCustomer: CustomerType | null;
   customers: Promise<CustomerType[]>;
   products: Promise<Product[]>;
   stockData: Promise<Product[]>;
-  priceType: "retail" | "wholesale";
+  priceType: PriceType;
   onSelectCustomer: (customer: CustomerType) => void;
   onRemoveCustomer: () => void;
   onProductSelect?: (product: Product, stockItem: Product | undefined) => void;
-  onPriceTypeChange: (priceType: "retail" | "wholesale") => void;
+  onPriceTypeChange: (priceType: PriceType) => void;
   salesType: "cash" | "credit";
   onSalesTypeChange: (salesType: "cash" | "credit") => void;
   showEditOnClick: boolean;
@@ -50,14 +50,13 @@ const SaleTabHeader = ({
 }: SaleTabHeaderProps) => {
   return (
     <section
-      className={`p-2 sm:p-4 pb-2 flex flex-col lg:flex-row items-stretch lg:items-center justify-between shrink-0 gap-2 sm:gap-4 ${
-        salesType === "credit"
-          ? "bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500"
-          : ""
-      }`}
+      className={`p-2 sm:p-4 pb-2 flex flex-col lg:flex-row items-stretch lg:items-center justify-between shrink-0 gap-2 sm:gap-4 ${salesType === "credit"
+        ? "border-l-4 border-amber-500"
+        : ""
+        }`}
     >
       {/* Customer Section */}
-      <div className="w-full lg:w-1/4 order-1">
+      <div className="w-full lg:w-1/6 order-1">
         {selectedCustomer ? (
           <div className="flex items-start sm:items-center gap-2 sm:gap-3 w-full">
             <div className="flex-1 min-w-0">
@@ -88,7 +87,7 @@ const SaleTabHeader = ({
       </div>
 
       {/* Product Search Section */}
-      <div className="relative w-full lg:w-2/4 order-2">
+      <div className="relative w-full lg:w-3/6 order-2">
         <Suspense fallback={<SearchProductsSkeleton />}>
           <SearchProducts
             onSelectProduct={onProductSelect}
@@ -99,7 +98,7 @@ const SaleTabHeader = ({
       </div>
 
       {/* Switches and Settings Section */}
-      <div className="w-full lg:w-1/4 flex flex-row items-center justify-between lg:justify-end gap-2 sm:gap-3 order-3">
+      <div className="w-full lg:w-2/6 flex flex-row items-center justify-between lg:justify-end gap-2 sm:gap-3 order-3">
         <div className="flex items-center justify-start lg:justify-end gap-2 sm:gap-3 lg:gap-4 flex-wrap flex-1 lg:flex-initial">
           <SaleSwitches
             priceType={priceType}

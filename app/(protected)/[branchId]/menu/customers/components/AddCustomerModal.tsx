@@ -20,6 +20,7 @@ export default function AddCustomerModal({
   const [name, setName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,7 +36,12 @@ export default function AddCustomerModal({
     setSaving(true);
     setError(null);
     const result = await createCustomer(
-      { name: trimmedName, phoneNumber: phoneNumber.trim() || undefined, address: address.trim() || undefined },
+      {
+        name: trimmedName,
+        phoneNumber: phoneNumber.trim() || undefined,
+        address: address.trim() || undefined,
+        city: city.trim() || undefined,
+      },
       branchId
     );
     setSaving(false);
@@ -43,6 +49,7 @@ export default function AddCustomerModal({
       setName("");
       setPhoneNumber("");
       setAddress("");
+      setCity("");
       onSuccess();
       onClose();
     } else {
@@ -92,6 +99,16 @@ export default function AddCustomerModal({
               onChange={(e) => setAddress(e.target.value)}
               className="w-full px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary"
               placeholder="Address"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500 dark:text-gray-400 uppercase mb-1">City</label>
+            <input
+              type="text"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary"
+              placeholder="City"
             />
           </div>
           <div className="flex gap-3 pt-2">

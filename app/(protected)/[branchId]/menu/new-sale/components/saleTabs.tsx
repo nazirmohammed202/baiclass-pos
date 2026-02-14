@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Plus, X, History } from "lucide-react";
 import SaleTab from "@/app/(protected)/[branchId]/menu/new-sale/components/saleTab";
-import { CustomerType, Product } from "@/types";
+import { CustomerType, PriceType, Product } from "@/types";
 import { StockProvider } from "@/context/stockContext";
 import {
   useParams,
@@ -61,7 +61,7 @@ const SaleTabs = ({
   const [pendingProduct, setPendingProduct] = useState<{
     product: Product;
     stockItem: Product | undefined;
-    priceType: "retail" | "wholesale";
+    priceType: PriceType;
   } | null>(null);
 
   // State for sidebar visibility
@@ -236,12 +236,8 @@ const SaleTabs = ({
             className={`
               flex items-center gap-2 px-5 py-4 rounded-t cursor-pointer transition-colors relative
               ${activeTabId === tab.id
-                ? tab.salesType === "credit"
-                  ? "bg-amber-50 dark:bg-amber-900/20 "
-                  : "bg-white dark:bg-neutral-900 "
-                : tab.salesType === "credit"
-                  ? "bg-amber-100/50 dark:bg-amber-900/10 hover:bg-amber-200/50 dark:hover:bg-amber-900/20"
-                  : "bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700"
+                ? "bg-white dark:bg-neutral-900 "
+                : "bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700"
               }
             `}
           >
@@ -257,10 +253,10 @@ const SaleTabs = ({
                   }`}
               >
                 {tab.isEditMode
-                  ? `Edit Sale${tab.customer ? ` - ${tab.customer.name}` : ""}`
+                  ? `Edit Sale${tab.customer ? ` - ${tab.customer.name}` : ""} ${tab.salesType === "credit" ? " (Credit)" : ""}`
                   : tab.customer
                     ? tab.customer.name
-                    : "New Sale"}
+                    : "New Sale" + (tab.salesType === "credit" ? " (Credit)" : "")}
               </span>
               {tab.saleDate && activeTabId === tab.id && (
                 <button
@@ -384,15 +380,22 @@ const SaleTabs = ({
             product: pendingProduct.product,
             quantity: 1,
             unitPrice:
-              pendingProduct.priceType === "wholesale"
-                ? pendingProduct.stockItem?.wholesalePrice ??
-                pendingProduct.product.wholesalePrice ??
-                pendingProduct.product.basePrice ??
-                0
-                : pendingProduct.stockItem?.retailPrice ??
+              pendingProduct.priceType === "credit"
+                ? pendingProduct.stockItem?.creditPrice ??
+                pendingProduct.product.creditPrice ??
+                pendingProduct.stockItem?.retailPrice ??
                 pendingProduct.product.retailPrice ??
                 pendingProduct.product.basePrice ??
-                0,
+                0
+                : pendingProduct.priceType === "wholesale"
+                  ? pendingProduct.stockItem?.wholesalePrice ??
+                  pendingProduct.product.wholesalePrice ??
+                  pendingProduct.product.basePrice ??
+                  0
+                  : pendingProduct.stockItem?.retailPrice ??
+                  pendingProduct.product.retailPrice ??
+                  pendingProduct.product.basePrice ??
+                  0,
             isPriceManuallyEdited: false,
           }}
           onSave={handlePendingProductSave}

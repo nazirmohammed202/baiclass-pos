@@ -84,6 +84,7 @@ export type UpdateBranchProductPayload = {
   basePrice?: number;
   retailPrice?: number;
   wholesalePrice?: number;
+  creditPrice?: number;
   lowStockThreshold?: number;
 };
 

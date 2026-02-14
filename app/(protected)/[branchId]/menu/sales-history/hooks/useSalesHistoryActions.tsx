@@ -126,6 +126,7 @@ export const useSalesHistoryActions = ({
           await refreshSalesHistory();
           successCallback();
         } else {
+          console.error("Error deleting sale:", result.error);
           errorCallback();
         }
       } catch (error) {
