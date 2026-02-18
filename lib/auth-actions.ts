@@ -1,8 +1,9 @@
 "use server";
 
 import api from "@/config/api";
-import { cacheLife } from "next/cache";
+import { cacheLife, revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import { handleError } from "@/utils/errorHandlers";
 
 export const extractToken = async () => {
   const token = (await cookies()).get("__baiclass")?.value;
@@ -16,6 +17,26 @@ export const getAccount = async () => {
     headers: { "x-auth-token": token },
   });
   return response.data;
+};
+
+export type UpdateAccountPayload = {
+  name?: string;
+  phoneNumber?: string;
+};
+
+export const updateAccount = async (
+  payload: UpdateAccountPayload
+): Promise<{ success: boolean; error: string | null }> => {
+  try {
+    const token = await extractToken();
+    await api.patch("/accounts/update", payload, {
+      headers: { "x-auth-token": token },
+    });
+    revalidatePath("/", "layout");
+    return { success: true, error: null };
+  } catch (error: unknown) {
+    return { success: false, error: handleError(error) };
+  }
 };
 
 export const getCompany = async (companyId: string) => {

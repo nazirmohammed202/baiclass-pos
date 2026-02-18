@@ -1,7 +1,14 @@
-import React from "react";
+import { getDailySalesReport } from "@/lib/saleShift-actions";
+import { getTodayDate } from "@/lib/date-utils";
+import OverviewClient from "./components/OverviewClient";
 
-const Dashboard = () => {
-  return <div>Dashboard</div>;
-};
+export default async function OverviewPage({
+  params,
+}: {
+  params: Promise<{ branchId: string }>;
+}) {
+  const { branchId } = await params;
+  const initialReport = await getDailySalesReport(branchId, getTodayDate());
 
-export default Dashboard;
+  return <OverviewClient initialReport={initialReport} branchId={branchId} />;
+}

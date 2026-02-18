@@ -16,3 +16,12 @@ export const formatCurrencyToDisplay = (amount: number): string => {
 
 export const fmt = (s: string | undefined) =>
   formatCurrency(Number(s ?? "0"));
+
+export function num(v: string | number | undefined): number {
+  const n = typeof v === "string" ? parseFloat(v) : (v ?? 0);
+  return Number.isNaN(n) ? 0 : n;
+}
+
+export function pct(part: number, whole: number): number {
+  return whole > 0 ? Math.min(100, (part / whole) * 100) : 0;
+}

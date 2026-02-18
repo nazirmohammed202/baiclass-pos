@@ -2,9 +2,31 @@
 
 import api from "@/config/api";
 import { Product } from "@/types";
-import { cacheLife, cacheTag, revalidatePath } from "next/cache";
+import { cacheLife, cacheTag, revalidatePath, updateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { handleError } from "@/utils/errorHandlers";
+
+/** Percentages are sent as 0-100 from the client; backend converts to 0-1 for the API. */
+export type UpdateBranchPayload = {
+  name?: string;
+  address?: string;
+  phoneNumber?: string;
+  settings?: Partial<{
+    /** Retail margin as 0-100 (e.g. 25 for 25%). Converted to 0-1 before API call. */
+    retailPricePercentage: number;
+    /** Wholesale margin as 0-100 (e.g. 10 for 10%). Converted to 0-1 before API call. */
+    wholesalePricePercentage: number;
+    roundRetailPrices: boolean;
+    roundWholesalePrices: boolean;
+    wholesaleEnabled: boolean;
+    retailEnabled: boolean;
+    currency: string;
+    isWarehouse: boolean;
+    suspended: boolean;
+    creditEnabled: boolean;
+    dailySalesTarget: number;
+  }>;
+};
 
 export const getBranch = async (branchId: string) => {
   const token = (await cookies()).get("__baiclass")?.value;
@@ -123,6 +145,37 @@ export const removeProductFromBranch = async (
       { headers: { "x-auth-token": token } }
     );
     revalidatePath(`/${branchId}/menu/stock`);
+    return { success: true, error: null };
+  } catch (error: unknown) {
+    return { success: false, error: handleError(error) };
+  }
+};
+
+export const updateBranch = async (
+  branchId: string,
+  payload: UpdateBranchPayload
+): Promise<{ success: boolean; error: string | null }> => {
+  const token = (await cookies()).get("__baiclass")?.value;
+  if (!token) {
+    return { success: false, error: "Not authenticated" };
+  }
+  try {
+    // Build API body: convert percentage 0-100 from client to 0-1 for API
+    const body = { ...payload };
+    if (body.settings) {
+      body.settings = { ...body.settings };
+      if (typeof body.settings.retailPricePercentage === "number") {
+        body.settings.retailPricePercentage = body.settings.retailPricePercentage / 100;
+      }
+      if (typeof body.settings.wholesalePricePercentage === "number") {
+        body.settings.wholesalePricePercentage = body.settings.wholesalePricePercentage / 100;
+      }
+    }
+    await api.patch(`/branches/update/${branchId}`, body, {
+      headers: { "x-auth-token": token },
+    });
+    updateTag("branch:" + branchId);
+    revalidatePath(`/${branchId}/settings`);
     return { success: true, error: null };
   } catch (error: unknown) {
     return { success: false, error: handleError(error) };
