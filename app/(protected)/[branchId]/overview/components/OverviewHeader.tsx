@@ -1,13 +1,38 @@
 "use client";
 
-export type Period = "today" | "7d" | "30d" | "month";
+import {
+  getTodayDate,
+  getStartOfWeekIso,
+  getEndOfWeekIso,
+  getStartOfMonthIso,
+  getEndOfMonthIso,
+} from "@/lib/date-utils";
+
+export type Period = "today" | "week" | "month";
+
+export type DateRange = { startDate: string; endDate: string };
 
 const PERIOD_OPTIONS: { value: Period; label: string }[] = [
   { value: "today", label: "Today" },
-  { value: "7d", label: "Week" },
-  { value: "30d", label: "Month" },
+  { value: "week", label: "This Week" },
   { value: "month", label: "This Month" },
 ];
+
+export function getDateRange(period: Period): DateRange {
+  const today = getTodayDate();
+  switch (period) {
+    case "today":
+      return { startDate: today, endDate: today };
+    case "week":
+      return { startDate: getStartOfWeekIso(), endDate: getEndOfWeekIso() };
+    case "month":
+      return { startDate: getStartOfMonthIso(), endDate: getEndOfMonthIso() };
+  }
+}
+
+export function getPeriodLabel(period: Period): string {
+  return PERIOD_OPTIONS.find((o) => o.value === period)?.label ?? "";
+}
 
 type OverviewHeaderProps = {
   accountName: string;
@@ -30,11 +55,10 @@ export default function OverviewHeader({
           <button
             key={opt.value}
             onClick={() => onPeriodChange(opt.value)}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer ${
-              period === opt.value
-                ? "bg-primary text-white"
-                : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
-            }`}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer ${period === opt.value
+              ? "bg-primary text-white"
+              : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+              }`}
           >
             {opt.label}
           </button>
@@ -42,8 +66,4 @@ export default function OverviewHeader({
       </div>
     </div>
   );
-}
-
-export function getPeriodLabel(period: Period): string {
-  return PERIOD_OPTIONS.find((o) => o.value === period)?.label ?? "";
 }

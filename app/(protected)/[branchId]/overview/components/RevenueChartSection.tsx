@@ -9,8 +9,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { formatDateToDisplayWithDay } from "@/lib/date-utils";
-import { formatCurrency, num } from "@/lib/utils";
+import { formatCurrency, num, compactNumber } from "@/lib/utils";
 
 export type ChartDataPoint = {
   label: string;
@@ -62,13 +61,7 @@ export default function RevenueChartSection({
                 axisLine={false}
                 tickLine={false}
                 tick={{ fontSize: 11, fill: "#9ca3af" }}
-                tickFormatter={(v) =>
-                  v >= 1_000_000
-                    ? `${(v / 1_000_000).toFixed(1)}M`
-                    : v >= 1_000
-                      ? `${(v / 1_000).toFixed(1)}k`
-                      : String(v)
-                }
+                tickFormatter={compactNumber}
               />
               <Tooltip
                 contentStyle={{

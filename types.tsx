@@ -356,3 +356,35 @@ export type InventoryHistoryType = {
   replacesReceipt: string;
 };
 
+
+export type SellerOverview = {
+  _id: string;
+  name: string;
+  totalSales: number;
+  salesCount: number;
+  cashSales: number;
+  creditSales: number;
+  productsSold: number;
+};
+
+export type OverviewData = {
+  totalSales: number;
+  cashSales: number;
+  creditSales: number;
+  dailySalesTarget: number;
+  totalExpenses: number;
+  totalElectronicPayments: number;
+  totalPaymentsReceived: number;
+  totalProductsSold: number;
+  averageSale: number;
+  recentSales: SalePopulatedType[];
+  sellers: SellerOverview[];
+  chartData: {
+    label: string;
+    date: string;
+    cash: number;
+    credit: number;
+    totalSales: number;
+  }[];
+};
+
