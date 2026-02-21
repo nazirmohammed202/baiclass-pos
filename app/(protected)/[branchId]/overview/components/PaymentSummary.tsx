@@ -1,77 +1,46 @@
 "use client";
 
-import { Wallet, Smartphone, Building2, CreditCard } from "lucide-react";
+import { Wallet } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
-import type { ReactNode } from "react";
+import type { PaymentsBreakdown } from "@/types";
 
-type PaymentChannel = {
+const channelStyles = [
+  { bar: "bg-emerald-500", dot: "bg-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-950/30", ring: "ring-emerald-500/20" },
+  { bar: "bg-blue-500", dot: "bg-blue-500", bg: "bg-blue-50 dark:bg-blue-950/30", ring: "ring-blue-500/20" },
+  { bar: "bg-purple-500", dot: "bg-purple-500", bg: "bg-purple-50 dark:bg-purple-950/30", ring: "ring-purple-500/20" },
+  { bar: "bg-red-500", dot: "bg-red-500", bg: "bg-red-50 dark:bg-red-950/30", ring: "ring-red-500/20" },
+] as const;
+
+type ChannelItem = {
   label: string;
   amount: number;
-  icon: ReactNode;
-  color: string;
+  icon: React.ReactNode;
+  bar: string;
+  dot: string;
   bg: string;
   ring: string;
 };
 
 type PaymentSummaryProps = {
-  cash: number;
-  momo: number;
-  bank: number;
-  card: number;
+  paymentsBreakdown: PaymentsBreakdown[];
+  periodLabel?: string;
 };
 
-const FAKE: PaymentSummaryProps = {
-  cash: 184500,
-  momo: 126800,
-  bank: 42300,
-  card: 18400,
-};
-
-function buildChannels(d: PaymentSummaryProps): PaymentChannel[] {
-  return [
-    {
-      label: "Cash",
-      amount: d.cash,
+export default function PaymentSummary({ paymentsBreakdown, periodLabel }: PaymentSummaryProps) {
+  const channels: ChannelItem[] = paymentsBreakdown.map((d, index) => {
+    const style = channelStyles[index % channelStyles.length];
+    return {
+      label: d?.label ?? "",
+      amount: d?.amount ?? 0,
       icon: <Wallet className="w-4 h-4" />,
-      color: "bg-emerald-500",
-      bg: "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400",
-      ring: "ring-emerald-500/20",
-    },
-    {
-      label: "Mobile Money",
-      amount: d.momo,
-      icon: <Smartphone className="w-4 h-4" />,
-      color: "bg-yellow-400",
-      bg: "bg-yellow-50 dark:bg-yellow-950/30 text-yellow-600 dark:text-yellow-400",
-      ring: "ring-yellow-400/20",
-    },
-    {
-      label: "Bank Transfer",
-      amount: d.bank,
-      icon: <Building2 className="w-4 h-4" />,
-      color: "bg-blue-500",
-      bg: "bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400",
-      ring: "ring-blue-500/20",
-    },
-    {
-      label: "Card",
-      amount: d.card,
-      icon: <CreditCard className="w-4 h-4" />,
-      color: "bg-violet-500",
-      bg: "bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400",
-      ring: "ring-violet-500/20",
-    },
-  ];
-}
+      ...style,
+    };
+  });
 
-export default function PaymentSummary(props: Partial<PaymentSummaryProps>) {
-  const data = { ...FAKE, ...props };
-  const channels = buildChannels(data);
   const total = channels.reduce((s, c) => s + c.amount, 0);
 
   return (
-    <div className="bg-white dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 overflow-hidden">
-      {/* Header */}
+    <div className="bg-white dark:bg-neutral-900 rounded-lg overflow-hidden">
       <div className="px-5 py-4 border-b border-gray-100 dark:border-neutral-800">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -83,7 +52,7 @@ export default function PaymentSummary(props: Partial<PaymentSummaryProps>) {
                 Payment Breakdown
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                How customers are paying
+                {periodLabel ? `How customers are paying — ${periodLabel}` : "How customers are paying"}
               </p>
             </div>
           </div>
@@ -98,7 +67,6 @@ export default function PaymentSummary(props: Partial<PaymentSummaryProps>) {
         </div>
       </div>
 
-      {/* Stacked bar */}
       <div className="px-5 pt-4 pb-3">
         <div className="flex h-3 rounded-full overflow-hidden gap-0.5">
           {channels.map((ch) => {
@@ -107,20 +75,19 @@ export default function PaymentSummary(props: Partial<PaymentSummaryProps>) {
             return (
               <div
                 key={ch.label}
-                className={`${ch.color} transition-all duration-700 first:rounded-l-full last:rounded-r-full`}
+                className={`${ch.bar} transition-all duration-700 first:rounded-l-full last:rounded-r-full`}
                 style={{ width: `${pct}%` }}
                 title={`${ch.label}: ${pct.toFixed(1)}%`}
               />
             );
           })}
         </div>
-        {/* Legend inline */}
         <div className="flex items-center gap-4 mt-2 flex-wrap">
           {channels.map((ch) => {
             const pct = total > 0 ? (ch.amount / total) * 100 : 0;
             return (
               <div key={ch.label} className="flex items-center gap-1.5">
-                <span className={`w-2 h-2 rounded-full ${ch.color} shrink-0`} />
+                <span className={`w-2 h-2 rounded-full ${ch.dot} shrink-0`} />
                 <span className="text-[11px] text-gray-500 dark:text-gray-400">
                   {ch.label} <span className="font-medium text-gray-700 dark:text-gray-300">{pct.toFixed(0)}%</span>
                 </span>
@@ -130,7 +97,6 @@ export default function PaymentSummary(props: Partial<PaymentSummaryProps>) {
         </div>
       </div>
 
-      {/* Channel cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-gray-100 dark:bg-neutral-800 border-t border-gray-100 dark:border-neutral-800">
         {channels.map((ch) => {
           const pct = total > 0 ? (ch.amount / total) * 100 : 0;

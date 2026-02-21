@@ -96,6 +96,10 @@ export type PaymentType = {
   };
   paymentType: "supplier" | "customer";
   createdAt: Date | string;
+  allocations: Array<{
+    sale: string;
+    amount: number;
+  }>;
 };
 
 export type SupplierType = {
@@ -386,5 +390,10 @@ export type OverviewData = {
     credit: number;
     totalSales: number;
   }[];
+};
+
+export type PaymentsBreakdown = {
+  label: string;
+  amount: number;
 };
 

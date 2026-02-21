@@ -101,6 +101,8 @@ export type RecordCustomerPaymentPayload = {
     number: string;
     date: string;
   };
+  /** When provided, sum of allocation amounts must equal payment amount. */
+  allocations?: Array<{ sale: string; amount: number }>;
 };
 
 export const recordCustomerPayment = async (

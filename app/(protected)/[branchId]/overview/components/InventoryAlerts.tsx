@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useMemo, use } from "react";
 import {
   ArrowRight,
   XCircle,
@@ -10,38 +11,13 @@ import {
   Archive,
   Package,
 } from "lucide-react";
+import type { Product } from "@/types";
 
-type AlertItem = { name: string; qty: number; capacity?: number };
+type AlertItem = { id: string; name: string; qty: number; capacity?: number };
 
 type InventoryAlertsProps = {
-  lowStock: AlertItem[];
-  outOfStock: AlertItem[];
-  fastMoving: AlertItem[];
-  deadStock: AlertItem[];
-};
-
-const FAKE_DATA: InventoryAlertsProps = {
-  lowStock: [
-    { name: "Dangote Cement 50kg", qty: 3, capacity: 50 },
-    { name: "Binding Wire 1kg", qty: 5, capacity: 40 },
-    { name: "POP Cement 40kg", qty: 2, capacity: 30 },
-    { name: "Wood Glue 500ml", qty: 4, capacity: 25 },
-  ],
-  outOfStock: [
-    { name: "Roofing Sheet 0.55mm", qty: 0 },
-    { name: "4-inch Nails 1kg", qty: 0 },
-    { name: "Aluminum Window 4ft", qty: 0 },
-  ],
-  fastMoving: [
-    { name: "Dangote Cement 50kg", qty: 142, capacity: 200 },
-    { name: "Iron Rod 12mm", qty: 98, capacity: 200 },
-    { name: "Granite (1 Ton)", qty: 76, capacity: 200 },
-    { name: "Sharp Sand (1 Ton)", qty: 63, capacity: 200 },
-  ],
-  deadStock: [
-    { name: "Paint Roller 9-inch", qty: 24 },
-    { name: "Tile Adhesive 20kg", qty: 18 },
-  ],
+  products: Promise<Product[]>;
+  stockData: Promise<Product[]>;
 };
 
 const CATEGORIES = [
@@ -84,22 +60,95 @@ const CATEGORIES = [
     icon: Archive,
     accent: "text-gray-400",
     bg: "bg-gray-50 dark:bg-neutral-800/50",
-    border: "border-gray-100 dark:border-neutral-700",
+    border: "border-gray-100 dark:border-gray-900/40",
     badge: "bg-gray-100 text-gray-600 dark:bg-neutral-700 dark:text-gray-300",
     bar: "bg-gray-400",
     emptyText: "No dead stock",
   },
 ];
 
-export default function InventoryAlerts(props: Partial<InventoryAlertsProps>) {
+function productDisplayName(p: Product): string {
+  return p.details?.name || p.details?.manufacturer || "Product";
+}
+
+function deriveAlerts(
+  products: Product[],
+  stockMap: Map<string, Product>
+): { outOfStock: AlertItem[]; lowStock: AlertItem[]; fastMoving: AlertItem[]; deadStock: AlertItem[] } {
+  const getStock = (p: Product) => stockMap.get(p.details._id)?.stock ?? 0;
+  const outOfStock: AlertItem[] = [];
+  const lowStock: AlertItem[] = [];
+
+  products.forEach((product) => {
+    const stock = getStock(product);
+    const threshold = product.lowStockThreshold ?? 5;
+    const name = productDisplayName(product);
+    const id = product.details._id;
+
+    if (stock <= 0) {
+      outOfStock.push({ id, name, qty: 0 });
+    } else if (stock <= threshold) {
+      lowStock.push({ id, name, qty: stock, capacity: threshold });
+    }
+  });
+
+  return {
+    outOfStock,
+    lowStock,
+    fastMoving: [], // No sales velocity data from branch products/stock
+    deadStock: [], // No dead-stock data from branch products/stock
+  };
+}
+
+export function InventoryAlertsFallback() {
+  return (
+    <div className="bg-white dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 overflow-hidden animate-pulse">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-neutral-800">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-gray-200 dark:bg-neutral-700" />
+          <div className="space-y-1">
+            <div className="h-4 w-32 bg-gray-200 dark:bg-neutral-700 rounded" />
+            <div className="h-3 w-24 bg-gray-100 dark:bg-neutral-800 rounded" />
+          </div>
+        </div>
+        <div className="h-8 w-28 bg-gray-200 dark:bg-neutral-700 rounded-full" />
+      </div>
+      <div className="flex gap-3 px-5 py-3 bg-gray-50/50 dark:bg-neutral-800/30 border-b border-gray-100 dark:border-neutral-800">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-6 w-24 bg-gray-200 dark:bg-neutral-700 rounded-full" />
+        ))}
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-gray-100 dark:bg-neutral-800">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="bg-white dark:bg-neutral-900 p-4 space-y-2">
+            <div className="h-4 w-20 bg-gray-200 dark:bg-neutral-700 rounded" />
+            <div className="h-3 w-full bg-gray-100 dark:bg-neutral-800 rounded" />
+            <div className="h-3 w-3/4 bg-gray-100 dark:bg-neutral-800 rounded" />
+            <div className="h-3 w-1/2 bg-gray-100 dark:bg-neutral-800 rounded" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function InventoryAlerts({ products: productsPromise, stockData: stockDataPromise }: InventoryAlertsProps) {
   const { branchId } = useParams<{ branchId: string }>();
-  const data = { ...FAKE_DATA, ...props };
+  const products = use(productsPromise);
+  const stockData = use(stockDataPromise);
+
+  const stockMap = useMemo(() => {
+    const map = new Map<string, Product>();
+    stockData.forEach((item) => map.set(item._id, item));
+    return map;
+  }, [stockData]);
+
+  const data = useMemo(() => deriveAlerts(products, stockMap), [products, stockMap]);
 
   const totalAlerts = data.outOfStock.length + data.lowStock.length;
 
   return (
     <div className="bg-white dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 overflow-hidden">
-      {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-neutral-800">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -124,7 +173,6 @@ export default function InventoryAlerts(props: Partial<InventoryAlertsProps>) {
         </Link>
       </div>
 
-      {/* Summary ribbon */}
       <div className="flex items-center gap-3 px-5 py-3 bg-gray-50/50 dark:bg-neutral-800/30 border-b border-gray-100 dark:border-neutral-800 overflow-x-auto">
         {CATEGORIES.map(({ key, label, badge, icon: Icon }) => (
           <span
@@ -137,7 +185,6 @@ export default function InventoryAlerts(props: Partial<InventoryAlertsProps>) {
         ))}
       </div>
 
-      {/* Cards grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-gray-100 dark:bg-neutral-800">
         {CATEGORIES.map(({ key, label, icon: Icon, accent, bg, bar, emptyText }) => {
           const items = data[key];
@@ -148,7 +195,6 @@ export default function InventoryAlerts(props: Partial<InventoryAlertsProps>) {
               key={key}
               className="bg-white dark:bg-neutral-900 p-4 flex flex-col"
             >
-              {/* Card header */}
               <div className="flex items-center gap-2 mb-3">
                 <Icon className={`w-4 h-4 ${accent}`} />
                 <p className="text-xs font-semibold text-gray-800 dark:text-gray-200">
@@ -175,7 +221,7 @@ export default function InventoryAlerts(props: Partial<InventoryAlertsProps>) {
                             : 30;
 
                     return (
-                      <div key={item.name} className="group">
+                      <div key={item.id} className="group">
                         <div className="flex items-center justify-between mb-1">
                           <p className="text-xs text-gray-700 dark:text-gray-300 truncate pr-2">
                             {item.name}
@@ -190,11 +236,10 @@ export default function InventoryAlerts(props: Partial<InventoryAlertsProps>) {
                         </div>
                         <div className="h-1.5 bg-gray-100 dark:bg-neutral-700 rounded-full overflow-hidden">
                           <div
-                            className={`h-full rounded-full transition-all duration-500 ${
-                              key === "outOfStock"
-                                ? "bg-red-500 animate-pulse"
-                                : bar
-                            }`}
+                            className={`h-full rounded-full transition-all duration-500 ${key === "outOfStock"
+                              ? "bg-red-500 animate-pulse"
+                              : bar
+                              }`}
                             style={{ width: `${Math.min(pct, 100)}%` }}
                           />
                         </div>
@@ -204,7 +249,7 @@ export default function InventoryAlerts(props: Partial<InventoryAlertsProps>) {
 
                   {items.length > 4 && (
                     <Link
-                      href={`/${branchId}/menu/stock`}
+                      href={`/${branchId}/menu/stock?category=${key}`}
                       className="inline-block text-[11px] font-medium text-primary hover:underline mt-1"
                     >
                       +{items.length - 4} more items

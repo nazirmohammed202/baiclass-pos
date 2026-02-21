@@ -1,11 +1,12 @@
 import { getEndOfMonthIso, getStartOfMonthIso, getStartOfWeekIso, getTodayDate } from "@/lib/date-utils";
 import OverviewClient from "./components/OverviewClient";
 import AlertsTasksPanel from "./components/AlertsTasksPanel";
-import InventoryAlerts from "./components/InventoryAlerts";
+import InventoryAlerts, { InventoryAlertsFallback } from "./components/InventoryAlerts";
 import TopPerformers from "./components/TopPerformers";
-import PaymentSummary from "./components/PaymentSummary";
 import RecentActivityFeed from "./components/RecentActivityFeed";
-import { getSalesOverview } from "@/lib/analytics-action";
+import { getPaymentsBreakdown, getSalesOverview } from "@/lib/analytics-action";
+import { getBranchProductsMetadata, getBranchProductsStockData } from "@/lib/branch-actions";
+import { Suspense } from "react";
 
 export default async function OverviewPage({
   params,
@@ -17,27 +18,39 @@ export default async function OverviewPage({
   const thisWeekReport = getSalesOverview(branchId, getStartOfWeekIso(), getTodayDate());
   const thisMonthReport = getSalesOverview(branchId, getStartOfMonthIso(), getEndOfMonthIso());
 
+  const paymentsBreakdownToday = getPaymentsBreakdown(branchId, getTodayDate(), getTodayDate());
+  const paymentsBreakdownThisWeek = getPaymentsBreakdown(branchId, getStartOfWeekIso(), getTodayDate());
+  const paymentsBreakdownThisMonth = getPaymentsBreakdown(branchId, getStartOfMonthIso(), getEndOfMonthIso());
+
+  const products = getBranchProductsMetadata(branchId);
+  const stockData = getBranchProductsStockData(branchId);
+
   return <>
-    <div className="p-2flex-1  flex flex-col ">
-      <OverviewClient branchId={branchId}
+    <div className="flex-1 flex flex-col">
+      <OverviewClient
+        branchId={branchId}
         todayReport={todayReport}
         thisWeekReport={thisWeekReport}
         thisMonthReport={thisMonthReport}
+        paymentsBreakdownToday={paymentsBreakdownToday}
+        paymentsBreakdownThisWeek={paymentsBreakdownThisWeek}
+        paymentsBreakdownThisMonth={paymentsBreakdownThisMonth}
       />
 
-      <div className=" mb-4">
-        <PaymentSummary />
+      <div className="px-4">
+        <Suspense fallback={<InventoryAlertsFallback />}>
+          <InventoryAlerts products={products} stockData={stockData} />
+        </Suspense>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4">
         <AlertsTasksPanel />
-        <InventoryAlerts />
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
         <TopPerformers />
       </div>
-      <RecentActivityFeed />
+      <div className="px-4">
+        <RecentActivityFeed />
+      </div>
     </div>
   </>;
 }

@@ -5,6 +5,8 @@ import { X, Loader2, Printer } from "lucide-react";
 import { recordCustomerPayment, RecordCustomerPaymentPayload } from "@/lib/customer-actions";
 import { formatCurrency } from "@/lib/utils";
 
+export type PaymentAllocation = { sale: string; amount: number };
+
 type RecordPaymentModalProps = {
   isOpen: boolean;
   onClose: () => void;
@@ -13,6 +15,8 @@ type RecordPaymentModalProps = {
   branchId: string;
   customerName: string;
   dueBalance: number;
+  /** When set, amount is prefilled and payment is allocated to these sales (sent to server). */
+  initialAllocations?: PaymentAllocation[];
 };
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
@@ -25,8 +29,12 @@ export default function RecordPaymentModal({
   branchId,
   customerName,
   dueBalance,
+  initialAllocations,
 }: RecordPaymentModalProps) {
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState(() =>
+    initialAllocations?.length ? String(initialAllocations.reduce((s, a) => s + a.amount, 0)) : ""
+  );
+  const [allocations, setAllocations] = useState<PaymentAllocation[]>(() => initialAllocations ?? []);
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "momo" | "cheque">("cash");
   const [datePaid, setDatePaid] = useState(todayStr());
   const [note, setNote] = useState("");
@@ -51,7 +59,7 @@ export default function RecordPaymentModal({
       paymentMethod,
       note: note.trim() || undefined,
       receiptNumber: receiptNumber.trim() || undefined,
-      date: datePaid || undefined,
+      date: datePaid || todayStr(),
     };
 
     if (paymentMethod === "momo") {
@@ -72,12 +80,22 @@ export default function RecordPaymentModal({
       payload.cheque = { bank, branch: cb, number: num, date: cd };
     }
 
+    if (allocations.length > 0) {
+      const sum = allocations.reduce((s, a) => s + a.amount, 0);
+      if (Math.abs(sum - numAmount) > 0.01) return null;
+      payload.allocations = allocations.map((a) => ({ sale: a.sale, amount: a.amount }));
+    }
+
     return payload;
   };
 
   const validateForm = (): string | null => {
     if (numAmount <= 0) return "Please enter a valid amount";
     if (numAmount > dueBalance) return `Amount cannot exceed due balance (${formatCurrency(dueBalance)})`;
+    if (allocations.length > 0) {
+      const sum = allocations.reduce((s, a) => s + a.amount, 0);
+      if (Math.abs(sum - numAmount) > 0.01) return "Allocation total must equal payment amount";
+    }
     if (paymentMethod === "momo" && (!momoName.trim() || !momoNumber.trim())) {
       return "MoMo Name and MoMo Number are required";
     }
@@ -87,6 +105,14 @@ export default function RecordPaymentModal({
       }
     }
     return null;
+  };
+
+  const handleAmountChange = (value: string) => {
+    setAmount(value);
+    const newNum = parseFloat(value) || 0;
+    if (allocations.length === 1) {
+      setAllocations([{ sale: allocations[0].sale, amount: newNum }]);
+    }
   };
 
   const handleSubmit = async (shouldPrint: boolean) => {
@@ -109,6 +135,7 @@ export default function RecordPaymentModal({
         printReceipt(payload);
       }
       setAmount("");
+      setAllocations([]);
       setNote("");
       setReceiptNumber("");
       setMomoName("");
@@ -185,6 +212,11 @@ export default function RecordPaymentModal({
           {error && (
             <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-md">{error}</p>
           )}
+          {allocations.length > 0 && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-neutral-800/50 rounded-lg px-3 py-2">
+              Allocating to {allocations.length} sale{allocations.length > 1 ? "s" : ""}: {formatCurrency(allocations.reduce((s, a) => s + a.amount, 0))} total.
+            </p>
+          )}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount *</label>
             <input
@@ -192,7 +224,7 @@ export default function RecordPaymentModal({
               step="0.01"
               min="0"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e) => handleAmountChange(e.target.value)}
               placeholder="0.00"
               className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent"
               required
