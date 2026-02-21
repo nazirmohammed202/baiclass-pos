@@ -25,8 +25,6 @@ type AlertsTasksPanelProps = {
   pendingCredits: TaskAlert[];
   overdueBalances: TaskAlert[];
   negativeStock: TaskAlert[];
-  failedTransactions: TaskAlert[];
-  noSupplier: TaskAlert[];
 };
 
 const FAKE: AlertsTasksPanelProps = {
@@ -43,14 +41,8 @@ const FAKE: AlertsTasksPanelProps = {
     { id: "1", title: "Roofing Sheet 0.55mm", detail: "Current: -3 units", time: "Since Jan 28" },
     { id: "2", title: "4-inch Nails 1kg", detail: "Current: -12 units", time: "Since Jan 25" },
   ],
-  failedTransactions: [
-    { id: "1", title: "MoMo Payment #TXN-882", detail: "Timeout — GHS 1,200.00", time: "Today, 9:32 AM" },
-  ],
-  noSupplier: [
-    { id: "1", title: "POP Cement 40kg", detail: "Added 12 days ago" },
-    { id: "2", title: "Wood Glue 500ml", detail: "Added 18 days ago" },
-    { id: "3", title: "Paint Roller 9-inch", detail: "Added 30 days ago" },
-  ],
+
+
 };
 
 type CategoryConfig = {
@@ -81,14 +73,6 @@ function getCategoryConfig(branchId: string): CategoryConfig[] {
       emptyText: "No negative stock",
     },
     {
-      key: "failedTransactions",
-      label: "Failed Transactions",
-      icon: <ShieldAlert className="w-4 h-4" />,
-      severity: "critical",
-      href: `/${branchId}/menu/sales-history`,
-      emptyText: "No failed transactions",
-    },
-    {
       key: "pendingCredits",
       label: "Pending Credit Payments",
       icon: <CreditCard className="w-4 h-4" />,
@@ -96,14 +80,7 @@ function getCategoryConfig(branchId: string): CategoryConfig[] {
       href: `/${branchId}/menu/sales-history`,
       emptyText: "No pending credits",
     },
-    {
-      key: "noSupplier",
-      label: "No Supplier Assigned",
-      icon: <Unlink className="w-4 h-4" />,
-      severity: "info",
-      href: `/${branchId}/menu/stock`,
-      emptyText: "All products have suppliers",
-    },
+
   ];
 }
 
