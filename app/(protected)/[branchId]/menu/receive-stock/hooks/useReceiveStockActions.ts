@@ -121,10 +121,12 @@ export const useReceiveStockActions = ({
             unitPrice: item.basePrice,
             wholesalePrice: item.wholesalePrice,
             retailPrice: item.retailPrice,
+            creditPrice: (item as { creditPrice?: number }).creditPrice,
             discount: item.discount,
             isPriceManuallyEdited: true,
             isWholesalePriceManuallyEdited: !!item.wholesalePrice,
             isRetailPriceManuallyEdited: !!item.retailPrice,
+            isCreditPriceManuallyEdited: !!(item as { creditPrice?: number }).creditPrice,
           } as ReceiveStockItem;
         })
         .filter((item): item is ReceiveStockItem => item !== null);
@@ -395,6 +397,7 @@ export const useReceiveStockActions = ({
       discount?: number,
       wholesalePrice?: number,
       retailPrice?: number,
+      creditPrice?: number,
       recalculatePrices?: boolean
     ) => {
       setTabs(
@@ -410,6 +413,7 @@ export const useReceiveStockActions = ({
                 let finalRetailPrice = retailPrice;
                 let isWholesaleManual = item.isWholesalePriceManuallyEdited;
                 let isRetailManual = item.isRetailPriceManuallyEdited;
+                let isCreditManual = item.isCreditPriceManuallyEdited ?? false;
 
                 if (recalculatePrices) {
                   const derivedPrices = calculateDerivedPrices(unitPrice, branchSettings, priceSettings);
@@ -422,12 +426,15 @@ export const useReceiveStockActions = ({
                   }
                 }
 
-                // If wholesale/retail price explicitly provided, mark as manually edited
+                // If wholesale/retail/credit price explicitly provided, mark as manually edited
                 if (wholesalePrice !== undefined) {
                   isWholesaleManual = true;
                 }
                 if (retailPrice !== undefined) {
                   isRetailManual = true;
+                }
+                if (creditPrice !== undefined) {
+                  isCreditManual = true;
                 }
 
                 return {
@@ -438,8 +445,10 @@ export const useReceiveStockActions = ({
                   discount: discount ?? item.discount,
                   wholesalePrice: finalWholesalePrice ?? item.wholesalePrice,
                   retailPrice: finalRetailPrice ?? item.retailPrice,
+                  creditPrice: creditPrice ?? item.creditPrice,
                   isWholesalePriceManuallyEdited: isWholesaleManual,
                   isRetailPriceManuallyEdited: isRetailManual,
+                  isCreditPriceManuallyEdited: isCreditManual,
                 };
               }),
             }
@@ -497,6 +506,7 @@ export const useReceiveStockActions = ({
               basePrice: item.unitPrice,
               wholesalePrice: item.wholesalePrice,
               retailPrice: item.retailPrice,
+              creditPrice: item.creditPrice,
               discount: item.discount,
               total: parseFloat(discountedTotal.toFixed(2)),
             };

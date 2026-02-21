@@ -171,6 +171,9 @@ const StockTable = ({ branchId, products: productsPromise, stockData: stockDataP
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-28">
                   Retail
                 </th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-28">
+                  Credit
+                </th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16">
                   <span className="sr-only">Actions</span>
                 </th>
@@ -183,6 +186,7 @@ const StockTable = ({ branchId, products: productsPromise, stockData: stockDataP
                 const basePrice = stockItem?.basePrice ? formatCurrency(stockItem.basePrice) : 0;
                 const wholesale = stockItem?.wholesalePrice ? formatCurrency(stockItem.wholesalePrice) : 0;
                 const retail = stockItem?.retailPrice ? formatCurrency(stockItem.retailPrice) : 0;
+                const credit = stockItem?.creditPrice ? formatCurrency(stockItem.creditPrice) : 0;
 
                 return (
                   <tr
@@ -327,6 +331,7 @@ const StockTable = ({ branchId, products: productsPromise, stockData: stockDataP
                             basePrice: stockItem?.basePrice ?? product.basePrice ?? 0,
                             wholesalePrice: stockItem?.wholesalePrice ?? product.wholesalePrice ?? 0,
                             retailPrice: stockItem?.retailPrice ?? product.retailPrice ?? 0,
+                            creditPrice: stockItem?.creditPrice ?? product.creditPrice ?? 0,
                           },
                           "retailPrice"
                         )
@@ -336,6 +341,31 @@ const StockTable = ({ branchId, products: productsPromise, stockData: stockDataP
                         <div className="h-4 w-14 bg-gray-200 dark:bg-neutral-700 rounded animate-pulse ml-auto" />
                       ) : (
                         retail
+                      )}
+                    </td>
+
+                    {/* Credit Column */}
+                    <td
+                      className={`px-4 py-3 text-sm text-right text-gray-700 dark:text-gray-300 rounded transition-colors ${isStockLoading ? "" : "cursor-pointer hover:bg-primary/10 dark:hover:bg-primary/20"
+                        }`}
+                      onClick={() =>
+                        !isStockLoading &&
+                        openPriceModal(
+                          {
+                            ...product,
+                            basePrice: stockItem?.basePrice ?? product.basePrice ?? 0,
+                            wholesalePrice: stockItem?.wholesalePrice ?? product.wholesalePrice ?? 0,
+                            retailPrice: stockItem?.retailPrice ?? product.retailPrice ?? 0,
+                            creditPrice: stockItem?.creditPrice ?? product.creditPrice ?? 0,
+                          },
+                          "creditPrice"
+                        )
+                      }
+                    >
+                      {isStockLoading ? (
+                        <div className="h-4 w-14 bg-gray-200 dark:bg-neutral-700 rounded animate-pulse ml-auto" />
+                      ) : (
+                        credit
                       )}
                     </td>
 

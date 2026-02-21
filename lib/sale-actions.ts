@@ -191,6 +191,8 @@ export const deleteSale = async (
     await api.delete(`/sales/delete/${branchId}/${saleId}`, {
       headers: { "x-auth-token": token },
     });
+    const today = getTodayDate();
+    updateTag(`sale:today:${branchId}:${today}`);
 
     return {
       success: true,

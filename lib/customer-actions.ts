@@ -11,6 +11,7 @@ import { getBranchCustomers } from "./branch-actions";
 export type CreateCustomerPayload = {
   name: string;
   address?: string;
+  city?: string;
   phoneNumber?: string;
 };
 
@@ -100,6 +101,8 @@ export type RecordCustomerPaymentPayload = {
     number: string;
     date: string;
   };
+  /** When provided, sum of allocation amounts must equal payment amount. */
+  allocations?: Array<{ sale: string; amount: number }>;
 };
 
 export const recordCustomerPayment = async (
@@ -153,7 +156,7 @@ export const deleteCustomer = async (
 ): Promise<{ success: boolean; error: string | null }> => {
   try {
     const token = await extractToken();
-    await api.delete(`/customers/delete/${customerId}`, {
+    await api.delete(`/customers/delete/${customerId}/${branchId}`, {
       headers: { "x-auth-token": token },
     });
 

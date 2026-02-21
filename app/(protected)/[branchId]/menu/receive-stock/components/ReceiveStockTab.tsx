@@ -26,6 +26,7 @@ type ReceiveStockTabProps = {
     discount?: number,
     wholesalePrice?: number,
     retailPrice?: number,
+    creditPrice?: number,
     recalculatePrices?: boolean
   ) => void;
   paymentType: "cash" | "credit";

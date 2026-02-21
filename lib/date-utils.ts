@@ -72,6 +72,48 @@ export const getLastNDays = (days: number): { startDate: string; endDate: string
   };
 };
 
+/** Start of current month as ISO (YYYY-MM-DD). */
+export const getStartOfMonthIso = (): string => {
+  const d = new Date();
+  d.setDate(1);
+  return dateToIso(d);
+};
+
+/** End of current month as ISO (YYYY-MM-DD). */
+export const getEndOfMonthIso = (): string => {
+  const d = new Date();
+  d.setMonth(d.getMonth() + 1, 0);
+  return dateToIso(d);
+};
+
+/** Start of the current week (Monday) as ISO (YYYY-MM-DD). */
+export const getStartOfWeekIso = (): string => {
+  const d = new Date();
+  const day = d.getDay();
+  const diff = day === 0 ? 6 : day - 1;
+  d.setDate(d.getDate() - diff);
+  return dateToIso(d);
+};
+
+/** End of the current week (Sunday) as ISO (YYYY-MM-DD). */
+export const getEndOfWeekIso = (): string => {
+  const d = new Date();
+  const day = d.getDay();
+  const diff = day === 0 ? 0 : 7 - day;
+  d.setDate(d.getDate() + diff);
+  return dateToIso(d);
+};
+
+const SHORT_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** Formats ISO date (YYYY-MM-DD) to short label for charts, e.g. "1 Feb". */
+export const formatDateShort = (isoDate: string): string => {
+  if (!isoDate) return "";
+  const d = isoToDate(isoDate);
+  if (!d) return "";
+  return `${d.getDate()} ${SHORT_MONTHS[d.getMonth()]}`;
+};
+
 /** Returns the previous day as ISO (YYYY-MM-DD) for a given ISO date. */
 export const getYesterdayIso = (isoDate: string): string => {
   const d = isoToDate(isoDate);

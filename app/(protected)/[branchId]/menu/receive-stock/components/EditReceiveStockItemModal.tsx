@@ -16,9 +16,10 @@ type EditReceiveStockItemModalProps = {
     discount?: number,
     wholesalePrice?: number,
     retailPrice?: number,
+    creditPrice?: number,
     recalculatePrices?: boolean
   ) => void;
-  focusField?: "quantity" | "unitPrice" | "subtotal" | "discount" | "wholesalePrice" | "retailPrice";
+  focusField?: "quantity" | "unitPrice" | "subtotal" | "discount" | "wholesalePrice" | "retailPrice" | "creditPrice";
   branchSettings?: BranchType["settings"];
   priceSettings: Pick<ReceiveStockSettings, "autoCalcWholesale" | "autoCalcRetail" | "roundWholesale" | "roundRetail">;
 };
@@ -34,8 +35,9 @@ const EditReceiveStockItemModal = ({
 }: EditReceiveStockItemModalProps) => {
   const [quantityStr, setQuantityStr] = useState(item.quantity.toString());
   const [unitPriceStr, setUnitPriceStr] = useState(item.unitPrice.toFixed(2));
-  const [wholesalePriceStr, setWholesalePriceStr] = useState((item.wholesalePrice ?? 0).toFixed(2));
-  const [retailPriceStr, setRetailPriceStr] = useState((item.retailPrice ?? 0).toFixed(2));
+  const [wholesalePriceStr, setWholesalePriceStr] = useState((item.wholesalePrice ?? item.product.wholesalePrice ?? 0).toFixed(2));
+  const [retailPriceStr, setRetailPriceStr] = useState((item.retailPrice ?? item.product.retailPrice ?? 0).toFixed(2));
+  const [creditPriceStr, setCreditPriceStr] = useState((item.creditPrice ?? item.product.creditPrice ?? 0).toFixed(2));
   const [subtotalStr, setSubtotalStr] = useState<string | null>(null);
   const [discountStr, setDiscountStr] = useState((item.discount ?? 0).toString());
   const [errors, setErrors] = useState<{
@@ -45,10 +47,12 @@ const EditReceiveStockItemModal = ({
   }>({});
   const [, startTransition] = useTransition();
 
+
   const quantityInputRef = useRef<HTMLInputElement>(null);
   const unitPriceInputRef = useRef<HTMLInputElement>(null);
   const wholesalePriceInputRef = useRef<HTMLInputElement>(null);
   const retailPriceInputRef = useRef<HTMLInputElement>(null);
+  const creditPriceInputRef = useRef<HTMLInputElement>(null);
   const subtotalInputRef = useRef<HTMLInputElement>(null);
   const discountInputRef = useRef<HTMLInputElement>(null);
 
@@ -87,8 +91,9 @@ const EditReceiveStockItemModal = ({
       startTransition(() => {
         setQuantityStr(item.quantity.toString());
         setUnitPriceStr(item.unitPrice.toFixed(2));
-        setWholesalePriceStr((item.wholesalePrice ?? 0).toFixed(2));
-        setRetailPriceStr((item.retailPrice ?? 0).toFixed(2));
+        setWholesalePriceStr((item.wholesalePrice ?? item.product.wholesalePrice ?? 0).toFixed(2));
+        setRetailPriceStr((item.retailPrice ?? item.product.retailPrice ?? 0).toFixed(2));
+        setCreditPriceStr((item.creditPrice ?? item.product.creditPrice ?? 0).toFixed(2));
         setDiscountStr((item.discount ?? 0).toString());
         setSubtotalStr(null);
         setErrors({});
@@ -113,6 +118,9 @@ const EditReceiveStockItemModal = ({
         } else if (focusField === "retailPrice" && retailPriceInputRef.current) {
           retailPriceInputRef.current.focus();
           retailPriceInputRef.current.select();
+        } else if (focusField === "creditPrice" && creditPriceInputRef.current) {
+          creditPriceInputRef.current.focus();
+          creditPriceInputRef.current.select();
         }
       }, 100);
     }
@@ -266,7 +274,10 @@ const EditReceiveStockItemModal = ({
     const parsedRetail = parseFloat(retailPriceStr);
     const roundedRetail = isNaN(parsedRetail) ? undefined : Math.round(parsedRetail * 100) / 100;
 
-    onSave(roundedQuantity, roundedUnitPrice, roundedDiscount, roundedWholesale, roundedRetail);
+    const parsedCredit = parseFloat(creditPriceStr);
+    const roundedCredit = isNaN(parsedCredit) ? undefined : Math.round(parsedCredit * 100) / 100;
+
+    onSave(roundedQuantity, roundedUnitPrice, roundedDiscount, roundedWholesale, roundedRetail, roundedCredit);
     onClose();
   };
 
@@ -274,6 +285,7 @@ const EditReceiveStockItemModal = ({
 
   const showWholesale = branchSettings?.wholesaleEnabled;
   const showRetail = branchSettings?.retailEnabled;
+  const showCredit = branchSettings?.creditEnabled;
 
   return (
     <div
@@ -335,11 +347,10 @@ const EditReceiveStockItemModal = ({
                     }
                   }
                 }}
-                className={`w-full px-4 py-2 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
-                  errors.quantity
-                    ? "border-red-500"
-                    : "border-gray-200 dark:border-neutral-800"
-                }`}
+                className={`w-full px-4 py-2 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${errors.quantity
+                  ? "border-red-500"
+                  : "border-gray-200 dark:border-neutral-800"
+                  }`}
               />
               {errors.quantity && (
                 <p className="mt-1 text-sm text-red-500">{errors.quantity}</p>
@@ -376,11 +387,10 @@ const EditReceiveStockItemModal = ({
                     }
                   }
                 }}
-                className={`w-full px-4 py-2 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
-                  errors.unitPrice
-                    ? "border-red-500"
-                    : "border-gray-200 dark:border-neutral-800"
-                }`}
+                className={`w-full px-4 py-2 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${errors.unitPrice
+                  ? "border-red-500"
+                  : "border-gray-200 dark:border-neutral-800"
+                  }`}
               />
               {errors.unitPrice && (
                 <p className="mt-1 text-sm text-red-500">{errors.unitPrice}</p>
@@ -418,11 +428,10 @@ const EditReceiveStockItemModal = ({
                     }
                   }
                 }}
-                className={`w-full px-4 py-2 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
-                  errors.discount
-                    ? "border-red-500"
-                    : "border-gray-200 dark:border-neutral-800"
-                }`}
+                className={`w-full px-4 py-2 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${errors.discount
+                  ? "border-red-500"
+                  : "border-gray-200 dark:border-neutral-800"
+                  }`}
               />
               {errors.discount && (
                 <p className="mt-1 text-sm text-red-500">{errors.discount}</p>
@@ -466,8 +475,8 @@ const EditReceiveStockItemModal = ({
             </div>
           </div>
 
-          {/* Second Row: Wholesale and Retail Prices (if enabled) */}
-          {(showWholesale || showRetail) && (
+          {/* Second Row: Wholesale, Retail, and Credit Prices (if enabled) */}
+          {(showWholesale || showRetail || showCredit) && (
             <div className="border-t border-gray-200 dark:border-neutral-700 pt-4">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -573,6 +582,42 @@ const EditReceiveStockItemModal = ({
                         Auto: ₵{calculatedPrices.retailPrice.toFixed(2)}
                       </p>
                     )}
+                  </div>
+                )}
+
+                {/* Credit Price */}
+                {showCredit && (
+                  <div>
+                    <label
+                      htmlFor="creditPrice"
+                      className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+                    >
+                      Credit (₵)
+                    </label>
+                    <input
+                      ref={creditPriceInputRef}
+                      type="number"
+                      id="creditPrice"
+                      min="0"
+                      step="0.01"
+                      value={creditPriceStr}
+                      onChange={(e) => setCreditPriceStr(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleSave();
+                        }
+                      }}
+                      onBlur={() => {
+                        if (creditPriceStr !== "") {
+                          const parsed = parseFloat(creditPriceStr);
+                          if (!isNaN(parsed)) {
+                            setCreditPriceStr((Math.round(parsed * 100) / 100).toFixed(2));
+                          }
+                        }
+                      }}
+                      className="w-full px-4 py-2 border border-gray-200 dark:border-neutral-800 rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    />
                   </div>
                 )}
               </div>

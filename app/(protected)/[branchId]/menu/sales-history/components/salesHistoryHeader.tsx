@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { Search, Calendar } from "lucide-react";
+import { useEffect, useRef, useCallback } from "react";
+import { Search, Calendar, Download } from "lucide-react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { isoToDate, dateToIso, formatDateToDisplay } from "@/lib/date-utils";
@@ -18,6 +18,7 @@ const SalesHistoryHeader = () => {
     setEndDate,
     setSearchQuery,
     searchQuery,
+    salesHistory,
   } = useSales();
 
   const { searchSalesHistory, refreshSalesHistory } = useSalesHistoryActions({
@@ -63,6 +64,113 @@ const SalesHistoryHeader = () => {
     }
   }, [startDate, endDate, refreshSalesHistory]);
 
+  // Helper to extract product name from populated or unpopulated product
+  const getProductName = (
+    product: string | { name?: string; details?: { name?: string; manufacturer?: string } }
+  ): string => {
+    if (typeof product === "string") return "Product";
+    const name = product?.name || product?.details?.name || "Product";
+    const manufacturer = product?.details?.manufacturer;
+    return manufacturer ? `${manufacturer} - ${name}` : name;
+  };
+
+  // Export sales history to CSV
+  const handleExportToExcel = useCallback(() => {
+    if (salesHistory.length === 0) return;
+
+    const headers = [
+      "Invoice Number",
+      "Date",
+      "Customer",
+      "Seller",
+      "Products",
+      "Total Items",
+      "Subtotal",
+      "Discount",
+      "Total",
+      "Paid",
+      "Due",
+      "Payment Method",
+      "Sales Type",
+      "Price Mode",
+      "Note",
+    ];
+
+    const rows = salesHistory.map((sale) => {
+      const productsList = sale.products
+        .map((p) => {
+          const name = getProductName(p.product as string | { name?: string; details?: { name?: string; manufacturer?: string } });
+          return `${name} (${p.quantity}x @ ₵${p.price.toFixed(2)})`;
+        })
+        .join("; ");
+      const totalItems = sale.products.reduce((sum, p) => sum + p.quantity, 0);
+      const subtotal = sale.total + sale.discount;
+
+      const saleDate = sale.createdAt
+        ? formatDateToDisplay(
+            typeof sale.createdAt === "string"
+              ? sale.createdAt
+              : sale.createdAt.toISOString()
+          )
+        : "";
+
+      return [
+        sale.invoiceNumber || sale._id,
+        saleDate,
+        sale.customer?.name || "Walk-in",
+        sale.seller?.name || "",
+        productsList,
+        totalItems.toString(),
+        subtotal.toFixed(2),
+        sale.discount.toFixed(2),
+        sale.total.toFixed(2),
+        sale.paid.toFixed(2),
+        sale.due.toFixed(2),
+        sale.paymentMethod || "",
+        sale.salesType || "",
+        sale.priceMode || "",
+        sale.note || "",
+      ];
+    });
+
+    // Convert to CSV
+    const escapeCSV = (value: string) => {
+      if (value.includes(",") || value.includes('"') || value.includes("\n")) {
+        return `"${value.replace(/"/g, '""')}"`;
+      }
+      return value;
+    };
+
+    const csvContent = [
+      headers.map(escapeCSV).join(","),
+      ...rows.map((row) => row.map(escapeCSV).join(",")),
+    ].join("\n");
+
+    // Add BOM for proper Excel encoding
+    const BOM = "\uFEFF";
+    const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
+
+    // Create download link
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+
+    const dateRange = startDate && endDate 
+      ? `${startDate}_to_${endDate}` 
+      : startDate 
+        ? `from_${startDate}` 
+        : endDate 
+          ? `to_${endDate}` 
+          : new Date().toISOString().split("T")[0];
+
+    link.setAttribute("download", `sales-history-${dateRange}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [salesHistory, startDate, endDate]);
+
   const hasActiveFilters = searchQuery || startDate || endDate;
 
   return (
@@ -72,6 +180,16 @@ const SalesHistoryHeader = () => {
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
           Sales History
         </h1>
+        <button
+          type="button"
+          onClick={handleExportToExcel}
+          disabled={salesHistory.length === 0}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Export to Excel"
+        >
+          <Download className="w-4 h-4" />
+          Export
+        </button>
       </div>
 
       {/* Search and Filters */}

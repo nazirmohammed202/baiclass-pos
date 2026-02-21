@@ -18,12 +18,13 @@ import {
   Printer,
   Copy,
   Pencil,
+  MoreVertical,
 } from "lucide-react";
 import { BranchType, CustomerType, SalePopulatedType } from "@/types";
 import { formatCurrency } from "@/lib/utils";
 import { useCustomerProfile } from "./hooks/useCustomerProfile";
 import ProfileTablePagination from "./components/ProfileTablePagination";
-import RecordPaymentModal from "./components/RecordPaymentModal";
+import RecordPaymentModal, { type PaymentAllocation } from "./components/RecordPaymentModal";
 import EditCreditLimitModal from "./components/EditCreditLimitModal";
 import CustomerStatement, { CustomerStatementRef } from "./components/CustomerStatement";
 import ViewSaleModal from "@/app/(protected)/[branchId]/menu/sales-history/components/viewSaleModal";
@@ -75,6 +76,8 @@ export default function CustomerProfile({ branchId, customerPromise, branchPromi
   } = useCustomerProfile({ customerId: customer._id, branchId: bid });
 
   const [recordPaymentOpen, setRecordPaymentOpen] = useState(false);
+  const [recordPaymentAllocations, setRecordPaymentAllocations] = useState<PaymentAllocation[] | null>(null);
+  const [saleDropdownId, setSaleDropdownId] = useState<string | null>(null);
   const [editLimitOpen, setEditLimitOpen] = useState(false);
   const [viewSale, setViewSale] = useState<SalePopulatedType | null>(null);
   const [statementOpen, setStatementOpen] = useState(false);
@@ -285,27 +288,65 @@ export default function CustomerProfile({ branchId, customerPromise, branchPromi
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Paid</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Due</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Type</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase w-12">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-neutral-700">
-                  {sales.map((sale) => (
-                    <tr
-                      key={sale._id}
-                      onClick={() => setViewSale(sale)}
-                      className="hover:bg-gray-50 dark:hover:bg-neutral-800/50 cursor-pointer"
-                    >
-                      <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{formatDate(sale.createdAt)}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{sale.invoiceNumber ?? "—"}</td>
-                      <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{formatCurrency(sale.total ?? 0)}</td>
-                      <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{formatCurrency(sale.paid ?? 0)}</td>
-                      <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{formatCurrency(sale.due ?? 0)}</td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium capitalize ${sale.salesType === "credit" ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300" : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"}`}>
-                          {sale.salesType ?? "cash"}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                  {sales.map((sale) => {
+                    const isCreditWithDue = sale.salesType === "credit" && (sale.due ?? 0) > 0;
+                    const isDropdownOpen = saleDropdownId === sale._id;
+                    return (
+                      <tr
+                        key={sale._id}
+                        onClick={() => setViewSale(sale)}
+                        className="hover:bg-gray-50 dark:hover:bg-neutral-800/50 cursor-pointer"
+                      >
+                        <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{formatDate(sale.createdAt)}</td>
+                        <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{sale.invoiceNumber ?? "—"}</td>
+                        <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{formatCurrency(sale.total ?? 0)}</td>
+                        <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{formatCurrency(sale.paid ?? 0)}</td>
+                        <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-gray-100">{formatCurrency(sale.due ?? 0)}</td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium capitalize ${sale.salesType === "credit" ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300" : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"}`}>
+                            {sale.salesType ?? "cash"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                          <div className="relative inline-block">
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setSaleDropdownId(isDropdownOpen ? null : sale._id); }}
+                              className="p-1.5 rounded text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-neutral-800 dark:hover:text-gray-300"
+                              aria-label="Sale actions"
+                            >
+                              <MoreVertical className="w-4 h-4" />
+                            </button>
+                            {isDropdownOpen && (
+                              <>
+                                <div className="fixed inset-0 z-10" aria-hidden onClick={() => setSaleDropdownId(null)} />
+                                <div className="absolute right-0 top-full mt-1 z-20 min-w-[160px] py-1 rounded-md border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-lg">
+                                  {isCreditWithDue && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setRecordPaymentAllocations([{ sale: sale._id, amount: sale.due ?? 0 }]);
+                                        setRecordPaymentOpen(true);
+                                        setSaleDropdownId(null);
+                                      }}
+                                      className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-800 flex items-center gap-2"
+                                    >
+                                      <Wallet className="w-4 h-4" />
+                                      Record payment
+                                    </button>
+                                  )}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
               {salesPagination && salesPagination.pages > 0 && (
@@ -420,12 +461,13 @@ export default function CustomerProfile({ branchId, customerPromise, branchPromi
       <RecordPaymentModal
         key={recordPaymentOpen ? "open" : "closed"}
         isOpen={recordPaymentOpen}
-        onClose={() => setRecordPaymentOpen(false)}
+        onClose={() => { setRecordPaymentOpen(false); setRecordPaymentAllocations(null); }}
         onSuccess={handleRecordPaymentSuccess}
         customerId={customer._id}
         branchId={bid}
         customerName={customer.name || "Customer"}
         dueBalance={Number(customer.due ?? 0)}
+        initialAllocations={recordPaymentAllocations ?? undefined}
       />
 
       <EditCreditLimitModal

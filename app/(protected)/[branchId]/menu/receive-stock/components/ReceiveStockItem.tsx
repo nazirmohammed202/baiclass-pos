@@ -20,6 +20,7 @@ type ReceiveStockItemProps = {
     discount?: number,
     wholesalePrice?: number,
     retailPrice?: number,
+    creditPrice?: number,
     recalculatePrices?: boolean
   ) => void;
   branchSettings?: BranchType["settings"];
@@ -225,9 +226,18 @@ const ReceiveStockItem = ({
             setIsEditModalOpen(false);
             setFocusField(undefined);
           }}
-          item={item}
-          onSave={(quantity, unitPrice, itemDiscount, wholesalePrice, retailPrice, recalculatePrices) => {
-            onUpdateItem(index, quantity, unitPrice, itemDiscount, wholesalePrice, retailPrice, recalculatePrices);
+          item={{
+            ...item,
+            product: {
+              ...item.product,
+              // Ensure product prices are populated from stockItem if available
+              wholesalePrice: item.product.wholesalePrice ?? stockItem?.wholesalePrice,
+              retailPrice: item.product.retailPrice ?? stockItem?.retailPrice,
+              creditPrice: item.product.creditPrice ?? stockItem?.creditPrice,
+            },
+          }}
+          onSave={(quantity, unitPrice, itemDiscount, wholesalePrice, retailPrice, creditPrice, recalculatePrices) => {
+            onUpdateItem(index, quantity, unitPrice, itemDiscount, wholesalePrice, retailPrice, creditPrice, recalculatePrices);
           }}
           focusField={focusField}
           branchSettings={branchSettings}

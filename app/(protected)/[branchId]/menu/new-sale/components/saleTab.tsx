@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import SaleTabHeader from "./SaleTabHeader";
 import CartItem from "./CartItem";
 import SaveSaleModal from "./SaveSaleModal";
-import { CartItem as CartItemType, CustomerType, Product } from "@/types";
+import { CartItem as CartItemType, CustomerType, PriceType, Product } from "@/types";
 import { Loader2 } from "lucide-react";
 import { formatDateToDisplay } from "@/lib/date-utils";
 
@@ -18,8 +18,8 @@ type SaleTabProps = {
   onUpdateQuantity?: (index: number, quantity: number) => void;
   onRemoveProduct?: (index: number) => void;
   onUpdateItem?: (index: number, quantity: number, unitPrice: number) => void;
-  priceType: "retail" | "wholesale";
-  onPriceTypeChange: (priceType: "retail" | "wholesale") => void;
+  priceType: PriceType;
+  onPriceTypeChange: (priceType: PriceType) => void;
   salesType: "cash" | "credit";
   onSalesTypeChange: (salesType: "cash" | "credit") => void;
   showEditOnClick: boolean;
@@ -33,7 +33,7 @@ type SaleTabProps = {
     cartItems: CartItemType[],
     total: number,
     amountPaid: number,
-    priceType: "retail" | "wholesale",
+    priceType: PriceType,
     shouldPrint: boolean,
     paymentMethod: "cash" | "momo"
   ) => void;

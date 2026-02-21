@@ -147,6 +147,7 @@ export const exportStockToCSV = (
     "Base Price",
     "Wholesale Price",
     "Retail Price",
+    "Credit Price",
   ];
 
   const rows = filteredProducts.map((product) => {
@@ -173,6 +174,7 @@ export const exportStockToCSV = (
       stockItem?.basePrice?.toString() || "0",
       stockItem?.wholesalePrice?.toString() || "0",
       stockItem?.retailPrice?.toString() || "0",
+      stockItem?.creditPrice?.toString() || "0",
     ];
   });
 
@@ -380,7 +382,9 @@ export const useStockTable = ({
             ? { basePrice: value }
             : field === "wholesalePrice"
               ? { wholesalePrice: value }
-              : { retailPrice: value };
+              : field === "creditPrice"
+                ? { creditPrice: value }
+                : { retailPrice: value };
         const result = await updateBranchProductStock(branchId, {
           productId: product.details._id,
           ...payload,

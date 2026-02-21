@@ -4,12 +4,13 @@ import React, { useState } from "react";
 import { X } from "lucide-react";
 import { Product } from "@/types";
 
-export type PriceFieldType = "basePrice" | "wholesalePrice" | "retailPrice";
+export type PriceFieldType = "basePrice" | "wholesalePrice" | "retailPrice" | "creditPrice";
 
 const LABELS: Record<PriceFieldType, string> = {
   basePrice: "Base price",
   wholesalePrice: "Wholesale price",
   retailPrice: "Retail price",
+  creditPrice: "Credit price",
 };
 
 type EditPriceModalProps = {

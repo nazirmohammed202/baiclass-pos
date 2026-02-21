@@ -3,7 +3,7 @@
 import React from "react";
 import { createPortal } from "react-dom";
 import { SalePopulatedType } from "@/types";
-import { X, Printer } from "lucide-react";
+import { X, Printer, RotateCcw } from "lucide-react";
 import { useCompany } from "@/context/companyContext";
 import { useParams } from "next/navigation";
 import Image from "next/image";
@@ -140,6 +140,27 @@ const ViewSaleModal = ({ sale, isOpen, onClose }: ViewSaleModalProps) => {
             </button>
           </div>
         </div>
+
+        {/* Reversed Status Banner */}
+        {sale.reversed && (
+          <div className="mx-6 mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <div className="flex items-center gap-3">
+              <div className="shrink-0">
+                <RotateCcw className="w-6 h-6 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-red-800 dark:text-red-300">
+                  This sale has been reversed
+                </h4>
+                {sale.reversedAt && (
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+                    Reversed on {formatDate(sale.reversedAt)}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Invoice Content */}
         <div className="p-6 space-y-6">

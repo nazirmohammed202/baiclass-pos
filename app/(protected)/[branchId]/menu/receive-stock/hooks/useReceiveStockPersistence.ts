@@ -13,9 +13,11 @@ type StoredTab = {
     unitPrice: number;
     wholesalePrice?: number;
     retailPrice?: number;
+    creditPrice?: number;
     discount?: number;
     isWholesalePriceManuallyEdited?: boolean;
     isRetailPriceManuallyEdited?: boolean;
+    isCreditPriceManuallyEdited?: boolean;
   }>;
   paymentType: "cash" | "credit";
   receiveDate: string;
@@ -74,9 +76,11 @@ export const useReceiveStockPersistence = (
                     unitPrice: item.unitPrice || 0,
                     wholesalePrice: item.wholesalePrice,
                     retailPrice: item.retailPrice,
+                    creditPrice: item.creditPrice,
                     isPriceManuallyEdited: false,
                     isWholesalePriceManuallyEdited: item.isWholesalePriceManuallyEdited ?? false,
                     isRetailPriceManuallyEdited: item.isRetailPriceManuallyEdited ?? false,
+                    isCreditPriceManuallyEdited: item.isCreditPriceManuallyEdited ?? false,
                     discount: item.discount ?? 0,
                   } as ReceiveStockItem)
                 : null;
@@ -126,9 +130,11 @@ export const useReceiveStockPersistence = (
           unitPrice: item.unitPrice,
           wholesalePrice: item.wholesalePrice,
           retailPrice: item.retailPrice,
+          creditPrice: item.creditPrice,
           discount: item.discount,
           isWholesalePriceManuallyEdited: item.isWholesalePriceManuallyEdited,
           isRetailPriceManuallyEdited: item.isRetailPriceManuallyEdited,
+          isCreditPriceManuallyEdited: item.isCreditPriceManuallyEdited,
         })),
       }));
 

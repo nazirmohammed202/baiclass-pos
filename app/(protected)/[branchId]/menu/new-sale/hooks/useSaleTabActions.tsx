@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import {
   CartItem,
   CustomerType,
+  PriceType,
   Product,
   SalePopulatedType,
   SaleType,
@@ -31,7 +32,7 @@ type UseSaleTabsActionsProps = {
     product: {
       product: Product;
       stockItem: Product | undefined;
-      priceType: "retail" | "wholesale";
+      priceType: PriceType;
     } | null
   ) => void;
   productsData: Product[];
@@ -220,11 +221,48 @@ export const useSaleTabsActions = ({
     [tabs, activeTabId, setTabs]
   );
 
+  // Helper function to get price based on price type
+  const getPriceByType = useCallback(
+    (
+      product: Product,
+      stockItem: Product | undefined,
+      priceType: PriceType
+    ): number => {
+      switch (priceType) {
+        case "credit":
+          return (
+            stockItem?.creditPrice ??
+            product.creditPrice ??
+            stockItem?.retailPrice ??
+            product.retailPrice ??
+            product.basePrice ??
+            0
+          );
+        case "wholesale":
+          return (
+            stockItem?.wholesalePrice ??
+            product.wholesalePrice ??
+            product.basePrice ??
+            0
+          );
+        case "retail":
+        default:
+          return (
+            stockItem?.retailPrice ??
+            product.retailPrice ??
+            product.basePrice ??
+            0
+          );
+      }
+    },
+    []
+  );
+
   const addProductToCart = useCallback(
     (
       product: Product,
       stockItem: Product | undefined,
-      priceType: "retail" | "wholesale",
+      priceType: PriceType,
       quantity: number,
       unitPrice?: number
     ) => {
@@ -236,15 +274,7 @@ export const useSaleTabsActions = ({
           const finalUnitPrice =
             unitPrice !== undefined
               ? unitPrice
-              : priceType === "wholesale"
-                ? stockItem?.wholesalePrice ??
-                product.wholesalePrice ??
-                product.basePrice ??
-                0
-                : stockItem?.retailPrice ??
-                product.retailPrice ??
-                product.basePrice ??
-                0;
+              : getPriceByType(product, stockItem, priceType);
 
           return {
             ...tab,
@@ -261,14 +291,14 @@ export const useSaleTabsActions = ({
         })
       );
     },
-    [tabs, activeTabId, setTabs]
+    [tabs, activeTabId, setTabs, getPriceByType]
   );
 
   const handleProductSelect = useCallback(
     (
       product: Product,
       stockItem: Product | undefined,
-      priceType: "retail" | "wholesale"
+      priceType: PriceType
     ) => {
       // If showEditOnClick is enabled, show modal instead of adding directly
       if (showEditOnClick) {
@@ -287,7 +317,7 @@ export const useSaleTabsActions = ({
       pendingProduct: {
         product: Product;
         stockItem: Product | undefined;
-        priceType: "retail" | "wholesale";
+        priceType: PriceType;
       } | null
     ) => {
       return (quantity: number, unitPrice: number) => {
@@ -348,7 +378,7 @@ export const useSaleTabsActions = ({
       cartItems: CartItem[],
       total: number,
       amountPaid: number,
-      priceType: "retail" | "wholesale",
+      priceType: PriceType,
       shouldPrint: boolean,
       paymentMethod: "cash" | "momo"
     ) => {
@@ -471,16 +501,63 @@ export const useSaleTabsActions = ({
   const handleSalesTypeChange = useCallback(
     (newSalesType: "cash" | "credit") => {
       setTabs(
-        tabs.map((tab) =>
-          tab.id === activeTabId ? { ...tab, salesType: newSalesType } : tab
-        )
+        tabs.map((tab) => {
+          if (tab.id !== activeTabId) return tab;
+
+          // When switching to credit sales type, auto-switch to credit price type
+          // and update prices for items that weren't manually edited
+          if (newSalesType === "credit" && tab.priceType !== "credit") {
+            const updatedProducts = tab.products.map((item) => {
+              if (item.isPriceManuallyEdited) return item;
+
+              const newPrice =
+                item.product.creditPrice ??
+                item.product.retailPrice ??
+                item.product.basePrice ??
+                0;
+
+              return { ...item, unitPrice: newPrice };
+            });
+
+            return {
+              ...tab,
+              salesType: newSalesType,
+              priceType: "credit",
+              products: updatedProducts,
+            };
+          }
+
+          // When switching from credit to cash and priceType is credit,
+          // revert to retail prices
+          if (newSalesType === "cash" && tab.priceType === "credit") {
+            const updatedProducts = tab.products.map((item) => {
+              if (item.isPriceManuallyEdited) return item;
+
+              const newPrice =
+                item.product.retailPrice ??
+                item.product.basePrice ??
+                0;
+
+              return { ...item, unitPrice: newPrice };
+            });
+
+            return {
+              ...tab,
+              salesType: newSalesType,
+              priceType: "retail",
+              products: updatedProducts,
+            };
+          }
+
+          return { ...tab, salesType: newSalesType };
+        })
       );
     },
     [tabs, activeTabId, setTabs]
   );
 
   const handlePriceTypeChange = useCallback(
-    (newPriceType: "retail" | "wholesale") => {
+    (newPriceType: PriceType) => {
       setTabs(
         tabs.map((tab) => {
           if (tab.id !== activeTabId) return tab;
@@ -489,11 +566,25 @@ export const useSaleTabsActions = ({
           const updatedProducts = tab.products.map((item) => {
             if (item.isPriceManuallyEdited) return item;
 
-            // Get price from product data (stock data might not be loaded yet)
-            const newPrice =
-              newPriceType === "wholesale"
-                ? item.product.wholesalePrice ?? item.product.basePrice ?? 0
-                : item.product.retailPrice ?? item.product.basePrice ?? 0;
+            // Get price from product data based on new price type
+            let newPrice: number;
+            switch (newPriceType) {
+              case "credit":
+                newPrice =
+                  item.product.creditPrice ??
+                  item.product.retailPrice ??
+                  item.product.basePrice ??
+                  0;
+                break;
+              case "wholesale":
+                newPrice =
+                  item.product.wholesalePrice ?? item.product.basePrice ?? 0;
+                break;
+              case "retail":
+              default:
+                newPrice =
+                  item.product.retailPrice ?? item.product.basePrice ?? 0;
+            }
 
             return { ...item, unitPrice: newPrice };
           });

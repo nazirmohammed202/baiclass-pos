@@ -3,10 +3,10 @@ import React, { useState, useRef, useMemo, use, useEffect } from "react";
 import { Plus } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Product } from "@/types";
-import UnitSkeleton from "./skeletons/unitSkeleton";
+import UnitSkeleton from "../../../../../../components/skeletons/unitSkeleton";
 import { useStock } from "@/context/stockContext";
-import AddNewProductModal from "./AddNewProductModal";
-import AddSystemProductModal from "./AddSystemProductModal";
+import AddNewProductModal from "../../../../../../components/AddNewProductModal";
+import AddSystemProductModal from "../../../../../../components/AddSystemProductModal";
 import { useCompany } from "@/context/companyContext";
 
 type SearchProductsProps = {
@@ -36,9 +36,8 @@ const ProductItem = ({
     <div
       onClick={() => onSelect(product)}
       onMouseEnter={onMouseEnter}
-      className={`p-2.5 hover:bg-gray-100 dark:hover:bg-neutral-800 cursor-pointer border border-gray-200 dark:border-neutral-800 transition-colors uppercase last:border-b-0 flex items-start justify-between gap-4 ${
-        isHighlighted ? "bg-gray-100 dark:bg-neutral-800" : ""
-      }`}
+      className={`p-2.5 hover:bg-gray-100 dark:hover:bg-neutral-800 cursor-pointer border border-gray-200 dark:border-neutral-800 transition-colors uppercase last:border-b-0 flex items-start justify-between gap-4 ${isHighlighted ? "bg-gray-100 dark:bg-neutral-800" : ""
+        }`}
     >
       <div className="flex-1 min-w-0">
         <p className="text-xs text-gray-400 dark:text-gray-400 mt-1">
@@ -58,8 +57,8 @@ const ProductItem = ({
       </div>
       <div className="text-sm text-gray-600 dark:text-gray-400 shrink-0 ">
         {isStockLoading ||
-        (stockItem?.wholesalePrice === undefined &&
-          stockItem?.retailPrice === undefined) ? (
+          (stockItem?.wholesalePrice === undefined &&
+            stockItem?.retailPrice === undefined) ? (
           <UnitSkeleton />
         ) : (
           <div className="flex items-center gap-3">

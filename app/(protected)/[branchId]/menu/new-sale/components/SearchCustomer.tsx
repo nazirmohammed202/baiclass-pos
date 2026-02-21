@@ -110,6 +110,7 @@ const SearchCustomer = ({
         address: fullAddress,
         phoneNumber: formData.phoneNumber.trim(),
         _id: "",
+        city: formData.city.trim(),
       };
 
       // Add to customers list (in real app, this would be an API call)
