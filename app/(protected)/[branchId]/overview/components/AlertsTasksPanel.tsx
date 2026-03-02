@@ -11,39 +11,11 @@ import {
   ChevronRight,
   Bell,
 } from "lucide-react";
-import type { ReactNode } from "react";
-
-type TaskAlert = {
-  id: string;
-  title: string;
-  detail: string;
-  amount?: string;
-  time?: string;
-};
-
-type AlertsTasksPanelProps = {
-  pendingCredits: TaskAlert[];
-  overdueBalances: TaskAlert[];
-  negativeStock: TaskAlert[];
-};
-
-const FAKE: AlertsTasksPanelProps = {
-  pendingCredits: [
-    { id: "1", title: "Alhaji Musa", detail: "Invoice #1042 — 3 days ago", amount: "GHS 4,500.00" },
-    { id: "2", title: "Madam Grace", detail: "Invoice #1038 — 5 days ago", amount: "GHS 2,180.00" },
-    { id: "3", title: "Kofi Builders", detail: "Invoice #1035 — 7 days ago", amount: "GHS 8,320.00" },
-  ],
-  overdueBalances: [
-    { id: "1", title: "Mensah Enterprise", detail: "Overdue 14 days", amount: "GHS 12,400.00" },
-    { id: "2", title: "Ibrahim & Sons", detail: "Overdue 21 days", amount: "GHS 6,750.00" },
-  ],
-  negativeStock: [
-    { id: "1", title: "Roofing Sheet 0.55mm", detail: "Current: -3 units", time: "Since Jan 28" },
-    { id: "2", title: "4-inch Nails 1kg", detail: "Current: -12 units", time: "Since Jan 25" },
-  ],
+import { use, type ReactNode } from "react";
+import { AlertsTasksPanelProps } from "@/types";
 
 
-};
+
 
 type CategoryConfig = {
   key: keyof AlertsTasksPanelProps;
@@ -111,9 +83,62 @@ const SEVERITY_STYLES = {
   },
 };
 
-export default function AlertsTasksPanel(props: Partial<AlertsTasksPanelProps>) {
+export function AlertsTasksPanelFallback() {
+  return (
+    <div className="bg-white dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 overflow-hidden animate-pulse">
+      <div className="px-5 py-4 border-b border-gray-100 dark:border-neutral-800">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-gray-200 dark:bg-neutral-700" />
+            <div className="space-y-1.5">
+              <div className="h-4 w-40 bg-gray-200 dark:bg-neutral-700 rounded" />
+              <div className="h-3 w-28 bg-gray-100 dark:bg-neutral-800 rounded" />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="divide-y divide-gray-100 dark:divide-neutral-800">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="px-5 py-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-md bg-gray-200 dark:bg-neutral-700" />
+                <div className="h-3 w-24 bg-gray-200 dark:bg-neutral-700 rounded" />
+                <div className="h-5 w-6 rounded-full bg-gray-200 dark:bg-neutral-700" />
+              </div>
+              <div className="h-3 w-14 bg-gray-100 dark:bg-neutral-800 rounded" />
+            </div>
+            <div className="space-y-1">
+              {[1, 2, 3].map((j) => (
+                <div
+                  key={j}
+                  className="flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 bg-gray-50 dark:bg-neutral-800/50"
+                >
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="w-2 h-2 rounded-full bg-gray-200 dark:bg-neutral-700 shrink-0" />
+                    <div className="min-w-0 space-y-1">
+                      <div className="h-3.5 w-3/4 bg-gray-200 dark:bg-neutral-700 rounded" />
+                      <div className="h-3 w-1/2 bg-gray-100 dark:bg-neutral-800 rounded" />
+                    </div>
+                  </div>
+                  <div className="h-3.5 w-12 bg-gray-200 dark:bg-neutral-700 rounded shrink-0" />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function AlertsTasksPanel({
+  alertsTasks,
+}: {
+  alertsTasks: Promise<AlertsTasksPanelProps>;
+}) {
   const { branchId } = useParams<{ branchId: string }>();
-  const data = { ...FAKE, ...props };
+  const data = use(alertsTasks);
   const categories = getCategoryConfig(branchId);
 
   const criticalCount = categories

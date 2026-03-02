@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Plus, X, History } from "lucide-react";
 import SaleTab from "@/app/(protected)/[branchId]/menu/new-sale/components/saleTab";
-import { CustomerType, PriceType, Product } from "@/types";
+import { BranchType, CustomerType, PriceType, Product } from "@/types";
 import { StockProvider } from "@/context/stockContext";
 import {
   useParams,
@@ -26,10 +26,12 @@ const SaleTabs = ({
   customers,
   products,
   stockData,
+  branch,
 }: {
   customers: Promise<CustomerType[]>;
   products: Promise<Product[]>;
   stockData: Promise<Product[]>;
+  branch: Promise<BranchType>;
 }) => {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -42,7 +44,7 @@ const SaleTabs = ({
   const productsData = use(products);
   const customersData = use(customers);
   const { account, company } = useCompany();
-
+  const branchData = use(branch);
   // Use custom hook for localStorage persistence
   const { tabs, setTabs, activeTabId, setActiveTabId, isHydrated } =
     useSaleTabsPersistence(branchId, productsData);
@@ -55,6 +57,10 @@ const SaleTabs = ({
     setShowPriceTypeSwitch,
     showSalesTypeSwitch,
     setShowSalesTypeSwitch,
+    defaultPriceType,
+    setDefaultPriceType,
+    defaultSalesType,
+    setDefaultSalesType,
   } = useSaleSettingsPersistence(branchId);
 
   // State for pending product to add (when showEditOnClick is enabled)
@@ -69,6 +75,9 @@ const SaleTabs = ({
 
   // State for date picker modal
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+
+  // State for close tab confirmation
+  const [tabIdToClose, setTabIdToClose] = useState<string | null>(null);
 
   // Prevent double-processing customerId from URL
   const processedCustomerIdRef = useRef<string | null>(null);
@@ -101,6 +110,9 @@ const SaleTabs = ({
     setPendingProduct,
     productsData,
     customers,
+    defaultPriceType,
+    defaultSalesType,
+    branchData,
   });
 
   // Load sale when saleId is present in URL
@@ -275,8 +287,12 @@ const SaleTabs = ({
             </div>
             {tabs.length > 1 && (
               <button
-                onClick={(e) => handleCloseTab(tab.id, e)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setTabIdToClose(tab.id);
+                }}
                 className="p-1 rounded hover:bg-gray-300 dark:hover:bg-neutral-600 transition-colors"
+                aria-label="Close tab"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -313,6 +329,7 @@ const SaleTabs = ({
             setTabs={setTabs}
             activeTabId={activeTabId}
             priceType={activeTab.priceType}
+            branchData={branchData}
           />
           <SaleTab
             customer={activeTab.customer}
@@ -320,6 +337,7 @@ const SaleTabs = ({
             onProductSelect={(product, stockItem) =>
               handleProductSelect(product, stockItem, activeTab.priceType)
             }
+
             onCustomerChange={handleCustomerChange}
             customers={customers}
             stockData={stockData}
@@ -337,6 +355,10 @@ const SaleTabs = ({
             showSalesTypeSwitch={showSalesTypeSwitch}
             onShowPriceTypeSwitchChange={setShowPriceTypeSwitch}
             onShowSalesTypeSwitchChange={setShowSalesTypeSwitch}
+            defaultPriceType={defaultPriceType}
+            onDefaultPriceTypeChange={setDefaultPriceType}
+            defaultSalesType={defaultSalesType}
+            onDefaultSalesTypeChange={setDefaultSalesType}
             onSaveSale={(
               customer,
               cartItems,
@@ -344,7 +366,8 @@ const SaleTabs = ({
               amountPaid,
               priceType,
               shouldPrint,
-              paymentMethod
+              paymentMethod,
+              creditDueDate
             ) =>
               handleSaveSale(
                 customer,
@@ -353,7 +376,8 @@ const SaleTabs = ({
                 amountPaid,
                 priceType,
                 shouldPrint,
-                paymentMethod
+                paymentMethod,
+                creditDueDate
               )
             }
             savingSale={savingSale}
@@ -410,6 +434,46 @@ const SaleTabs = ({
         onConfirm={handleDateConfirm}
         initialDate={activeTab.saleDate}
       />
+
+      {/* Close Tab Confirmation Modal */}
+      {tabIdToClose && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={() => setTabIdToClose(null)}
+        >
+          <div
+            className="bg-white dark:bg-neutral-900 rounded-lg shadow-xl w-full max-w-sm mx-4 p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              Close tab?
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+              Any unsaved items in this tab will be lost. Are you sure you want
+              to close it?
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => setTabIdToClose(null)}
+                className="px-4 py-2 rounded-md border border-gray-200 dark:border-neutral-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  handleCloseTab(tabIdToClose);
+                  setTabIdToClose(null);
+                }}
+                className="px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white transition-colors"
+              >
+                Close tab
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

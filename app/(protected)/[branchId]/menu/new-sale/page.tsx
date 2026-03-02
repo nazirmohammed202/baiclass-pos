@@ -1,5 +1,7 @@
 import SaleTabs from "@/app/(protected)/[branchId]/menu/new-sale/components/saleTabs";
+import { StockProvider } from "@/context/stockContext";
 import {
+  getBranch,
   getBranchCustomers,
   getBranchProductsMetadata,
   getBranchProductsStockData,
@@ -15,14 +17,18 @@ const NewSale = async ({
   const customers = getBranchCustomers(branchId);
   const products = getBranchProductsMetadata(branchId);
   const stockData = getBranchProductsStockData(branchId);
+  const branch = getBranch(branchId);
 
   return (
     <div className="p-4 h-full">
-      <SaleTabs
-        customers={customers}
-        products={products}
-        stockData={stockData}
-      />
+      <StockProvider>
+        <SaleTabs
+          customers={customers}
+          products={products}
+          stockData={stockData}
+          branch={branch}
+        />
+      </StockProvider>
     </div>
   );
 };

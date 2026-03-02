@@ -98,11 +98,10 @@ const CartItem = ({
                 Stock
               </p>
               <p
-                className={`font-semibold text-sm sm:text-base ${
-                  stockQuantity >= 0
-                    ? "text-green-600 dark:text-green-400"
-                    : "text-red-600 dark:text-red-400"
-                }`}
+                className={`font-semibold text-sm sm:text-base ${stockQuantity >= 0
+                  ? "text-green-600 dark:text-green-400"
+                  : "text-red-600 dark:text-red-400"
+                  }`}
               >
                 {stockQuantity}
               </p>
@@ -124,9 +123,8 @@ const CartItem = ({
                 setTimeout(() => setPulsingButton(null), 300);
                 onUpdateQuantity?.(index, item.quantity - 1);
               }}
-              className={`p-1.5 sm:p-2 rounded-full bg-black dark:bg-primary   text-white hover:opacity-90 transition-opacity ${
-                pulsingButton === "minus" ? "animate-pulse-once" : ""
-              }`}
+              className={`p-1.5 sm:p-2 rounded-full bg-black dark:bg-primary   text-white hover:opacity-90 transition-opacity ${pulsingButton === "minus" ? "animate-pulse-once" : ""
+                }`}
               aria-label="Decrease quantity"
             >
               <Minus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -147,9 +145,8 @@ const CartItem = ({
                 setTimeout(() => setPulsingButton(null), 300);
                 onUpdateQuantity?.(index, item.quantity + 1);
               }}
-              className={`p-1.5 sm:p-2 rounded-full bg-black dark:bg-primary  text-white hover:opacity-90 transition-opacity ${
-                pulsingButton === "plus" ? "animate-pulse-once" : ""
-              }`}
+              className={`p-1.5 sm:p-2 rounded-full bg-black dark:bg-primary  text-white hover:opacity-90 transition-opacity ${pulsingButton === "plus" ? "animate-pulse-once" : ""
+                }`}
               aria-label="Increase quantity"
             >
               <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />

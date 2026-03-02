@@ -4,6 +4,9 @@ import React, { useState } from "react";
 import { Settings } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
+type DefaultPriceType = "retail" | "wholesale";
+type DefaultSalesType = "cash" | "credit";
+
 type SaleSettingsButtonProps = {
   showEditOnClick: boolean;
   onShowEditOnClickChange: (value: boolean) => void;
@@ -11,6 +14,10 @@ type SaleSettingsButtonProps = {
   onShowPriceTypeSwitchChange: (value: boolean) => void;
   showSalesTypeSwitch: boolean;
   onShowSalesTypeSwitchChange: (value: boolean) => void;
+  defaultPriceType: DefaultPriceType;
+  onDefaultPriceTypeChange: (value: DefaultPriceType) => void;
+  defaultSalesType: DefaultSalesType;
+  onDefaultSalesTypeChange: (value: DefaultSalesType) => void;
 };
 
 const SaleSettingsButton = ({
@@ -20,6 +27,10 @@ const SaleSettingsButton = ({
   onShowPriceTypeSwitchChange,
   showSalesTypeSwitch,
   onShowSalesTypeSwitchChange,
+  defaultPriceType,
+  onDefaultPriceTypeChange,
+  defaultSalesType,
+  onDefaultSalesTypeChange,
 }: SaleSettingsButtonProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -36,11 +47,59 @@ const SaleSettingsButton = ({
 
       <DropdownMenu.Portal>
         <DropdownMenu.Content
-          className="min-w-[220px] bg-white dark:bg-neutral-900 rounded-lg shadow-lg border border-gray-200 dark:border-neutral-800 p-2 z-50"
+          className="min-w-[240px] bg-white dark:bg-neutral-900 rounded-lg shadow-lg border border-gray-200 dark:border-neutral-800 p-2 z-50"
           sideOffset={5}
           align="end"
         >
           <div className="space-y-1">
+            <div className="px-3 pt-2 pb-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              Defaults for new sales
+            </div>
+            <div className="px-3 py-2 rounded-md">
+              <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1.5">
+                Default sales price
+              </label>
+              <div className="flex gap-1 rounded-lg p-0.5 bg-gray-100 dark:bg-neutral-800">
+                {(["retail", "wholesale"] as const).map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => onDefaultPriceTypeChange(value)}
+                    className={`flex-1 px-3 py-1.5 text-sm rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 ${defaultPriceType === value
+                        ? "bg-white dark:bg-neutral-700 text-gray-900 dark:text-gray-100 shadow-sm"
+                        : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                      }`}
+                    aria-pressed={defaultPriceType === value}
+                  >
+                    {value === "wholesale" ? "Wholesale" : "Retail"}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="px-3 py-2 rounded-md">
+              <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1.5">
+                Default sales type
+              </label>
+              <div className="flex gap-1 rounded-lg p-0.5 bg-gray-100 dark:bg-neutral-800">
+                {(["cash", "credit"] as const).map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => onDefaultSalesTypeChange(value)}
+                    className={`flex-1 px-3 py-1.5 text-sm rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 ${defaultSalesType === value
+                        ? "bg-white dark:bg-neutral-700 text-gray-900 dark:text-gray-100 shadow-sm"
+                        : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                      }`}
+                    aria-pressed={defaultSalesType === value}
+                  >
+                    {value === "credit" ? "Credit" : "Cash"}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="px-3 pt-2 pb-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide border-t border-gray-200 dark:border-neutral-700 mt-1">
+              Display options
+            </div>
             <div className="flex items-center justify-between px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors gap-2">
               <label
                 htmlFor="show-edit-on-click"
@@ -53,19 +112,17 @@ const SaleSettingsButton = ({
                 onClick={() => {
                   onShowEditOnClickChange(!showEditOnClick);
                 }}
-                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
-                  showEditOnClick
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${showEditOnClick
                     ? "bg-primary"
                     : "bg-gray-200 dark:bg-neutral-700"
-                }`}
+                  }`}
                 role="switch"
                 aria-checked={showEditOnClick}
                 aria-label="Show edit cart item on click"
               >
                 <span
-                  className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                    showEditOnClick ? "translate-x-4.5" : "translate-x-0.5"
-                  }`}
+                  className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${showEditOnClick ? "translate-x-4.5" : "translate-x-0.5"
+                    }`}
                 />
               </button>
             </div>
@@ -82,19 +139,17 @@ const SaleSettingsButton = ({
                 onClick={() => {
                   onShowPriceTypeSwitchChange(!showPriceTypeSwitch);
                 }}
-                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
-                  showPriceTypeSwitch
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${showPriceTypeSwitch
                     ? "bg-primary"
                     : "bg-gray-200 dark:bg-neutral-700"
-                }`}
+                  }`}
                 role="switch"
                 aria-checked={showPriceTypeSwitch}
                 aria-label="Show retail/wholesale switch"
               >
                 <span
-                  className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                    showPriceTypeSwitch ? "translate-x-4.5" : "translate-x-0.5"
-                  }`}
+                  className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${showPriceTypeSwitch ? "translate-x-4.5" : "translate-x-0.5"
+                    }`}
                 />
               </button>
             </div>
@@ -111,19 +166,17 @@ const SaleSettingsButton = ({
                 onClick={() => {
                   onShowSalesTypeSwitchChange(!showSalesTypeSwitch);
                 }}
-                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
-                  showSalesTypeSwitch
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${showSalesTypeSwitch
                     ? "bg-primary"
                     : "bg-gray-200 dark:bg-neutral-700"
-                }`}
+                  }`}
                 role="switch"
                 aria-checked={showSalesTypeSwitch}
                 aria-label="Show cash/credit switch"
               >
                 <span
-                  className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                    showSalesTypeSwitch ? "translate-x-4.5" : "translate-x-0.5"
-                  }`}
+                  className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${showSalesTypeSwitch ? "translate-x-4.5" : "translate-x-0.5"
+                    }`}
                 />
               </button>
             </div>

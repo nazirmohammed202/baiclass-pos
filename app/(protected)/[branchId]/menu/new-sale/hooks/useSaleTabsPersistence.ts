@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useTransition, useRef } from "react";
-import { CartItem, CustomerType, Product, Tab } from "@/types";
+import { CartItem, CustomerType, PriceType, Product, Tab } from "@/types";
 
 type StoredTab = {
   id: string;
@@ -11,7 +11,7 @@ type StoredTab = {
     quantity: number;
     unitPrice: number;
   }>;
-  priceType: "retail" | "wholesale";
+  priceType: PriceType;
   salesType?: "cash" | "credit";
   saleId: string | undefined | null;
   isEditMode: boolean | undefined;
@@ -66,11 +66,11 @@ export const useSaleTabsPersistence = (
               );
               return product
                 ? ({
-                    product,
-                    quantity: item.quantity,
-                    unitPrice: item.unitPrice || 0, // Default to 0 if not stored
-                    isPriceManuallyEdited: false, // Default to false for backward compatibility
-                  } as CartItem)
+                  product,
+                  quantity: item.quantity,
+                  unitPrice: item.unitPrice || 0, // Default to 0 if not stored
+                  isPriceManuallyEdited: false, // Default to false for backward compatibility
+                } as CartItem)
                 : null;
             })
             .filter((item): item is CartItem => item !== null),
@@ -125,6 +125,7 @@ export const useSaleTabsPersistence = (
         saleId: tab.saleId,
         isEditMode: tab.isEditMode,
         saleDate: tab.saleDate,
+
       }));
 
       localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToStore));

@@ -180,7 +180,7 @@ const StockTable = ({ branchId, products: productsPromise, stockData: stockDataP
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-neutral-700">
-              {filteredProducts.map((product) => {
+              {filteredProducts.map((product, i) => {
                 const stockItem = stockMap.get(product.details._id);
                 const stock = stockItem?.stock ?? 0;
                 const basePrice = stockItem?.basePrice ? formatCurrency(stockItem.basePrice) : 0;
@@ -190,7 +190,7 @@ const StockTable = ({ branchId, products: productsPromise, stockData: stockDataP
 
                 return (
                   <tr
-                    key={product.details._id}
+                    key={i}
                     className="hover:bg-gray-50 dark:hover:bg-neutral-800/50 transition-colors"
                   >
                     {/* Product Details Column */}
@@ -262,12 +262,15 @@ const StockTable = ({ branchId, products: productsPromise, stockData: stockDataP
                     <td
                       className={`px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400 rounded transition-colors ${isStockLoading ? "" : "cursor-pointer hover:bg-primary/10 dark:hover:bg-primary/20"
                         }`}
-                      onClick={() => !isStockLoading && setThresholdModalProduct(product)}
+                      onClick={() => !isStockLoading && setThresholdModalProduct({
+                        ...product,
+                        lowStockThreshold: stockItem?.lowStockThreshold ?? product.lowStockThreshold ?? 5
+                      })}
                     >
                       {isStockLoading ? (
                         <div className="h-4 w-8 bg-gray-200 dark:bg-neutral-700 rounded animate-pulse ml-auto" />
                       ) : (
-                        product.lowStockThreshold ?? 5
+                        stockItem?.lowStockThreshold ?? 5
                       )}
                     </td>
 
