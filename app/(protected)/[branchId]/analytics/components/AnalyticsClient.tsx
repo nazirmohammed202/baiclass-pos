@@ -19,6 +19,8 @@ type AnalyticsClientProps = {
 export default function AnalyticsClient({ branchId }: AnalyticsClientProps) {
   const {
     data,
+    startDate,
+    endDate,
     period,
     setPeriod,
     customStart,
@@ -86,7 +88,13 @@ export default function AnalyticsClient({ branchId }: AnalyticsClientProps) {
         <TimeIntelligenceSection data={data.timeIntelligence} loading={data.timeIntelligence === null} />
       </div>
 
-      <ProductPerformanceSection data={data.productPerformance} loading={data.productPerformance === null} />
+      <ProductPerformanceSection
+        data={data.productPerformance}
+        loading={data.productPerformance === null}
+        branchId={branchId}
+        startDate={startDate}
+        endDate={endDate}
+      />
 
       <StaffPerformanceSection data={data.staffPerformance} loading={data.staffPerformance === null} />
 

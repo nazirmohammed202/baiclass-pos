@@ -221,6 +221,8 @@ export function useAnalyticsData({ branchId }: UseAnalyticsDataParams) {
   return {
     data,
     isPending: pendingCount > 0,
+    startDate: currentStart,
+    endDate: currentEnd,
     period,
     setPeriod,
     customStart,

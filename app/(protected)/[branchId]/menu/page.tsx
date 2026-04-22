@@ -1,7 +1,6 @@
 import React from "react";
 import { MenuCard } from "@/components/MenuCard";
 
-
 type MenuItem = {
   name: string;
   icon: string;
@@ -9,7 +8,8 @@ type MenuItem = {
   description: string;
 };
 
-const Dashboard = async () => {
+const MenuPage = async () => {
+
   const salesList: MenuItem[] = [
     {
       name: "New Sale",
@@ -21,7 +21,7 @@ const Dashboard = async () => {
       name: "Custom Date",
       icon: "ShoppingCart",
       route: "/new-sale?customDate=true",
-      description: "Enter sales for a specific date ",
+      description: "Enter sales for a specific date",
     },
     {
       name: "Sales History",
@@ -35,9 +35,27 @@ const Dashboard = async () => {
       route: "/sales-report",
       description: "Generate sales performance reports",
     },
+    {
+      name: "Returns & Refunds",
+      icon: "RotateCcw",
+      route: "/sales-history",
+      description: "Process returns and refunds from sales history",
+    },
+    {
+      name: "Add Expense",
+      icon: "DollarSign",
+      route: "/add-expense",
+      description: "Record expenses for the branch",
+    },
   ];
 
   const inventoryList: MenuItem[] = [
+    {
+      name: "Product Catalog",
+      icon: "PackageOpen",
+      route: "/stock",
+      description: "Manage products, categories and pricing",
+    },
     {
       name: "View Stock",
       icon: "Package",
@@ -71,23 +89,29 @@ const Dashboard = async () => {
       route: "/customers",
       description: "View and manage your customers",
     },
-
     {
       name: "View Suppliers",
       icon: "Building2",
       route: "/suppliers",
       description: "View and manage your suppliers",
     },
-
   ];
 
-
+  const registerList: MenuItem[] = [
+    {
+      name: "End of Day",
+      icon: "CircleDollarSign",
+      route: "/end-of-day",
+      description: "Close register and view Z-report",
+    },
+  ];
 
   return (
     <main className="p-3 sm:p-4 lg:p-6 space-y-8">
+
       <section>
         <p className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">Sales</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
           {salesList.map((saleItem, index) => (
             <MenuCard key={`sales-${index}`} saleItem={saleItem} />
           ))}
@@ -111,8 +135,17 @@ const Dashboard = async () => {
           ))}
         </div>
       </section>
+
+      <section>
+        <p className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">Register</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+          {registerList.map((item, index) => (
+            <MenuCard key={`register-${index}`} saleItem={item} />
+          ))}
+        </div>
+      </section>
     </main>
   );
 };
 
-export default Dashboard;
+export default MenuPage;

@@ -139,6 +139,29 @@ export const getProductPerformance = async (
     return response.data;
 };
 
+/** Single product analytics for the date range. See BACKEND_ROUTES.md in analytics folder. */
+export const getProductSummary = async (
+    branchId: string,
+    productId: string,
+    startDate: string,
+    endDate: string,
+): Promise<ProductPerformanceItem | null> => {
+    const token = await extractToken();
+    try {
+        const response = await api.get(
+            `/analytics/read/product-summary/${branchId}/${productId}?startDate=${startDate}&endDate=${endDate}`,
+            { headers: { "x-auth-token": token } }
+        );
+        return response.data;
+    } catch (err: unknown) {
+        if (typeof err === "object" && err !== null && "response" in err) {
+            const res = (err as { response?: { status?: number } }).response;
+            if (res?.status === 404) return null;
+        }
+        throw err;
+    }
+};
+
 export const getInventoryHealth = async (
     branchId: string,
 ): Promise<InventoryHealthData> => {

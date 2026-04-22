@@ -8,7 +8,7 @@ export default async function CustomerProfilePage({
   params: Promise<{ branchId: string; customerId: string }>;
 }) {
   const { branchId, customerId } = await params;
-  const customerPromise = getCustomerById(customerId);
+  const customerPromise = getCustomerById(customerId, branchId);
   const branchPromise = getBranch(branchId);
   return (
     <CustomerProfile

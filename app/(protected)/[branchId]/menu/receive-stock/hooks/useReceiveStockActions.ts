@@ -160,7 +160,7 @@ export const useReceiveStockActions = ({
       setLoadingInventory(true);
 
       try {
-        const response = await getInventoryById(inventoryId);
+        const response = await getInventoryById(inventoryId, branchId);
 
         if (!response.success || !response.inventory) {
           toastError(response.error ?? "Failed to load inventory");

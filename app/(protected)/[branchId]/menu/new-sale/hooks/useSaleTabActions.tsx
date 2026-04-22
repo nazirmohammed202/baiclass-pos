@@ -142,7 +142,7 @@ export const useSaleTabsActions = ({
       setLoadingSale(true);
 
       try {
-        const response = await getSaleById(saleId);
+        const response = await getSaleById(saleId, branchId);
 
         if (!response.success || !response.sale) {
           toastError(response.error ?? "Failed to load sale");
@@ -457,7 +457,7 @@ export const useSaleTabsActions = ({
             creditDueDate: creditDueDate,
           };
           response = isEditMode
-            ? await updateSale(activeTab.saleId as string, sale)
+            ? await updateSale(activeTab.saleId as string, sale, branchId)
             : await createNewSale(sale, branchId);
         }
 
