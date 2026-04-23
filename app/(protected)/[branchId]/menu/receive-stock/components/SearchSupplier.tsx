@@ -95,6 +95,7 @@ const SearchSupplier = ({ onSelectSupplier, suppliers }: SearchSupplierProps) =>
       address: formData.address.trim() || undefined,
       phoneNumbers: formData.phoneNumber.trim() ? [formData.phoneNumber.trim()] : undefined,
       email: formData.email.trim() || undefined,
+      branch: branchId,
     };
 
     const response = await createSupplier(payload, branchId);

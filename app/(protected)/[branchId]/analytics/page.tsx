@@ -1,7 +1,15 @@
-import React from "react";
+import AnalyticsClient from "./components/AnalyticsClient";
 
-const Analytics = () => {
-  return <div>Analytics</div>;
-};
+export default async function AnalyticsPage({
+  params,
+}: {
+  params: Promise<{ branchId: string }>;
+}) {
+  const { branchId } = await params;
 
-export default Analytics;
+  return (
+    <div className="flex-1 flex flex-col overflow-hidden">
+      <AnalyticsClient branchId={branchId} />
+    </div>
+  );
+}

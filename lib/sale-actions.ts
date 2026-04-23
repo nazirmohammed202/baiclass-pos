@@ -115,13 +115,16 @@ export const getTodaySales = async (
 };
 
 export const getSaleById = async (
-  saleId: string
+  saleId: string,
+  branchId: string
 ): Promise<{
   success: boolean;
   error: string | null;
   sale: SalePopulatedType | null;
 }> => {
   try {
+    // branchId is intentionally included to keep server actions branch-scoped consistently
+    void branchId;
     const token = await extractToken();
 
     const getSaleByIdCached = async (saleId: string) => {
@@ -156,7 +159,8 @@ export const getSaleById = async (
 
 export const updateSale = async (
   saleId: string,
-  sale: SaleType
+  sale: SaleType,
+  branchId: string
 ): Promise<{ success: boolean; error: string | null }> => {
   try {
     const token = await extractToken();
@@ -166,7 +170,7 @@ export const updateSale = async (
 
     const today = getTodayDate();
     updateTag("sale:" + saleId);
-    updateTag(`sale:today:${sale.branch}:${today}`);
+    updateTag(`sale:today:${branchId}:${today}`);
 
     return {
       success: true,

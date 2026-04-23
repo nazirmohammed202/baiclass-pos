@@ -42,6 +42,7 @@ export type BranchType = {
   settings: {
     retailPricePercentage: number; // between 0 and 1
     wholesalePricePercentage: number; // between 0 and 1
+    creditPricePercentage: number; // between 0 and 1
     roundRetailPrices: boolean;
     roundWholesalePrices: boolean;
     wholesaleEnabled: boolean;
@@ -197,6 +198,7 @@ export type SaleType = {
   salesType?: "credit" | "cash";
   priceMode?: PriceType;
   createdAt?: Date | string;
+  creditDueDate?: string;
 };
 
 export type SalePopulatedType = {
@@ -395,5 +397,193 @@ export type OverviewData = {
 export type PaymentsBreakdown = {
   label: string;
   amount: number;
+};
+type TaskAlert = {
+  id: string;
+  title: string;
+  detail: string;
+  amount?: string;
+  time?: string;
+};
+
+
+export type AlertsTasksPanelProps = {
+  pendingCredits: TaskAlert[];
+  overdueBalances: TaskAlert[];
+  negativeStock: TaskAlert[];
+};
+
+export type Performer = {
+  id: string;
+  name: string;
+  subtitle?: string;
+  value: number;
+  valueLabel: string;
+  secondary?: string;
+};
+
+export type ActivityItem = {
+  id: string;
+  type: ActivityType;
+  title: string;
+  detail: string;
+  time: string;
+  amount?: string;
+};
+
+type ActivityType =
+  | "sale"
+  | "stock_adjust"
+  | "new_customer"
+  | "refund"
+  | "payment_received"
+  | "stock_in"
+  | "failed";
+
+// ── Analytics Page Types ──────────────────────────────────────────────
+
+export type AnalyticsPeriod =
+  | "today"
+  | "yesterday"
+  | "last7"
+  | "last30"
+  | "thisMonth"
+  | "lastMonth"
+  | "custom";
+
+/** Compare range can be "previous" (auto) or any preset/custom, e.g. Yesterday vs Last 5 days */
+export type AnalyticsComparePeriod =
+  | "previous"
+  | "today"
+  | "yesterday"
+  | "last5"
+  | "last7"
+  | "last30"
+  | "thisMonth"
+  | "lastMonth"
+  | "custom";
+
+export type AnalyticsDateRange = {
+  startDate: string;
+  endDate: string;
+  label: string;
+};
+
+export type KPICard = {
+  label: string;
+  value: number;
+  previousValue?: number;
+  changePercent?: number;
+  prefix?: string;
+  suffix?: string;
+  format: "currency" | "number" | "percent";
+};
+
+export type AnalyticsKPIs = {
+  grossRevenue: KPICard;
+  netRevenue: KPICard;
+  totalTransactions: KPICard;
+  averageOrderValue: KPICard;
+  totalProfit: KPICard;
+  profitMargin: KPICard;
+  totalItemsSold: KPICard;
+  totalDiscounts: KPICard;
+  discountRate: KPICard;
+  totalRefunds: KPICard;
+  refundRate: KPICard;
+  taxCollected: KPICard;
+};
+
+export type SalesTrendPoint = {
+  label: string;
+  date: string;
+  revenue: number;
+  profit: number;
+  transactions: number;
+  previousRevenue?: number;
+  previousProfit?: number;
+  previousTransactions?: number;
+};
+
+export type ProductPerformanceItem = {
+  productId: string;
+  name: string;
+  category?: string;
+  quantitySold: number;
+  revenue: number;
+  profit: number;
+  margin: number;
+  stock: number;
+  daysOfStockLeft?: number;
+  velocityPerDay?: number;
+};
+
+export type InventoryHealthData = {
+  totalValueCost: number;
+  totalValueRetail: number;
+  gmroi: number;
+  lowStockCount: number;
+  outOfStockCount: number;
+  overstockedCount: number;
+  totalSkus: number;
+  averageTurnover: number;
+};
+
+export type CustomerAnalyticsData = {
+  newCustomers: number;
+  returningCustomers: number;
+  repeatPurchaseRate: number;
+  averageBasketSize: number;
+  averageBasketValue: number;
+  topCustomers: {
+    id: string;
+    name: string;
+    revenue: number;
+    transactions: number;
+    clv: number;
+  }[];
+};
+
+export type StaffPerformanceItem = {
+  staffId: string;
+  name: string;
+  revenue: number;
+  transactions: number;
+  averageSale: number;
+  discountsGiven: number;
+  refundsProcessed: number;
+  itemsSold: number;
+};
+
+export type PeakHourData = {
+  hour: number;
+  hourLabel: string;
+  revenue: number;
+  transactions: number;
+};
+
+export type PeakDayData = {
+  dayOfWeek: number;
+  dayLabel: string;
+  revenue: number;
+  transactions: number;
+};
+
+export type TimeIntelligenceData = {
+  peakHours: PeakHourData[];
+  peakDays: PeakDayData[];
+};
+
+export type AlertRisk = {
+  id: string;
+  type: "revenue_drop" | "high_discount" | "low_margin" | "high_refund" | "stock_critical" | "credit_overdue";
+  severity: "critical" | "warning" | "info";
+  title: string;
+  detail: string;
+  metric?: string;
+};
+
+export type AnalyticsAlertsData = {
+  alerts: AlertRisk[];
 };
 

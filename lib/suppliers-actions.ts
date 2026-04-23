@@ -69,8 +69,11 @@ export const getSuppliers = async (
 };
 
 export const getSupplierById = async (
-  supplierId: string
+  supplierId: string,
+  branchId: string
 ): Promise<SupplierType> => {
+  // branchId is intentionally included to keep server actions branch-scoped consistently
+  void branchId;
   const token = await extractToken();
   const response = await api.get(`/suppliers/read/single/${supplierId}`, {
     headers: { "x-auth-token": token },

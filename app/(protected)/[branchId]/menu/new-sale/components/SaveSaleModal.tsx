@@ -1,15 +1,26 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useTransition } from "react";
-import { Printer, X, CreditCard } from "lucide-react";
+import { Printer, X, CreditCard, Calendar } from "lucide-react";
 import { CustomerType } from "@/types";
 import { CartItem } from "@/types";
 import { formatDateToDisplay } from "@/lib/date-utils";
 
+function getDefaultCreditDueDate(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 30);
+  return d.toISOString().slice(0, 10);
+}
+
 type SaveSaleModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (amountPaid: number, shouldPrint: boolean, paymentMethod: "cash" | "momo") => void;
+  onSave: (
+    amountPaid: number,
+    shouldPrint: boolean,
+    paymentMethod: "cash" | "momo",
+    creditDueDate?: string
+  ) => void;
   customer: CustomerType | null;
   cartItems: CartItem[];
   total: number;
@@ -38,14 +49,18 @@ const SaveSaleModal = ({
 
   const [amountPaidStr, setAmountPaidStr] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "momo">("cash");
+  const [creditDueDate, setCreditDueDate] = useState("");
   const amountPaidInputRef = useRef<HTMLInputElement>(null);
   const [, startTransition] = useTransition();
 
   useEffect(() => {
     if (isOpen) {
       startTransition(() => {
-        setAmountPaidStr(normalizedTotal.toFixed(2));
+        setAmountPaidStr(
+          salesType === "credit" ? "0.00" : normalizedTotal.toFixed(2)
+        );
         setPaymentMethod("cash"); // Reset to cash when modal opens
+        setCreditDueDate(getDefaultCreditDueDate());
       });
       // Focus amount paid input after modal opens
       setTimeout(() => {
@@ -55,16 +70,23 @@ const SaveSaleModal = ({
         }
       }, 100);
     }
-  }, [isOpen, normalizedTotal, startTransition]);
+  }, [isOpen, normalizedTotal, salesType, startTransition]);
 
   const amountPaid = parseFloat(amountPaidStr) || 0;
   const change = amountPaid - normalizedTotal;
+  const canSave =
+    salesType === "credit"
+      ? amountPaid >= 0 && amountPaidStr !== ""
+      : amountPaid >= normalizedTotal && amountPaidStr !== "";
 
   const handleSave = (shouldPrint: boolean) => {
-    if (amountPaid < normalizedTotal) {
-      return; // Can't save if amount paid is less than total
-    }
-    onSave(amountPaid, shouldPrint, paymentMethod);
+    if (!canSave) return;
+    onSave(
+      amountPaid,
+      shouldPrint,
+      paymentMethod,
+      salesType === "credit" ? creditDueDate : undefined
+    );
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -168,6 +190,27 @@ const SaveSaleModal = ({
             </select>
           </div>
 
+          {/* Credit Due Date - only for credit sales */}
+          {salesType === "credit" && (
+            <div>
+              <label
+                htmlFor="creditDueDate"
+                className="flex items-center gap-2 mb-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
+                <Calendar className="w-4 h-4" />
+                Due Date
+              </label>
+              <input
+                type="date"
+                id="creditDueDate"
+                value={creditDueDate}
+                onChange={(e) => setCreditDueDate(e.target.value)}
+                min={new Date().toISOString().slice(0, 10)}
+                className="w-full px-4 py-2 border border-gray-200 dark:border-neutral-800 rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+            </div>
+          )}
+
           {/* Amount Paid */}
           <div>
             <label
@@ -180,7 +223,7 @@ const SaveSaleModal = ({
               ref={amountPaidInputRef}
               type="number"
               id="amountPaid"
-              min={normalizedTotal}
+              min={salesType === "credit" ? 0 : normalizedTotal}
               step="0.01"
               value={amountPaidStr}
               onChange={(e) => setAmountPaidStr(e.target.value)}
@@ -212,13 +255,15 @@ const SaveSaleModal = ({
             </div>
           )}
 
-          {amountPaid < normalizedTotal && amountPaidStr !== "" && (
-            <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-md">
-              <p className="text-sm text-red-600 dark:text-red-400">
-                Amount paid must be at least ₵{normalizedTotal.toFixed(2)}
-              </p>
-            </div>
-          )}
+          {salesType !== "credit" &&
+            amountPaid < normalizedTotal &&
+            amountPaidStr !== "" && (
+              <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-md">
+                <p className="text-sm text-red-600 dark:text-red-400">
+                  Amount paid must be at least ₵{normalizedTotal.toFixed(2)}
+                </p>
+              </div>
+            )}
 
           {/* Action Buttons */}
           <div className="space-y-3 pt-4">
@@ -234,17 +279,12 @@ const SaveSaleModal = ({
               <button
                 type="button"
                 onClick={() => handleSave(false)}
-                disabled={
-                  savingSale ||
-                  isSaving ||
-                  amountPaid < normalizedTotal ||
-                  amountPaidStr === ""
-                }
+                disabled={savingSale || isSaving || !canSave}
                 className={`flex-1 px-4 py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium ${saleDate
-                    ? "bg-amber-600 hover:bg-amber-700 text-white"
-                    : isEditMode
-                      ? "bg-blue-600 hover:bg-blue-700 text-white"
-                      : "bg-primary text-white hover:bg-primary/90"
+                  ? "bg-amber-600 hover:bg-amber-700 text-white"
+                  : isEditMode
+                    ? "bg-blue-600 hover:bg-blue-700 text-white"
+                    : "bg-primary text-white hover:bg-primary/90"
                   }`}
               >
                 {savingSale || isSaving
@@ -261,14 +301,10 @@ const SaveSaleModal = ({
             <button
               type="button"
               onClick={() => handleSave(true)}
-              disabled={
-                savingSale ||
-                amountPaid < normalizedTotal ||
-                amountPaidStr === ""
-              }
+              disabled={savingSale || !canSave}
               className={`w-full flex-1 px-4 py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium ${saleDate
-                  ? "bg-amber-600 hover:bg-amber-700 text-white border-0"
-                  : "border border-gray-200 dark:border-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800"
+                ? "bg-amber-600 hover:bg-amber-700 text-white border-0"
+                : "border border-gray-200 dark:border-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800"
                 }`}
             >
               {savingSale

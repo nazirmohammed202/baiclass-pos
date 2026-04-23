@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import {
+  BranchType,
   CartItem,
   CustomerType,
   PriceType,
@@ -37,6 +38,9 @@ type UseSaleTabsActionsProps = {
   ) => void;
   productsData: Product[];
   customers: Promise<CustomerType[]>;
+  defaultPriceType: "retail" | "wholesale";
+  defaultSalesType: "cash" | "credit";
+  branchData: BranchType;
 };
 
 export const useSaleTabsActions = ({
@@ -50,12 +54,14 @@ export const useSaleTabsActions = ({
   showEditOnClick,
   setPendingProduct,
   productsData,
+  defaultPriceType,
+  defaultSalesType,
+  branchData,
 }: UseSaleTabsActionsProps) => {
   const { error: toastError, success: toastSuccess } = useToast();
   const [savingSale, setSavingSale] = useState(false);
   const [loadingSale, setLoadingSale] = useState(false);
   const [loadedSaleIds, setLoadedSaleIds] = useState<Set<string>>(new Set());
-
   const activeTab = tabs.find((tab) => tab.id === activeTabId) || tabs[0];
 
   // Helper function to convert sale products to cart items
@@ -136,7 +142,7 @@ export const useSaleTabsActions = ({
       setLoadingSale(true);
 
       try {
-        const response = await getSaleById(saleId);
+        const response = await getSaleById(saleId, branchId);
 
         if (!response.success || !response.sale) {
           toastError(response.error ?? "Failed to load sale");
@@ -189,18 +195,18 @@ export const useSaleTabsActions = ({
         id: Date.now().toString(),
         customer: customer ?? null,
         products: [],
-        priceType: "retail",
-        salesType: customer ? "credit" : "cash",
+        priceType: defaultPriceType,
+        salesType: customer ? "credit" : defaultSalesType,
       };
       setTabs([...tabs, newTab]);
       setActiveTabId(newTab.id);
     },
-    [tabs, setTabs, setActiveTabId]
+    [tabs, setTabs, setActiveTabId, defaultPriceType, defaultSalesType]
   );
 
   const handleCloseTab = useCallback(
-    (tabId: string, e: React.MouseEvent) => {
-      e.stopPropagation();
+    (tabId: string, e?: React.MouseEvent) => {
+      e?.stopPropagation();
       if (tabs.length === 1) return; // Don't close the last tab
       const newTabs = tabs.filter((tab) => tab.id !== tabId);
       setTabs(newTabs);
@@ -380,7 +386,8 @@ export const useSaleTabsActions = ({
       amountPaid: number,
       priceType: PriceType,
       shouldPrint: boolean,
-      paymentMethod: "cash" | "momo"
+      paymentMethod: "cash" | "momo",
+      creditDueDate?: string
     ) => {
       if (activeTab.salesType === "credit" && !customer) {
         toastError("Please select a customer for credit sales");
@@ -412,7 +419,10 @@ export const useSaleTabsActions = ({
             })),
             date: customDate, // ISO date string (YYYY-MM-DD)
             total: parseFloat(total.toFixed(2)),
-            note: "",
+            note:
+              activeTab.salesType === "credit" && creditDueDate
+                ? `Due: ${creditDueDate}`
+                : "",
             salesType: activeTab.salesType,
             priceMode: priceType,
             paymentMethod: paymentMethod,
@@ -437,13 +447,17 @@ export const useSaleTabsActions = ({
             due: total - amountPaid > 0 ? total - amountPaid : 0,
             paymentMethod:
               paymentMethod,
-            note: "",
+            note:
+              activeTab.salesType === "credit" && creditDueDate
+                ? `Due: ${creditDueDate}`
+                : "",
             salesType: activeTab.salesType,
             priceMode: priceType,
             ...(activeTab.saleDate && { createdAt: activeTab.saleDate }),
+            creditDueDate: creditDueDate,
           };
           response = isEditMode
-            ? await updateSale(activeTab.saleId as string, sale)
+            ? await updateSale(activeTab.saleId as string, sale, branchId)
             : await createNewSale(sale, branchId);
         }
 
@@ -558,43 +572,70 @@ export const useSaleTabsActions = ({
 
   const handlePriceTypeChange = useCallback(
     (newPriceType: PriceType) => {
-      setTabs(
-        tabs.map((tab) => {
+      const pct = branchData?.settings?.creditPricePercentage ?? 0;
+      setTabs((prevTabs) =>
+        prevTabs.map((tab) => {
           if (tab.id !== activeTabId) return tab;
+          if (newPriceType === tab.priceType) return tab;
 
-          // Update prices for items that weren't manually edited when priceType changes
           const updatedProducts = tab.products.map((item) => {
-            if (item.isPriceManuallyEdited) return item;
+            // console.log(item.isPriceManuallyEdited);
+            // if (item.isPriceManuallyEdited) return item;
 
-            // Get price from product data based on new price type
             let newPrice: number;
             switch (newPriceType) {
-              case "credit":
-                newPrice =
-                  item.product.creditPrice ??
-                  item.product.retailPrice ??
-                  item.product.basePrice ??
-                  0;
+              case "credit": {
+                const cp = item.product.creditPrice;
+                const hasCreditPrice =
+                  typeof cp === "number" && cp > 0;
+                if (hasCreditPrice) {
+                  newPrice = cp;
+                } else {
+                  const base =
+                    item.product.retailPrice ??
+                    item.product.basePrice ??
+                    (item.unitPrice > 0 ? item.unitPrice : 0);
+                  const computed = base * (1 + pct);
+                  newPrice = computed > 0 ? computed : item.unitPrice;
+                }
                 break;
+              }
               case "wholesale":
                 newPrice =
-                  item.product.wholesalePrice ?? item.product.basePrice ?? 0;
+                  item.product.wholesalePrice ??
+                  item.product.basePrice ??
+                  0;
                 break;
               case "retail":
               default:
                 newPrice =
-                  item.product.retailPrice ?? item.product.basePrice ?? 0;
+                  item.product.retailPrice ??
+                  item.product.basePrice ??
+                  0;
             }
 
-            return { ...item, unitPrice: newPrice };
+            console.log(newPrice);
+            const finalPrice =
+              newPrice > 0 ? newPrice : item.unitPrice;
+            return { ...item, unitPrice: finalPrice };
           });
 
-          return { ...tab, priceType: newPriceType, products: updatedProducts };
+
+          return {
+            ...tab,
+            priceType: newPriceType,
+            products: updatedProducts,
+          };
         })
       );
     },
-    [tabs, activeTabId, setTabs]
+    [
+      activeTabId,
+      setTabs,
+      branchData?.settings?.creditPricePercentage,
+    ]
   );
+
 
   const handleUpdateItem = useCallback(
     (index: number, quantity: number, unitPrice: number) => {

@@ -163,9 +163,12 @@ export type GetInventoryByIdResponse = {
 };
 
 export const getInventoryById = async (
-  inventoryId: string
+  inventoryId: string,
+  branchId: string
 ): Promise<GetInventoryByIdResponse> => {
   try {
+    // branchId is intentionally included to keep server actions branch-scoped consistently
+    void branchId;
     const token = await extractToken();
     const response = await api.get(`/inventory/read/${inventoryId}`, {
       headers: { "x-auth-token": token },

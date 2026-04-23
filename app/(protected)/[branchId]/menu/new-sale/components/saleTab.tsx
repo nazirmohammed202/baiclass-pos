@@ -28,6 +28,10 @@ type SaleTabProps = {
   showSalesTypeSwitch: boolean;
   onShowPriceTypeSwitchChange: (value: boolean) => void;
   onShowSalesTypeSwitchChange: (value: boolean) => void;
+  defaultPriceType: "retail" | "wholesale";
+  onDefaultPriceTypeChange: (value: "retail" | "wholesale") => void;
+  defaultSalesType: "cash" | "credit";
+  onDefaultSalesTypeChange: (value: "cash" | "credit") => void;
   onSaveSale?: (
     customer: CustomerType | null,
     cartItems: CartItemType[],
@@ -35,7 +39,8 @@ type SaleTabProps = {
     amountPaid: number,
     priceType: PriceType,
     shouldPrint: boolean,
-    paymentMethod: "cash" | "momo"
+    paymentMethod: "cash" | "momo",
+    creditDueDate?: string
   ) => void;
   savingSale: boolean;
   isEditMode?: boolean;
@@ -64,6 +69,10 @@ const SaleTab = ({
   showSalesTypeSwitch,
   onShowPriceTypeSwitchChange,
   onShowSalesTypeSwitchChange,
+  defaultPriceType,
+  onDefaultPriceTypeChange,
+  defaultSalesType,
+  onDefaultSalesTypeChange,
   onSaveSale,
   savingSale,
   isEditMode = false,
@@ -117,7 +126,12 @@ const SaleTab = ({
     return sum + item.unitPrice * item.quantity;
   }, 0);
 
-  const handleSaveSale = (amountPaid: number, shouldPrint: boolean, paymentMethod: "cash" | "momo") => {
+  const handleSaveSale = (
+    amountPaid: number,
+    shouldPrint: boolean,
+    paymentMethod: "cash" | "momo",
+    creditDueDate?: string
+  ) => {
     if (onSaveSale) {
       onSaveSale(
         selectedCustomer,
@@ -126,7 +140,8 @@ const SaleTab = ({
         amountPaid,
         priceType,
         shouldPrint,
-        paymentMethod
+        paymentMethod,
+        creditDueDate
       );
       setIsSaveModalOpen(false);
     }
@@ -152,6 +167,10 @@ const SaleTab = ({
         showSalesTypeSwitch={showSalesTypeSwitch}
         onShowPriceTypeSwitchChange={onShowPriceTypeSwitchChange}
         onShowSalesTypeSwitchChange={onShowSalesTypeSwitchChange}
+        defaultPriceType={defaultPriceType}
+        onDefaultPriceTypeChange={onDefaultPriceTypeChange}
+        defaultSalesType={defaultSalesType}
+        onDefaultSalesTypeChange={onDefaultSalesTypeChange}
       />
       <section className="flex flex-col lg:flex-row flex-1 gap-2 sm:gap-4 min-h-0 px-2 sm:px-4 pb-2 sm:pb-4">
         <article

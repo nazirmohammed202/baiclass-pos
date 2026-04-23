@@ -2,20 +2,24 @@
 
 import { useEffect } from "react";
 import { useStock } from "@/context/stockContext";
-import { PriceType, Tab } from "@/types";
+import { BranchType, PriceType, Tab } from "@/types";
 
 type StockPriceUpdaterProps = {
   setTabs: (tabs: Tab[] | ((prev: Tab[]) => Tab[])) => void;
   activeTabId: string;
   priceType: PriceType;
+  branchData: BranchType;
 };
 
 const StockPriceUpdater = ({
   setTabs,
   activeTabId,
   priceType,
+  branchData,
 }: StockPriceUpdaterProps) => {
   const { stockMap } = useStock();
+
+  const creditPricePercentage = branchData.settings.creditPricePercentage + 1;
 
   useEffect(() => {
     // Only update if stockMap has data
@@ -39,12 +43,7 @@ const StockPriceUpdater = ({
             case "credit":
               newPrice =
                 stockItem.creditPrice ??
-                stockItem.retailPrice ??
-                stockItem.basePrice ??
-                item.product.creditPrice ??
-                item.product.retailPrice ??
-                item.product.basePrice ??
-                0;
+                (creditPricePercentage * (stockItem.wholesalePrice ?? 0));
               break;
             case "wholesale":
               newPrice =
@@ -75,7 +74,7 @@ const StockPriceUpdater = ({
         return { ...tab, products: updatedProducts };
       })
     );
-  }, [stockMap, activeTabId, priceType, setTabs]);
+  }, [stockMap, activeTabId, priceType, setTabs, creditPricePercentage]);
 
   return null;
 };

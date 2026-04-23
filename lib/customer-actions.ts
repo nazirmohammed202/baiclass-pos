@@ -62,20 +62,24 @@ export const getCustomersBalanceDue = async (
 };
 
 export const getCustomerById = async (
-  customerId: string
+  customerId: string,
+  branchId: string
 ): Promise<CustomerType> => {
 
   const token = await extractToken();
 
-  const getCustomerByIdCached = async (customerId: string) => {
-
+  const getCustomerByIdCached = async (customerId: string, branchId: string) => {
+    "use cache";
+    cacheLife("minutes");
+    // Keep tag pattern consistent with existing invalidations (see deleteCustomer)
+    cacheTag("customer:" + customerId);
     const response = await api.get(`/customers/read/single/${customerId}`, {
       headers: { "x-auth-token": token },
     });
     return response.data as CustomerType;
   };
 
-  const customer = await getCustomerByIdCached(customerId);
+  const customer = await getCustomerByIdCached(customerId, branchId);
   return customer;
 };
 
@@ -139,6 +143,7 @@ export const updateCustomer = async (
     });
 
     updateTag("branch-customers:" + branchId);
+    updateTag("customer:" + customerId);
     revalidatePath(`/${branchId}/menu/customers`);
 
     return { success: true, error: null };

@@ -27,6 +27,10 @@ type SaleTabHeaderProps = {
   showSalesTypeSwitch: boolean;
   onShowPriceTypeSwitchChange: (value: boolean) => void;
   onShowSalesTypeSwitchChange: (value: boolean) => void;
+  defaultPriceType: "retail" | "wholesale";
+  onDefaultPriceTypeChange: (value: "retail" | "wholesale") => void;
+  defaultSalesType: "cash" | "credit";
+  onDefaultSalesTypeChange: (value: "cash" | "credit") => void;
 };
 
 const SaleTabHeader = ({
@@ -47,6 +51,10 @@ const SaleTabHeader = ({
   showSalesTypeSwitch,
   onShowPriceTypeSwitchChange,
   onShowSalesTypeSwitchChange,
+  defaultPriceType,
+  onDefaultPriceTypeChange,
+  defaultSalesType,
+  onDefaultSalesTypeChange,
 }: SaleTabHeaderProps) => {
   return (
     <section
@@ -117,6 +125,10 @@ const SaleTabHeader = ({
             onShowPriceTypeSwitchChange={onShowPriceTypeSwitchChange}
             showSalesTypeSwitch={showSalesTypeSwitch}
             onShowSalesTypeSwitchChange={onShowSalesTypeSwitchChange}
+            defaultPriceType={defaultPriceType}
+            onDefaultPriceTypeChange={onDefaultPriceTypeChange}
+            defaultSalesType={defaultSalesType}
+            onDefaultSalesTypeChange={onDefaultSalesTypeChange}
           />
         </div>
       </div>
