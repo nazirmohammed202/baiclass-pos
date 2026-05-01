@@ -111,7 +111,7 @@ const MenuPage = async () => {
 
       <section>
         <p className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">Sales</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-2 sm:gap-4">
           {salesList.map((saleItem, index) => (
             <MenuCard key={`sales-${index}`} saleItem={saleItem} />
           ))}
@@ -120,7 +120,7 @@ const MenuPage = async () => {
 
       <section>
         <p className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">Inventory</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-2 sm:gap-4">
           {inventoryList.map((item, index) => (
             <MenuCard key={`inventory-${index}`} saleItem={item} />
           ))}
@@ -129,7 +129,7 @@ const MenuPage = async () => {
 
       <section>
         <p className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">Customers and Suppliers</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-2 sm:gap-4">
           {customersAndSuppliersList.map((item, index) => (
             <MenuCard key={`customers-and-suppliers-${index}`} saleItem={item} />
           ))}
@@ -138,7 +138,7 @@ const MenuPage = async () => {
 
       <section>
         <p className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">Register</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-2 sm:gap-4">
           {registerList.map((item, index) => (
             <MenuCard key={`register-${index}`} saleItem={item} />
           ))}
