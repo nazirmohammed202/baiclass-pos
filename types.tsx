@@ -587,3 +587,21 @@ export type AnalyticsAlertsData = {
   alerts: AlertRisk[];
 };
 
+
+//expeses types
+
+export type ExpenseAccountType = {
+  _id: string;
+  name: string;
+};
+
+export type ExpenseType = {
+  _id?: string;
+  id?: string;
+  amount: number;
+  description: string;
+  account: ExpenseAccountType;
+  date?: string;
+  createdAt?: string;
+};
+
