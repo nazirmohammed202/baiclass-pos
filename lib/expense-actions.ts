@@ -6,11 +6,14 @@ import { handleError } from "@/utils/errorHandlers";
 import { ExpenseType } from "@/types";
 import { revalidatePath } from "next/cache";
 
-export type CreateExpensePayload = {
+export type ExpensePayload = {
   amount: number;
   description: string;
   date: string;
 };
+
+export type CreateExpensePayload = ExpensePayload;
+export type UpdateExpensePayload = ExpensePayload;
 
 export const getExpenses = async (branchId: string, date: string): Promise<ExpenseType[]> => {
   try {
@@ -36,6 +39,36 @@ export const createExpense = async (
     const response = await api.post(`/sales-shift/create/expense/${branchId}`, payload, {
       headers: { "x-auth-token": token },
     });
+
+    revalidatePath(`/${branchId}/menu/add-expense`);
+
+    return {
+      success: true,
+      error: null,
+      expense: response.data as ExpenseType,
+    };
+  } catch (error: unknown) {
+    const errorMessage = handleError(error);
+    return {
+      success: false,
+      error: errorMessage,
+      expense: null,
+    };
+  }
+};
+
+export const updateExpense = async (
+  branchId: string,
+  expenseId: string,
+  payload: UpdateExpensePayload
+): Promise<{ success: boolean; error: string | null; expense: ExpenseType | null }> => {
+  try {
+    const token = await extractToken();
+    const response = await api.put(
+      `/sales-shift/update/expense/${branchId}/${expenseId}`,
+      payload,
+      { headers: { "x-auth-token": token } }
+    );
 
     revalidatePath(`/${branchId}/menu/add-expense`);
 

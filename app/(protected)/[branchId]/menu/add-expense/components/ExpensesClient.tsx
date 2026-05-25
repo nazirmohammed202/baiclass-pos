@@ -226,6 +226,7 @@ export default function ExpensesClient({
         branchId={branchId}
         isOpen={isModalOpen}
         mode={editing ? "edit" : "create"}
+        expenseId={editing ? getExpenseId(editing) : undefined}
         initialValues={
           editing
             ? {
@@ -239,20 +240,10 @@ export default function ExpensesClient({
         onCreated={(expense) => {
           setExpenses((prev) => [expense, ...prev]);
         }}
-        onSave={(payload) => {
-          if (!editing) return;
-          const editingId = getExpenseId(editing);
+        onUpdated={(expense) => {
+          const updatedId = getExpenseId(expense);
           setExpenses((prev) =>
-            prev.map((e) =>
-              getExpenseId(e) === editingId
-                ? {
-                    ...e,
-                    amount: payload.amount,
-                    description: payload.description,
-                    date: payload.date,
-                  }
-                : e
-            )
+            prev.map((e) => (getExpenseId(e) === updatedId ? expense : e))
           );
         }}
       />

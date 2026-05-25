@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Loader2, Plus, X } from "lucide-react";
-import { createExpense } from "@/lib/expense-actions";
+import { createExpense, updateExpense } from "@/lib/expense-actions";
 import { ExpenseType } from "@/types";
 
 export type ExpenseFormPayload = {
@@ -20,9 +20,10 @@ type AddExpenseModalProps = {
     description?: string;
     date?: string;
   };
+  expenseId?: string;
   onClose: () => void;
   onCreated?: (expense: ExpenseType) => void;
-  onSave?: (payload: ExpenseFormPayload) => void;
+  onUpdated?: (expense: ExpenseType) => void;
 };
 
 function todayInputValue() {
@@ -50,9 +51,10 @@ export default function AddExpenseModal({
   isOpen,
   mode,
   initialValues,
+  expenseId,
   onClose,
   onCreated,
-  onSave,
+  onUpdated,
 }: AddExpenseModalProps) {
   const [amountStr, setAmountStr] = useState("");
   const [description, setDescription] = useState("");
@@ -105,8 +107,21 @@ export default function AddExpenseModal({
       return;
     }
 
-    onSave?.(payload);
-    onClose();
+    if (!expenseId) {
+      setError("Expense ID is missing");
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    const result = await updateExpense(branchId, expenseId, payload);
+    setSaving(false);
+    if (result.success && result.expense) {
+      onUpdated?.(result.expense);
+      onClose();
+    } else {
+      setError(result.error ?? "Failed to update expense");
+    }
   };
 
   return (
