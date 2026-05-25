@@ -112,6 +112,8 @@ export default function AddExpenseModal({
       return;
     }
 
+    
+
     setSaving(true);
     setError(null);
     const result = await updateExpense(branchId, expenseId, payload);
