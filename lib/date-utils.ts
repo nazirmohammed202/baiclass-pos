@@ -32,6 +32,18 @@ export const formatDateToDisplay = (isoDate: string): string => {
   return `${day}/${month}/${year}`;
 };
 
+/** Calendar YYYY-MM-DD or full ISO timestamp → DD/MM/YYYY (same as {@link formatDateToDisplay} for plain dates). */
+export const formatTimestampToDisplay = (value: string): string => {
+  if (!value) return "";
+  const trimmed = value.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    return formatDateToDisplay(trimmed);
+  }
+  const d = new Date(trimmed);
+  if (Number.isNaN(d.getTime())) return value;
+  return formatDateToDisplay(dateToIso(d));
+};
+
 /**
  * Formats an ISO date string (YYYY-MM-DD) to "Day, DD/MM/YYYY" format
  * @param isoDate - ISO date string in format YYYY-MM-DD
