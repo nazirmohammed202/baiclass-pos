@@ -7,6 +7,9 @@ import { DollarSign, MoreVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { formatTimestampToDisplay } from "@/lib/date-utils";
 import { formatCurrencyToDisplay } from "@/lib/utils";
 import AddExpenseModal from "./AddExpenseModal";
+import DeleteExpenseModal from "./DeleteExpenseModal";
+import { useToast } from "@/context/toastContext";
+import { deleteExpense } from "@/lib/expense-actions";
 import { ExpenseType } from "@/types";
 
 function getExpenseId(expense: ExpenseType): string {
@@ -28,6 +31,9 @@ export default function ExpensesClient({
   const [expenses, setExpenses] = useState<ExpenseType[]>(initialExpenses);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editing, setEditing] = useState<ExpenseType | null>(null);
+  const [deleteModalExpense, setDeleteModalExpense] = useState<ExpenseType | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const { error: toastError, success: toastSuccess } = useToast();
 
   const total = useMemo(
     () => expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0),
@@ -49,8 +55,28 @@ export default function ExpensesClient({
     setEditing(null);
   };
 
-  const removeExpense = (id: string) => {
-    setExpenses((prev) => prev.filter((e) => getExpenseId(e) !== id));
+  const handleConfirmDelete = async () => {
+    if (!deleteModalExpense) return;
+    const expenseId = getExpenseId(deleteModalExpense);
+    if (!expenseId) {
+      toastError("Expense ID is missing");
+      return;
+    }
+
+    setDeletingId(expenseId);
+    const result = await deleteExpense(branchId, expenseId);
+    setDeletingId(null);
+
+    if (result.success) {
+      setDeleteModalExpense(null);
+      setExpenses((prev) => prev.filter((e) => getExpenseId(e) !== expenseId));
+      if (editing && getExpenseId(editing) === expenseId) {
+        closeModal();
+      }
+      toastSuccess("Expense deleted successfully");
+    } else {
+      toastError(result.error ?? "Failed to delete expense");
+    }
   };
 
   return (
@@ -68,7 +94,7 @@ export default function ExpensesClient({
 
           <div className="flex items-center gap-2">
             <Link
-              href=".."
+              href="./"
               className="px-3 py-2 rounded-md border border-gray-200 dark:border-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-800"
             >
               Back
@@ -203,7 +229,7 @@ export default function ExpensesClient({
                                 </DropdownMenu.Item>
                                 <DropdownMenu.Item
                                   className="px-3 py-2 text-sm text-red-600 dark:text-red-400 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer outline-none focus:bg-red-50 dark:focus:bg-red-900/20 flex items-center gap-2"
-                                  onSelect={() => removeExpense(expenseId)}
+                                  onSelect={() => setDeleteModalExpense(e)}
                                 >
                                   <Trash2 className="w-4 h-4" />
                                   Delete
@@ -246,6 +272,14 @@ export default function ExpensesClient({
             prev.map((e) => (getExpenseId(e) === updatedId ? expense : e))
           );
         }}
+      />
+
+      <DeleteExpenseModal
+        expense={deleteModalExpense}
+        isOpen={deleteModalExpense !== null}
+        isDeleting={deletingId === (deleteModalExpense ? getExpenseId(deleteModalExpense) : "")}
+        onClose={() => setDeleteModalExpense(null)}
+        onConfirm={handleConfirmDelete}
       />
     </main>
   );

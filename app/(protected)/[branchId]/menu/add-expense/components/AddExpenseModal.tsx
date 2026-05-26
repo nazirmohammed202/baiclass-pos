@@ -68,9 +68,11 @@ export default function AddExpenseModal({
       typeof initialValues?.amount === "number" ? String(initialValues.amount) : ""
     );
     setDescription(initialValues?.description ?? "");
-    setDateStr(isoToDateInput(initialValues?.date));
+    setDateStr(
+      mode === "create" ? todayInputValue() : isoToDateInput(initialValues?.date)
+    );
     setError(null);
-  }, [isOpen, initialValues?.amount, initialValues?.description, initialValues?.date]);
+  }, [isOpen, mode, initialValues?.amount, initialValues?.description, initialValues?.date]);
 
   if (!isOpen) return null;
 
@@ -111,8 +113,6 @@ export default function AddExpenseModal({
       setError("Expense ID is missing");
       return;
     }
-
-    
 
     setSaving(true);
     setError(null);
@@ -188,12 +188,11 @@ export default function AddExpenseModal({
               <input
                 type="date"
                 value={dateStr}
-                onChange={(e) => {
-                  setDateStr(e.target.value);
-                  setError(null);
-                }}
-                disabled={saving}
-                className="w-full px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary disabled:opacity-60"
+                disabled
+                readOnly
+                tabIndex={-1}
+                aria-readonly="true"
+                className="w-full px-3 py-2 border border-gray-200 dark:border-neutral-700 rounded-md bg-gray-50 dark:bg-neutral-800 text-gray-900 dark:text-gray-100 cursor-not-allowed opacity-80"
               />
             </div>
           </div>

@@ -86,3 +86,24 @@ export const updateExpense = async (
     };
   }
 };
+
+export const deleteExpense = async (
+  branchId: string,
+  expenseId: string
+): Promise<{ success: boolean; error: string | null }> => {
+  try {
+    const token = await extractToken();
+    await api.delete(`/sales-shift/delete/expense/${branchId}/${expenseId}`, {
+      headers: { "x-auth-token": token },
+    });
+
+    revalidatePath(`/${branchId}/menu/add-expense`);
+
+    return { success: true, error: null };
+  } catch (error: unknown) {
+    return {
+      success: false,
+      error: handleError(error),
+    };
+  }
+};
