@@ -1,18 +1,22 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Package, Users, User, Info } from "lucide-react";
-import { formatDateToDisplayWithDay, getYesterdayIso } from "@/lib/date-utils";
-import { getSalesHistoryCached } from "@/lib/sale-actions";
+import { formatDateToDisplayWithDay } from "@/lib/date-utils";
 import { getDailySalesReport } from "@/lib/saleShift-actions";
 import { DailySalesReport, SalePopulatedType } from "@/types";
 import { fmt, formatCurrency } from "@/lib/utils";
 import { useToast } from "@/context/toastContext";
 import { handleError } from "@/utils/errorHandlers";
 import ViewSaleModal from "../../sales-history/components/viewSaleModal";
-import SalesHistoryTableSkeleton from "../../sales-history/components/salesHistoryTableSkeleton";
+import DaySalesDetailSkeleton from "./DaySalesDetailSkeleton";
 import InfoTooltip from "@/components/ui/tooltip";
+import {
+  buildHourlyDisplay,
+  calculatePercentage,
+  getSellerVariance,
+} from "../lib/sales-report-math";
 import {
   PieChart,
   Pie,
@@ -23,37 +27,6 @@ import {
 
 type DaySalesDetailProps = {
   date: string;
-};
-
-type ProductSaleData = {
-  productId: string;
-  productName: string;
-  quantity: number;
-  revenue: number;
-  transactionCount: number;
-};
-
-type CustomerSaleData = {
-  customerId: string;
-  customerName: string;
-  totalSpent: number;
-  transactionCount: number;
-  averageTransaction: number;
-};
-
-type SellerSaleData = {
-  sellerId: string;
-  sellerName: string;
-  totalSales: number;
-  transactionCount: number;
-  averageTransaction: number;
-};
-
-type HourlySalesData = {
-  hour: number;
-  hourLabel: string;
-  sales: number;
-  transactions: number;
 };
 
 const COLORS = [
@@ -71,215 +44,11 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
   const router = useRouter();
   const { error: toastError } = useToast();
 
-  const [sales, setSales] = useState<SalePopulatedType[]>([]);
   const [dailyReport, setDailyReport] = useState<DailySalesReport | null>(null);
-  const [yesterdayReport, setYesterdayReport] = useState<DailySalesReport | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [viewingSale, setViewingSale] = useState<SalePopulatedType | null>(
     null
   );
-
-  const summaryStats = useMemo(() => {
-    const totalSales = sales.reduce((sum, sale) => sum + sale.total, 0);
-    const transactionCount = sales.length;
-    const cashSales = sales
-      .filter((sale) => sale.salesType === "cash")
-      .reduce((sum, sale) => sum + sale.total, 0);
-    const creditSales = sales
-      .filter((sale) => sale.salesType === "credit")
-      .reduce((sum, sale) => sum + sale.total, 0);
-    const averageTransaction =
-      transactionCount > 0 ? totalSales / transactionCount : 0;
-    const cashPaymentMethod = sales
-      .filter((sale) => sale.paymentMethod === "cash")
-      .reduce((sum, sale) => sum + sale.total, 0);
-    const momoPaymentMethod = sales
-      .filter((sale) => sale.paymentMethod === "momo")
-      .reduce((sum, sale) => sum + sale.total, 0);
-    const retailSales = sales
-      .filter((sale) => sale.priceMode === "retail")
-      .reduce((sum, sale) => sum + sale.total, 0);
-    const wholesaleSales = sales
-      .filter((sale) => sale.priceMode === "wholesale")
-      .reduce((sum, sale) => sum + sale.total, 0);
-    const outstandingCredit = sales
-      .filter((s) => s.salesType === "credit")
-      .reduce((sum, s) => sum + (s.due || 0), 0);
-
-    return {
-      totalSales,
-      transactionCount,
-      cashSales,
-      creditSales,
-      averageTransaction,
-      cashPaymentMethod,
-      momoPaymentMethod,
-      retailSales,
-      wholesaleSales,
-      outstandingCredit,
-    };
-  }, [sales]);
-
-  const topProducts = useMemo(() => {
-    const productMap = new Map<string, ProductSaleData>();
-
-    sales.forEach((sale) => {
-      sale.products.forEach((productItem) => {
-        let productId = "unknown";
-        let productName = "Unknown Product";
-
-        if (typeof productItem.product === "string") {
-          productId = productItem.product;
-        } else if (
-          productItem.product &&
-          typeof productItem.product === "object"
-        ) {
-          const populatedProduct = productItem.product as {
-            _id?: string;
-            name?: string;
-            details?: { _id?: string; name?: string };
-          };
-          productId =
-            populatedProduct._id || populatedProduct.details?._id || "unknown";
-          productName =
-            populatedProduct.name ||
-            populatedProduct.details?.name ||
-            "Unknown Product";
-        }
-
-        if (!productMap.has(productId)) {
-          productMap.set(productId, {
-            productId,
-            productName,
-            quantity: 0,
-            revenue: 0,
-            transactionCount: 0,
-          });
-        }
-
-        const productData = productMap.get(productId)!;
-        productData.quantity += productItem.quantity;
-        productData.revenue += productItem.total;
-        productData.transactionCount += 1;
-      });
-    });
-
-    return Array.from(productMap.values())
-      .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, 10);
-  }, [sales]);
-
-  const topCustomers = useMemo(() => {
-    const customerMap = new Map<string, CustomerSaleData>();
-
-    sales.forEach((sale) => {
-      if (sale.customer) {
-        const customerId = sale.customer._id;
-        const customerName = sale.customer.name;
-
-        if (!customerMap.has(customerId)) {
-          customerMap.set(customerId, {
-            customerId,
-            customerName,
-            totalSpent: 0,
-            transactionCount: 0,
-            averageTransaction: 0,
-          });
-        }
-
-        const customerData = customerMap.get(customerId)!;
-        customerData.totalSpent += sale.total;
-        customerData.transactionCount += 1;
-        customerData.averageTransaction =
-          customerData.totalSpent / customerData.transactionCount;
-      }
-    });
-
-    return Array.from(customerMap.values())
-      .sort((a, b) => b.totalSpent - a.totalSpent)
-      .slice(0, 10);
-  }, [sales]);
-
-  const salesBySeller = useMemo(() => {
-    const sellerMap = new Map<string, SellerSaleData>();
-
-    sales.forEach((sale) => {
-      const sellerId = sale.seller._id;
-      const sellerName = sale.seller.name;
-
-      if (!sellerMap.has(sellerId)) {
-        sellerMap.set(sellerId, {
-          sellerId,
-          sellerName,
-          totalSales: 0,
-          transactionCount: 0,
-          averageTransaction: 0,
-        });
-      }
-
-      const sellerData = sellerMap.get(sellerId)!;
-      sellerData.totalSales += sale.total;
-      sellerData.transactionCount += 1;
-      sellerData.averageTransaction =
-        sellerData.totalSales / sellerData.transactionCount;
-    });
-
-    return Array.from(sellerMap.values()).sort(
-      (a, b) => b.totalSales - a.totalSales
-    );
-  }, [sales]);
-
-  const hourlyBreakdown = useMemo(() => {
-    const hourlyMap = new Map<number, HourlySalesData>();
-
-    for (let i = 0; i < 24; i++) {
-      hourlyMap.set(i, {
-        hour: i,
-        hourLabel:
-          i === 0
-            ? "12 AM"
-            : i < 12
-              ? `${i} AM`
-              : i === 12
-                ? "12 PM"
-                : `${i - 12} PM`,
-        sales: 0,
-        transactions: 0,
-      });
-    }
-
-    sales.forEach((sale) => {
-      const saleDate = sale.createdAt
-        ? typeof sale.createdAt === "string"
-          ? new Date(sale.createdAt)
-          : sale.createdAt
-        : null;
-
-      if (saleDate) {
-        const hour = saleDate.getHours();
-        const hourData = hourlyMap.get(hour)!;
-        hourData.sales += sale.total;
-        hourData.transactions += 1;
-      }
-    });
-
-    return Array.from(hourlyMap.values());
-  }, [sales]);
-
-  const salesTypeData = [
-    { name: "Cash", value: summaryStats.cashSales },
-    { name: "Credit", value: summaryStats.creditSales },
-  ];
-
-  const paymentMethodData = [
-    { name: "Cash", value: summaryStats.cashPaymentMethod },
-    { name: "MoMo", value: summaryStats.momoPaymentMethod },
-  ];
-
-  const priceModeData = [
-    { name: "Retail", value: summaryStats.retailSales },
-    { name: "Wholesale", value: summaryStats.wholesaleSales },
-  ];
 
   useEffect(() => {
     const fetchDayData = async () => {
@@ -287,50 +56,16 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
 
       setLoading(true);
       try {
-        const yesterdayIso = getYesterdayIso(date);
-        const [allSales, report, yReport] = await Promise.all([
-          (async () => {
-            const list: SalePopulatedType[] = [];
-            let page = 1;
-            let hasMore = true;
-            while (hasMore) {
-              const data = await getSalesHistoryCached(
-                branchId as string,
-                date,
-                date,
-                "",
-                page,
-                100
-              );
-              list.push(...data.sales);
-              if (data.sales.length < 100 || page >= data.pagination.pages) {
-                hasMore = false;
-              } else {
-                page++;
-              }
-            }
-            return list;
-          })(),
-          getDailySalesReport(branchId as string, date),
-          yesterdayIso
-            ? getDailySalesReport(branchId as string, yesterdayIso).catch(() => null)
-            : Promise.resolve(null),
-        ]);
-
-        setSales(allSales);
+        const report = await getDailySalesReport(branchId as string, date);
         setDailyReport(report);
-        setYesterdayReport(yReport ?? null);
       } catch (error) {
         console.error("Failed to fetch day data:", error);
         toastError(handleError(error));
-        setSales([]);
         setDailyReport(null);
-        setYesterdayReport(null);
       } finally {
         setLoading(false);
       }
     };
-
     fetchDayData();
   }, [date, branchId, toastError]);
 
@@ -338,34 +73,21 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
     router.back();
   };
 
-  const calculatePercentage = (value: number, total: number) => {
-    if (total === 0) return 0;
-    return Number(((value / total) * 100).toFixed(2));
-  };
-
   if (loading) {
-    return (
-      <div>
-        <div className="bg-white dark:bg-neutral-900 rounded-lg p-3 sm:p-4 mb-4 ">
-          <button
-            onClick={handleBack}
-            className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 mb-4 transition-colors pointer"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Report
-          </button>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
-            Sales for {formatDateToDisplayWithDay(date)}
-          </h1>
-        </div>
-        <SalesHistoryTableSkeleton />
-      </div>
-    );
+    return <DaySalesDetailSkeleton />;
   }
 
   const report = dailyReport;
+  const recentSalesDisplay = report?.recentSales ?? [];
+  const topProducts = report?.topProducts ?? [];
+  const topCustomers = report?.topCustomers ?? [];
+  const sellers = report?.sellers ?? [];
+  const hourlyBreakdown = buildHourlyDisplay(report?.hourlyBreakdown);
+  const cashAtHandEntries = report?.cashAtHand ?? [];
+  const cashAtHandByAccountId = new Map(
+    cashAtHandEntries.map((entry) => [entry.account._id, entry.amount])
+  );
 
-  // Calculate percentages for progress bars
   const totalSalesNum = Number(report?.totalSales ?? "0");
   const cashSalesNum = Number(report?.totalCashSales ?? "0");
   const creditSalesNum = Number(report?.totalCreditSales ?? "0");
@@ -377,7 +99,24 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
   const expensesNum = Number(report?.totalExpenses ?? "0");
   const netProfitNum = grossProfitNum - expensesNum;
 
-  const yesterdayTotalNum = Number(yesterdayReport?.totalSales ?? "0");
+  const salesTypeData = [
+    { name: "Cash", value: cashSalesNum },
+    { name: "Credit", value: creditSalesNum },
+  ];
+
+  const paymentMethodData = [
+    { name: "Cash", value: Number(report?.totalCashPayments ?? "0") },
+    { name: "MoMo", value: ePaymentNum },
+  ];
+
+  const priceModeData = [
+    { name: "Retail", value: Number(report?.totalRetailSales ?? "0") },
+    { name: "Wholesale", value: Number(report?.totalWholesaleSales ?? "0") },
+  ];
+
+  const yesterdayTotalNum = Number(
+    report?.yesterdayComparison?.totalSales ?? "0"
+  );
   const growthPercent =
     yesterdayTotalNum > 0
       ? ((totalSalesNum - yesterdayTotalNum) / yesterdayTotalNum) * 100
@@ -563,12 +302,27 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
               <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                 AVERAGE SALE
               </p>
-              <InfoTooltip content="Total number of products sold this day">
+              <InfoTooltip content="Average transaction value for this day">
                 <Info className="w-4 h-4 text-gray-400 cursor-help" />
               </InfoTooltip>
             </div>
             <p className="text-6xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
               {fmt(report?.averageSale)}
+            </p>
+          </div>
+
+          {/* Debt Payments Received */}
+          <div className="bg-white dark:bg-neutral-900 rounded-lg p-5">
+            <div className="flex items-start justify-between mb-3">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                DEBT PAYMENTS RECEIVED
+              </p>
+              <InfoTooltip content="Total customer debt payments collected for this day">
+                <Info className="w-4 h-4 text-gray-400 cursor-help" />
+              </InfoTooltip>
+            </div>
+            <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100">
+              {fmt(report?.totalPaymentsReceived)}
             </p>
           </div>
         </div>
@@ -635,7 +389,7 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
               Recent Sales
             </h3>
           </div>
-          {sales.length === 0 ? (
+          {recentSalesDisplay.length === 0 ? (
             <div className="p-8 text-center text-gray-500 dark:text-gray-400">
               <p className="text-lg font-medium">No sales found for this day</p>
             </div>
@@ -666,7 +420,7 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-neutral-700">
-                    {sales.map((sale) => {
+                    {recentSalesDisplay.map((sale) => {
                       const saleDate = sale.createdAt
                         ? typeof sale.createdAt === "string"
                           ? new Date(sale.createdAt)
@@ -719,7 +473,7 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
               </div>
 
               <div className="md:hidden">
-                {sales.map((sale) => {
+                {recentSalesDisplay.map((sale) => {
                   const saleDate = sale.createdAt
                     ? typeof sale.createdAt === "string"
                       ? new Date(sale.createdAt)
@@ -946,16 +700,15 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
                     <div
                       key={hour.hour}
                       title={`${hour.hourLabel}: ${formatCurrency(hour.sales)}`}
-                      className={`aspect-square min-h-[28px] sm:min-h-[32px] rounded-sm transition-colors ${
-                        intensity === 0
+                      className={`aspect-square min-h-[28px] sm:min-h-[32px] rounded-sm transition-colors ${intensity === 0
                           ? "bg-gray-200 dark:bg-neutral-700"
                           : ""
-                      }`}
+                        }`}
                       style={
                         intensity > 0
                           ? {
-                              backgroundColor: `rgba(194, 65, 12, ${opacity})`,
-                            }
+                            backgroundColor: `rgba(194, 65, 12, ${opacity})`,
+                          }
                           : undefined
                       }
                     >
@@ -1014,32 +767,28 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-neutral-700">
-                {topProducts.map((product, index) => (
+                {topProducts.map((item, index) => (
                   <tr
-                    key={product.productId}
+                    key={item.product._id}
                     className="hover:bg-gray-50 dark:hover:bg-neutral-800/50 transition-colors"
                   >
                     <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
                       #{index + 1}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                      {product.productName}
+                      {item.product.name}
                     </td>
                     <td className="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">
-                      {product.quantity}
+                      {item.quantity}
                     </td>
                     <td className="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-gray-100">
-                      {formatCurrency(product.revenue)}
+                      {formatCurrency(item.revenue)}
                     </td>
                     <td className="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">
-                      {product.transactionCount}
+                      {item.transactionCount}
                     </td>
                     <td className="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">
-                      {calculatePercentage(
-                        product.revenue,
-                        summaryStats.totalSales
-                      ).toFixed(1)}
-                      %
+                      {calculatePercentage(item.revenue, totalSalesNum).toFixed(1)}%
                     </td>
                   </tr>
                 ))}
@@ -1085,32 +834,28 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-neutral-700">
-                {topCustomers.map((customer, index) => (
+                {topCustomers.map((item, index) => (
                   <tr
-                    key={customer.customerId}
+                    key={item.customer._id}
                     className="hover:bg-gray-50 dark:hover:bg-neutral-800/50 transition-colors"
                   >
                     <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
                       #{index + 1}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                      {customer.customerName}
+                      {item.customer.name}
                     </td>
                     <td className="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-gray-100">
-                      {formatCurrency(customer.totalSpent)}
+                      {formatCurrency(item.totalSpent)}
                     </td>
                     <td className="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">
-                      {customer.transactionCount}
+                      {item.transactionCount}
                     </td>
                     <td className="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">
-                      {formatCurrency(customer.averageTransaction)}
+                      {formatCurrency(item.averageTransaction)}
                     </td>
                     <td className="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">
-                      {calculatePercentage(
-                        customer.totalSpent,
-                        summaryStats.totalSales
-                      ).toFixed(1)}
-                      %
+                      {calculatePercentage(item.totalSpent, totalSalesNum).toFixed(1)}%
                     </td>
                   </tr>
                 ))}
@@ -1121,7 +866,7 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
       )}
 
       {/* Sales by Seller */}
-      {salesBySeller.length > 0 && (
+      {sellers.length > 0 && (
         <div className="bg-white dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 overflow-hidden">
           <div className="p-4 border-b border-gray-200 dark:border-neutral-700">
             <div className="flex items-center gap-2">
@@ -1142,43 +887,126 @@ const DaySalesDetail = ({ date }: DaySalesDetailProps) => {
                     Total Sales
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <div className="inline-flex items-center justify-end gap-1">
+                      % of Total
+                      <InfoTooltip
+                        side="bottom"
+                        content="This seller's share of recorded sales vs all entered sales for the day. Not based on cash at hand."
+                      >
+                        <Info className="w-3.5 h-3.5 text-gray-400 cursor-help" />
+                      </InfoTooltip>
+                    </div>
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Transactions
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Avg Transaction
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    % of Total
+                    <div className="inline-flex items-center justify-end gap-1">
+                      E-Payments
+                      <InfoTooltip
+                        side="bottom"
+                        content="Total MoMo and electronic payments recorded for this seller's sales for the day."
+                      >
+                        <Info className="w-3.5 h-3.5 text-gray-400 cursor-help" />
+                      </InfoTooltip>
+                    </div>
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <div className="inline-flex items-center justify-end gap-1">
+                      Cash at Hand
+                      <InfoTooltip
+                        side="bottom"
+                        content="Physical cash counted at end of day for this seller. May differ from entered sales if transactions were not fully recorded."
+                      >
+                        <Info className="w-3.5 h-3.5 text-gray-400 cursor-help" />
+                      </InfoTooltip>
+                    </div>
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <div className="inline-flex items-center justify-end gap-1">
+                      Expenses
+                      <InfoTooltip
+                        side="bottom"
+                        content="Cash expenses recorded by this seller for the day. These reduce the expected cash remaining in the drawer."
+                      >
+                        <Info className="w-3.5 h-3.5 text-gray-400 cursor-help" />
+                      </InfoTooltip>
+                    </div>
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <div className="inline-flex items-center justify-end gap-1">
+                      Shortage / Excess
+                      <InfoTooltip
+                        side="bottom"
+                        content="(Cash at hand + E-payments) minus (cash sales − expenses). Positive means excess. Negative means shortage."
+                      >
+                        <Info className="w-3.5 h-3.5 text-gray-400 cursor-help" />
+                      </InfoTooltip>
+                    </div>
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-neutral-700">
-                {salesBySeller.map((seller) => (
+                {sellers.map((seller) => {
+                  const cashAtHand = cashAtHandByAccountId.get(seller.account._id);
+                  const variance = getSellerVariance(seller, cashAtHand);
+
+                  return (
                   <tr
-                    key={seller.sellerId}
+                    key={seller.account._id}
                     className="hover:bg-gray-50 dark:hover:bg-neutral-800/50 transition-colors"
                   >
                     <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
-                      {seller.sellerName}
+                      {seller.account.name}
                     </td>
                     <td className="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-gray-100">
                       {formatCurrency(seller.totalSales)}
                     </td>
                     <td className="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">
+                      {calculatePercentage(seller.totalSales, totalSalesNum).toFixed(1)}%
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">
                       {seller.transactionCount}
                     </td>
                     <td className="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">
-                      {formatCurrency(seller.averageTransaction)}
+                      {formatCurrency(seller.averageSale)}
                     </td>
-                    <td className="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">
-                      {calculatePercentage(
-                        seller.totalSales,
-                        summaryStats.totalSales
-                      ).toFixed(1)}
-                      %
+                    <td className="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-gray-100">
+                      {seller.ePayments > 0
+                        ? formatCurrency(seller.ePayments)
+                        : "—"}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-gray-100">
+                      {cashAtHand !== undefined
+                        ? formatCurrency(cashAtHand)
+                        : "—"}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-gray-100">
+                      {seller.expenses > 0
+                        ? formatCurrency(seller.expenses)
+                        : "—"}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right font-medium">
+                      {variance === null ? (
+                        <span className="text-gray-500 dark:text-gray-400">—</span>
+                      ) : variance === 0 ? (
+                        <span className="text-gray-600 dark:text-gray-400">Balanced</span>
+                      ) : variance > 0 ? (
+                        <span className="text-green-600 dark:text-green-500">
+                          Excess {formatCurrency(variance)}
+                        </span>
+                      ) : (
+                        <span className="text-red-600 dark:text-red-500">
+                          Shortage {formatCurrency(Math.abs(variance))}
+                        </span>
+                      )}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
