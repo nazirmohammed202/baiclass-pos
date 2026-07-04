@@ -224,3 +224,63 @@ export const getAnalyticsAlerts = async (
     );
     return response.data;
 };
+
+export type AnalyticsDashboardData = {
+    kpis: AnalyticsKPIs;
+    salesTrend: SalesTrendPoint[];
+    paymentsBreakdown: PaymentsBreakdown[];
+    productPerformance: {
+        topSelling: ProductPerformanceItem[];
+        mostProfitable: ProductPerformanceItem[];
+        worstPerforming: ProductPerformanceItem[];
+        deadStock: ProductPerformanceItem[];
+    };
+    inventoryHealth: InventoryHealthData;
+    customerAnalytics: CustomerAnalyticsData;
+    staffPerformance: StaffPerformanceItem[];
+    timeIntelligence: TimeIntelligenceData;
+    alertsRisks: AnalyticsAlertsData;
+};
+
+/** Fetches all analytics page data in one server round-trip. */
+export const getAnalyticsDashboard = async (
+    branchId: string,
+    startDate: string,
+    endDate: string,
+    compareStartDate?: string,
+    compareEndDate?: string,
+): Promise<AnalyticsDashboardData> => {
+    const [
+        kpis,
+        salesTrend,
+        paymentsBreakdown,
+        productPerformance,
+        inventoryHealth,
+        customerAnalytics,
+        staffPerformance,
+        timeIntelligence,
+        alertsRisks,
+    ] = await Promise.all([
+        getAnalyticsKPIs(branchId, startDate, endDate, compareStartDate, compareEndDate),
+        getSalesTrend(branchId, startDate, endDate, compareStartDate, compareEndDate),
+        getPaymentsBreakdown(branchId, startDate, endDate),
+        getProductPerformance(branchId, startDate, endDate),
+        getInventoryHealth(branchId),
+        getCustomerAnalytics(branchId, startDate, endDate),
+        getStaffPerformance(branchId, startDate, endDate),
+        getTimeIntelligence(branchId, startDate, endDate),
+        getAnalyticsAlerts(branchId, startDate, endDate),
+    ]);
+
+    return {
+        kpis,
+        salesTrend,
+        paymentsBreakdown,
+        productPerformance,
+        inventoryHealth,
+        customerAnalytics,
+        staffPerformance,
+        timeIntelligence,
+        alertsRisks,
+    };
+};

@@ -3,6 +3,7 @@
 import api from "@/config/api";
 import { cacheLife, revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { handleError } from "@/utils/errorHandlers";
 
 export const extractToken = async () => {
@@ -53,4 +54,9 @@ export const getCompany = async (companyId: string) => {
   };
 
   return getCompanyCached(companyId);
+};
+
+export const logout = async () => {
+  (await cookies()).delete("__baiclass");
+  redirect("/login");
 };

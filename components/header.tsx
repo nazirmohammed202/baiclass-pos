@@ -1,10 +1,14 @@
 "use client";
 import Image from "next/image";
-import { useParams, usePathname } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { AccountType, BranchType, CompanyType } from "@/types";
 import { Suspense, use, useEffect } from "react";
+import GlobalSearch from "./GlobalSearch";
 import { useCompany } from "@/context/companyContext";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { LogOut, Settings } from "lucide-react";
+import { logout } from "@/lib/auth-actions";
 
 const chips = ["overview", "menu", "analytics", "settings"];
 
@@ -33,6 +37,7 @@ const BranchBreadcrumb = ({ branch }: { branch: Promise<BranchType> }) => {
 const Header = ({ branch, company, account }: HeaderProps) => {
   const pathname = usePathname();
   const params = useParams();
+  const router = useRouter();
   const withoutBranch = pathname?.split("/").filter(Boolean).slice(1).join("/");
   const current = withoutBranch.split("/").pop();
   const { setAccount } = useCompany();
@@ -82,54 +87,57 @@ const Header = ({ branch, company, account }: HeaderProps) => {
 
         {/* Search and Account Info */}
         <div className="flex items-center gap-2 sm:gap-4 flex-wrap lg:flex-nowrap">
-          {/* Search Input */}
-          <div className="relative flex items-center flex-1 min-w-0 lg:min-w-[200px]">
-            <span className="absolute left-2 sm:left-3 text-gray-400 flex items-center pointer-events-none">
-              <svg
-                className="w-4 h-4 sm:w-[18px] sm:h-[18px]"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  cx="11"
-                  cy="11"
-                  r="7"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                />
-                <line
-                  x1="16.5"
-                  y1="16.5"
-                  x2="21"
-                  y2="21"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </span>
-
-            <input
-              type="text"
-              placeholder="Search..."
-              className="w-full rounded-full pl-8 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 text-sm sm:text-base bg-white dark:bg-neutral-900 dark:border-none border border-gray-200 dark:border-neutral-800 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
-          </div>
+          <GlobalSearch />
 
           {/* Account Info */}
-          <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-1.5 sm:py-2 bg-white dark:bg-neutral-900 rounded-full shrink-0">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-xs sm:text-sm shrink-0">
-              {account.name.charAt(0).toUpperCase()}
-            </div>
-            <div className="hidden sm:flex flex-col min-w-0">
-              <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                {account.name}
-              </span>
-              <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                {account.phoneNumber}
-              </span>
-            </div>
-          </div>
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild>
+              <button
+                type="button"
+                className="flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-1.5 sm:py-2 bg-white dark:bg-neutral-900 rounded-full shrink-0 hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-xs sm:text-sm shrink-0">
+                  {account.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="hidden sm:flex flex-col min-w-0 text-left">
+                  <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                    {account.name}
+                  </span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                    {account.phoneNumber}
+                  </span>
+                </div>
+              </button>
+            </DropdownMenu.Trigger>
+
+            <DropdownMenu.Portal>
+              <DropdownMenu.Content
+                sideOffset={8}
+                align="end"
+                className="z-[200] min-w-[220px] rounded-xl border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-lg p-1"
+              >
+                <DropdownMenu.Item
+                  onSelect={() => router.push(`/${params.branchId}/settings`)}
+                  className="flex cursor-pointer select-none items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-200 outline-none hover:bg-gray-50 dark:hover:bg-neutral-800 focus:bg-gray-50 dark:focus:bg-neutral-800"
+                >
+                  <Settings className="h-4 w-4 opacity-80" />
+                  Account settings
+                </DropdownMenu.Item>
+
+                <DropdownMenu.Separator className="my-1 h-px bg-gray-200 dark:bg-neutral-800" />
+
+                <DropdownMenu.Item
+                  onSelect={async () => {
+                    await logout();
+                  }}
+                  className="flex cursor-pointer select-none items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-600 dark:text-red-400 outline-none hover:bg-red-50 dark:hover:bg-red-950/30 focus:bg-red-50 dark:focus:bg-red-950/30"
+                >
+                  <LogOut className="h-4 w-4 opacity-80" />
+                  Logout
+                </DropdownMenu.Item>
+              </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
         </div>
       </section>
 

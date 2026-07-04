@@ -2,51 +2,21 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import type {
-  AnalyticsAlertsData,
   AnalyticsComparePeriod,
-  AnalyticsKPIs,
   AnalyticsPeriod,
-  CustomerAnalyticsData,
-  InventoryHealthData,
-  PaymentsBreakdown,
-  ProductPerformanceItem,
-  SalesTrendPoint,
-  StaffPerformanceItem,
-  TimeIntelligenceData,
 } from "@/types";
 import { getTodayDate } from "@/lib/date-utils";
-import {
-  getAnalyticsKPIs,
-  getSalesTrend,
-  getPaymentsBreakdown,
-  getProductPerformance,
-  getInventoryHealth,
-  getCustomerAnalytics,
-  getStaffPerformance,
-  getTimeIntelligence,
-  getAnalyticsAlerts,
-} from "@/lib/analytics-action";
+import { getAnalyticsDashboard, type AnalyticsDashboardData } from "@/lib/analytics-action";
 import {
   computeDateRange,
   computeCompareDateRange,
   formatDateRangeLabel,
 } from "./analytics-date-utils";
 
+export type { AnalyticsDashboardData };
+
 export type AnalyticsData = {
-  kpis: AnalyticsKPIs | null;
-  salesTrend: SalesTrendPoint[] | null;
-  paymentsBreakdown: PaymentsBreakdown[] | null;
-  productPerformance: {
-    topSelling: ProductPerformanceItem[];
-    mostProfitable: ProductPerformanceItem[];
-    worstPerforming: ProductPerformanceItem[];
-    deadStock: ProductPerformanceItem[];
-  } | null;
-  inventoryHealth: InventoryHealthData | null;
-  customerAnalytics: CustomerAnalyticsData | null;
-  staffPerformance: StaffPerformanceItem[] | null;
-  timeIntelligence: TimeIntelligenceData | null;
-  alertsRisks: AnalyticsAlertsData | null;
+  [K in keyof AnalyticsDashboardData]: AnalyticsDashboardData[K] | null;
 };
 
 const initialData: AnalyticsData = {
@@ -61,6 +31,25 @@ const initialData: AnalyticsData = {
   alertsRisks: null,
 };
 
+const CACHE_TTL_MS = 3 * 60 * 1000;
+
+type CacheEntry = {
+  data: AnalyticsData;
+  fetchedAt: number;
+};
+
+const analyticsCache = new Map<string, CacheEntry>();
+
+function buildCacheKey(
+  branchId: string,
+  startDate: string,
+  endDate: string,
+  compareStart?: string,
+  compareEnd?: string
+) {
+  return `${branchId}|${startDate}|${endDate}|${compareStart ?? ""}|${compareEnd ?? ""}`;
+}
+
 export type UseAnalyticsDataParams = {
   branchId: string;
 };
@@ -74,7 +63,7 @@ export function useAnalyticsData({ branchId }: UseAnalyticsDataParams) {
   const [compareCustomStart, setCompareCustomStart] = useState(() => getTodayDate());
   const [compareCustomEnd, setCompareCustomEnd] = useState(() => getTodayDate());
   const [data, setData] = useState<AnalyticsData>(initialData);
-  const [pendingCount, setPendingCount] = useState(0);
+  const [isPending, setIsPending] = useState(false);
   const fetchIdRef = useRef(0);
 
   const fetchAll = useCallback(
@@ -91,83 +80,43 @@ export function useAnalyticsData({ branchId }: UseAnalyticsDataParams) {
       const compareRange = compare
         ? computeCompareDateRange(cmpPeriod, startDate, endDate, cmpCs, cmpCe)
         : null;
+      const compareStart = compareRange?.compareStartDate;
+      const compareEnd = compareRange?.compareEndDate;
+      const cacheKey = buildCacheKey(branchId, startDate, endDate, compareStart, compareEnd);
 
-      setData(initialData);
-      setPendingCount(9);
       fetchIdRef.current += 1;
       const thisFetchId = fetchIdRef.current;
-
       const stillCurrent = () => thisFetchId === fetchIdRef.current;
-      const decrement = () => {
-        if (!stillCurrent()) return;
-        setPendingCount((c) => Math.max(0, c - 1));
-      };
 
-      getAnalyticsKPIs(
+      const cached = analyticsCache.get(cacheKey);
+      if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
+        setData(cached.data);
+        setIsPending(false);
+        return;
+      }
+
+      setData(initialData);
+      setIsPending(true);
+
+      getAnalyticsDashboard(
         branchId,
         startDate,
         endDate,
-        compareRange?.compareStartDate ?? undefined,
-        compareRange?.compareEndDate ?? undefined
+        compareStart,
+        compareEnd
       )
-        .then((value) => {
-          if (stillCurrent()) setData((prev) => ({ ...prev, kpis: value }));
+        .then((result) => {
+          if (!stillCurrent()) return;
+          const nextData: AnalyticsData = { ...result };
+          analyticsCache.set(cacheKey, { data: nextData, fetchedAt: Date.now() });
+          setData(nextData);
         })
-        .finally(decrement);
-
-      getSalesTrend(
-        branchId,
-        startDate,
-        endDate,
-        compareRange?.compareStartDate ?? undefined,
-        compareRange?.compareEndDate ?? undefined
-      )
-        .then((value) => {
-          if (stillCurrent()) setData((prev) => ({ ...prev, salesTrend: value }));
+        .catch((error) => {
+          console.error("Failed to load analytics dashboard:", error);
         })
-        .finally(decrement);
-
-      getPaymentsBreakdown(branchId, startDate, endDate)
-        .then((value) => {
-          if (stillCurrent()) setData((prev) => ({ ...prev, paymentsBreakdown: value }));
-        })
-        .finally(decrement);
-
-      getProductPerformance(branchId, startDate, endDate)
-        .then((value) => {
-          if (stillCurrent()) setData((prev) => ({ ...prev, productPerformance: value }));
-        })
-        .finally(decrement);
-
-      getInventoryHealth(branchId)
-        .then((value) => {
-          if (stillCurrent()) setData((prev) => ({ ...prev, inventoryHealth: value }));
-        })
-        .finally(decrement);
-
-      getCustomerAnalytics(branchId, startDate, endDate)
-        .then((value) => {
-          if (stillCurrent()) setData((prev) => ({ ...prev, customerAnalytics: value }));
-        })
-        .finally(decrement);
-
-      getStaffPerformance(branchId, startDate, endDate)
-        .then((value) => {
-          if (stillCurrent()) setData((prev) => ({ ...prev, staffPerformance: value }));
-        })
-        .finally(decrement);
-
-      getTimeIntelligence(branchId, startDate, endDate)
-        .then((value) => {
-          if (stillCurrent()) setData((prev) => ({ ...prev, timeIntelligence: value }));
-        })
-        .finally(decrement);
-
-      getAnalyticsAlerts(branchId, startDate, endDate)
-        .then((value) => {
-          if (stillCurrent()) setData((prev) => ({ ...prev, alertsRisks: value }));
-        })
-        .finally(decrement);
+        .finally(() => {
+          if (stillCurrent()) setIsPending(false);
+        });
     },
     [branchId]
   );
@@ -184,7 +133,11 @@ export function useAnalyticsData({ branchId }: UseAnalyticsDataParams) {
         compareCustomEnd
       );
     }, 0);
-    return () => clearTimeout(id);
+
+    return () => {
+      clearTimeout(id);
+      fetchIdRef.current += 1;
+    };
   }, [
     period,
     customStart,
@@ -220,7 +173,7 @@ export function useAnalyticsData({ branchId }: UseAnalyticsDataParams) {
 
   return {
     data,
-    isPending: pendingCount > 0,
+    isPending,
     startDate: currentStart,
     endDate: currentEnd,
     period,

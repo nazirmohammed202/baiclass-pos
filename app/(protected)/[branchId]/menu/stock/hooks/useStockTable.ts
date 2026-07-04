@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Product } from "@/types";
 import { useToast } from "@/context/toastContext";
 import { useStock } from "@/context/stockContext";
@@ -219,6 +219,7 @@ export const useStockTable = ({
   stockDataPromise,
 }: UseStockTableParams) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { error: toastError, success: toastSuccess } = useToast();
   const { stockMap, setStockMap, setIsStockLoading, isStockLoading } = useStock();
 
@@ -228,6 +229,11 @@ export const useStockTable = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [stockFilter, setStockFilter] = useState<StockFilterType>("all");
+
+  useEffect(() => {
+    const q = searchParams.get("search");
+    if (q) setSearchQuery(q);
+  }, [searchParams]);
 
   // ─────────────────────────────────────────────────────────────────────────
   // Modal State
