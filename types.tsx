@@ -308,6 +308,7 @@ export type DailySalesSummary = {
 };
 
 export type DailySalesReport = {
+  // existing summary fields...
   totalSales: string;
   totalCashSales: string;
   totalCreditSales: string;
@@ -319,7 +320,46 @@ export type DailySalesReport = {
   totalPaymentsReceived: string;
   averageSale: string;
   recentSales: SalePopulatedType[];
-  topProducts: ProductDetailsType[];
+  cashAtHand: Array<{ account: AccountType; amount: number }>;
+
+  // NEW — branch-level aggregates for charts
+  transactionCount: number;
+  totalCashPayments: string;      // paymentMethod cash
+  totalRetailSales: string;
+  totalWholesaleSales: string;
+  outstandingCredit: string;
+
+  // NEW — ranked / breakdown data
+  topProducts: Array<{
+    product: ProductDetailsType;
+    quantity: number;
+    revenue: number;
+    transactionCount: number;
+  }>;
+  topCustomers: Array<{
+    customer: { _id: string; name: string };
+    totalSpent: number;
+    transactionCount: number;
+    averageTransaction: number;
+  }>;
+  sellers: Array<{
+    account: AccountType;
+    totalSales: number;
+    cashSales: number;
+    recordedCash: number;
+    ePayments: number;
+    expenses: number;
+    transactionCount: number;
+    averageSale: number;
+  }>;
+  hourlyBreakdown: Array<{
+    hour: number;
+    sales: number;
+    transactions: number;
+  }>;
+
+  // OPTIONAL
+  yesterdayComparison?: { totalSales: string };
 };
 
 export type InventoryProductItem = {

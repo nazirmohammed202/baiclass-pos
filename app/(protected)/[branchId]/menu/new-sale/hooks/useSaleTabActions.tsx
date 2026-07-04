@@ -60,8 +60,7 @@ export const useSaleTabsActions = ({
 }: UseSaleTabsActionsProps) => {
   const { error: toastError, success: toastSuccess } = useToast();
   const [savingSale, setSavingSale] = useState(false);
-  const [loadingSale, setLoadingSale] = useState(false);
-  const [loadedSaleIds, setLoadedSaleIds] = useState<Set<string>>(new Set());
+  const [, setLoadingSale] = useState(false);
   const activeTab = tabs.find((tab) => tab.id === activeTabId) || tabs[0];
 
   // Helper function to convert sale products to cart items
@@ -119,24 +118,10 @@ export const useSaleTabsActions = ({
   // Load sale and create/edit tab
   const loadSale = useCallback(
     async (saleId: string) => {
-      // Check if sale is already loaded
-      if (loadedSaleIds.has(saleId)) {
-        const existingTab = tabs.find((tab) => tab.saleId === saleId);
-        if (existingTab) {
-          setActiveTabId(existingTab.id);
-          return { success: true };
-        }
-      }
-
-      // Check if sale is already in tabs (for re-activation)
-      const saleAlreadyLoaded = tabs.some((tab) => tab.saleId === saleId);
-      if (saleAlreadyLoaded) {
-        const existingTab = tabs.find((tab) => tab.saleId === saleId);
-        if (existingTab) {
-          setActiveTabId(existingTab.id);
-          setLoadedSaleIds((prev) => new Set(prev).add(saleId));
-          return { success: true };
-        }
+      const existingTab = tabs.find((tab) => tab.saleId === saleId);
+      if (existingTab) {
+        setActiveTabId(existingTab.id);
+        return { success: true };
       }
 
       setLoadingSale(true);
@@ -146,16 +131,12 @@ export const useSaleTabsActions = ({
 
         if (!response.success || !response.sale) {
           toastError(response.error ?? "Failed to load sale");
-          setLoadingSale(false);
           return { success: false };
         }
 
         const sale: SalePopulatedType = response.sale;
-
-        // Convert sale to cart items
         const cartItems = convertSaleProductsToCartItems(sale.products);
 
-        // Create new tab with sale data
         const editTab: Tab = {
           id: Date.now().toString(),
           customer: sale.customer as CustomerType | null,
@@ -166,27 +147,19 @@ export const useSaleTabsActions = ({
           products: cartItems,
         };
 
-        // Add the edit tab and set it as active
-        const newTabs = [...tabs, editTab];
-        setTabs(newTabs);
-        // setActiveTabId(editTab.id);
-        setLoadedSaleIds((prev) => new Set(prev).add(saleId));
+        setTabs((prev) => [...prev, editTab]);
+        setActiveTabId(editTab.id);
 
         return { success: true };
       } catch (error) {
         console.error("Error loading sale:", error);
         toastError("Failed to load sale");
         return { success: false };
+      } finally {
+        setLoadingSale(false);
       }
     },
-    [
-      tabs,
-      setTabs,
-      setActiveTabId,
-      toastError,
-      loadedSaleIds,
-      convertSaleProductsToCartItems,
-    ]
+    [tabs, setTabs, setActiveTabId, toastError, branchId, convertSaleProductsToCartItems]
   );
 
   const handleAddTab = useCallback(

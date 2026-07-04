@@ -124,7 +124,6 @@ export const getSaleById = async (
 }> => {
   try {
     // branchId is intentionally included to keep server actions branch-scoped consistently
-    void branchId;
     const token = await extractToken();
 
     const getSaleByIdCached = async (saleId: string) => {
@@ -132,7 +131,7 @@ export const getSaleById = async (
       cacheLife("weeks");
       cacheTag("sale:" + saleId);
 
-      const response = await api.get(`/sales/read/${saleId}`, {
+      const response = await api.get(`/sales/read/${saleId}?branch=${branchId}`, {
         headers: { "x-auth-token": token },
       });
 
