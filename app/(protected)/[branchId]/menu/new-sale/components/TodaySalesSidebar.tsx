@@ -168,8 +168,9 @@ const TodaySalesSidebar = ({
                     </button>
                     <button
                       onClick={() => handleEdit(sale)}
-                      className="flex-1 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 rounded-md transition-colors flex items-center justify-center gap-1"
-                      title="Edit Sale"
+                      disabled={sale.reversed === true}
+                      className="flex-1 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 rounded-md transition-colors flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title={sale.reversed ? "Sale has been reversed" : "Edit Sale"}
                     >
                       <Edit className="w-3.5 h-3.5" />
                       Edit

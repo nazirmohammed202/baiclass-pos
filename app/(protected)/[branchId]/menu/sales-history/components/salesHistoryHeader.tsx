@@ -7,10 +7,13 @@ import "react-datepicker/dist/react-datepicker.css";
 import { isoToDate, dateToIso, formatDateToDisplay } from "@/lib/date-utils";
 import { useSales } from "@/context/salesContext";
 import { useSalesHistoryActions } from "../hooks/useSalesHistoryActions";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
+import { Edit, RotateCcw } from "lucide-react";
 
 const SalesHistoryHeader = () => {
   const { branchId } = useParams();
+  const searchParams = useSearchParams();
+  const isReturnsMode = searchParams.get("mode") === "returns";
   const {
     startDate,
     endDate,
@@ -178,7 +181,7 @@ const SalesHistoryHeader = () => {
       {/* Title and Actions */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-4">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
-          Sales History
+          {isReturnsMode ? "Returns & Refunds" : "Sales History"}
         </h1>
         <button
           type="button"
@@ -191,6 +194,30 @@ const SalesHistoryHeader = () => {
           Export
         </button>
       </div>
+
+      {isReturnsMode && (
+        <div className="mb-4 p-3 sm:p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/50 rounded-lg">
+          <p className="text-sm text-amber-900 dark:text-amber-200 font-medium mb-2">
+            How to process a return or refund
+          </p>
+          <ul className="text-sm text-amber-800 dark:text-amber-300 space-y-1.5">
+            <li className="flex items-start gap-2">
+              <Edit className="w-4 h-4 mt-0.5 shrink-0" />
+              <span>
+                <strong>Partial return</strong> — use <strong>Edit Sale</strong> to
+                remove items or adjust quantities, then update the sale.
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <RotateCcw className="w-4 h-4 mt-0.5 shrink-0" />
+              <span>
+                <strong>Full refund</strong> — use <strong>Reverse Sale</strong> to
+                undo the entire transaction and restore stock.
+              </span>
+            </li>
+          </ul>
+        </div>
+      )}
 
       {/* Search and Filters */}
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3">

@@ -358,7 +358,7 @@ const SalesHistoryTable = () => {
         onClose={() => setViewingSale(null)}
       />
 
-      {/* Delete Sale Modal */}
+      {/* Reverse Sale Modal */}
       <DeleteSaleModal
         sale={deleteSaleModal}
         isOpen={deleteSaleModal !== null}
@@ -370,10 +370,10 @@ const SalesHistoryTable = () => {
               deleteSaleModal,
               () => {
                 setDeleteSaleModal(null);
-                toastSuccess("Sale deleted successfully");
+                toastSuccess("Sale reversed successfully");
               },
               () => {
-                toastError("Failed to delete sale");
+                toastError("Failed to reverse sale");
               }
             );
           }
