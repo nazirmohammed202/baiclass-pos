@@ -59,6 +59,18 @@ export function computePreviousPeriod(
 ): { compareStartDate: string; compareEndDate: string } {
   const s = new Date(startDate + "T00:00:00");
   const e = new Date(endDate + "T00:00:00");
+
+  if (isFullCalendarMonth(s, e)) {
+    const prevStart = new Date(s);
+    prevStart.setMonth(prevStart.getMonth() - 1, 1);
+    const prevEnd = new Date(prevStart);
+    prevEnd.setMonth(prevEnd.getMonth() + 1, 0);
+    return {
+      compareStartDate: dateToIso(prevStart),
+      compareEndDate: dateToIso(prevEnd),
+    };
+  }
+
   const diffMs = e.getTime() - s.getTime();
   const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
@@ -71,6 +83,20 @@ export function computePreviousPeriod(
     compareStartDate: dateToIso(prevStart),
     compareEndDate: dateToIso(prevEnd),
   };
+}
+
+/** True when the range is day 1 through the last day of the same calendar month. */
+function isFullCalendarMonth(start: Date, end: Date): boolean {
+  if (start.getDate() !== 1) return false;
+  if (
+    start.getFullYear() !== end.getFullYear() ||
+    start.getMonth() !== end.getMonth()
+  ) {
+    return false;
+  }
+  const dayAfterEnd = new Date(end);
+  dayAfterEnd.setDate(end.getDate() + 1);
+  return dayAfterEnd.getMonth() !== end.getMonth();
 }
 
 export type CompareRangeResult = {

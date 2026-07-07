@@ -96,11 +96,23 @@ describe("computePreviousPeriod", () => {
     });
   });
 
-  it("mirrors the range length, not the calendar month", () => {
-    // July has 31 days, so the previous period is the 31 days ending June 30
-    // (May 31 – June 30), not simply "June".
+  it("uses the previous calendar month for a full month range", () => {
     expect(computePreviousPeriod("2026-07-01", "2026-07-31")).toEqual({
-      compareStartDate: "2026-05-31",
+      compareStartDate: "2026-06-01",
+      compareEndDate: "2026-06-30",
+    });
+  });
+
+  it("handles February in a leap year", () => {
+    expect(computePreviousPeriod("2024-03-01", "2024-03-31")).toEqual({
+      compareStartDate: "2024-02-01",
+      compareEndDate: "2024-02-29",
+    });
+  });
+
+  it("mirrors partial-month ranges by day count", () => {
+    expect(computePreviousPeriod("2026-07-01", "2026-07-15")).toEqual({
+      compareStartDate: "2026-06-16",
       compareEndDate: "2026-06-30",
     });
   });
