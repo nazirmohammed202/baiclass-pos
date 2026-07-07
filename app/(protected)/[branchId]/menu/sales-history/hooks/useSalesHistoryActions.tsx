@@ -5,6 +5,7 @@ import { getSalesHistoryCached, deleteSale } from "@/lib/sale-actions";
 import { useCallback } from "react";
 import { useSales } from "@/context/salesContext";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/context/toastContext";
 
 type UseSalesHistoryActionsProps = {
   branchId: string;
@@ -20,6 +21,7 @@ export const useSalesHistoryActions = ({
   onDeleteSaleRequest,
 }: UseSalesHistoryActionsProps) => {
   const router = useRouter();
+  const { error: toastError } = useToast();
 
   const {
     searchQuery,
@@ -99,9 +101,11 @@ export const useSalesHistoryActions = ({
   ]);
 
   const handleEditSale = async (sale: SalePopulatedType) => {
+    if (sale.reversed) {
+      toastError("This sale has been reversed and cannot be edited.");
+      return;
+    }
     router.push(`/${branchId}/menu/new-sale?saleId=${sale._id}`);
-    // Default edit behavior - you can customize this
-    // You might want to open a modal or navigate to an edit page here
   };
 
   const handleDeleteSale = useCallback(

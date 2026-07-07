@@ -135,6 +135,12 @@ export const useSaleTabsActions = ({
         }
 
         const sale: SalePopulatedType = response.sale;
+
+        if (sale.reversed) {
+          toastError("This sale has been reversed and cannot be edited.");
+          return { success: false };
+        }
+
         const cartItems = convertSaleProductsToCartItems(sale.products);
 
         const editTab: Tab = {

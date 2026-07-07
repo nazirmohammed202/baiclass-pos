@@ -38,8 +38,8 @@ const MenuPage = async () => {
     {
       name: "Returns & Refunds",
       icon: "RotateCcw",
-      route: "/sales-history",
-      description: "Process returns and refunds from sales history",
+      route: "/sales-history?mode=returns",
+      description: "Edit or reverse past sales for partial or full refunds",
     },
     {
       name: "Add Expense",

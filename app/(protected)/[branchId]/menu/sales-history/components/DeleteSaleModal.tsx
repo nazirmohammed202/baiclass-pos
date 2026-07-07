@@ -84,7 +84,7 @@ const DeleteSaleModal = ({
               )}
             </div>
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              {isAlreadyReversed ? "Sale Already Reversed" : "Delete Sale"}
+              {isAlreadyReversed ? "Sale Already Reversed" : "Reverse Sale"}
             </h2>
           </div>
           {!isDeleting && (
@@ -103,13 +103,13 @@ const DeleteSaleModal = ({
           {isAlreadyReversed ? (
             <div className="p-4 mb-4 bg-gray-50 dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-lg">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                This sale has already been reversed and cannot be deleted again.
+                This sale has already been reversed and cannot be reversed again.
               </p>
             </div>
           ) : (
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Are you sure you want to delete this sale? This action cannot be
-              undone.
+              This will fully reverse the sale, restore stock, and refund the
+              customer. This action cannot be undone.
             </p>
           )}
           <div className="bg-gray-50 dark:bg-neutral-800 rounded-md p-4 mb-4">
@@ -173,10 +173,10 @@ const DeleteSaleModal = ({
               {isDeleting ? (
                 <>
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                  Deleting...
+                  Reversing...
                 </>
               ) : (
-                "Delete Sale"
+                "Reverse Sale"
               )}
             </button>
           )}

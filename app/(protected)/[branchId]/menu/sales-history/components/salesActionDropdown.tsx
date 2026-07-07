@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { SalePopulatedType } from "@/types";
-import { Eye, Edit, Trash2 } from "lucide-react";
+import { Eye, Edit, RotateCcw } from "lucide-react";
 
 type DropdownPosition = {
   top: number;
@@ -45,7 +45,7 @@ const SalesActionDropdown = ({
   return createPortal(
     <div
       data-dropdown-portal
-      className="fixed w-40 bg-white dark:bg-neutral-800 rounded-md shadow-lg border border-gray-200 dark:border-neutral-700 z-9999"
+      className="fixed w-44 bg-white dark:bg-neutral-800 rounded-md shadow-lg border border-gray-200 dark:border-neutral-700 z-9999"
       style={{
         top: `${dropdownPosition.top}px`,
         left: `${dropdownPosition.left}px`,
@@ -79,7 +79,8 @@ const SalesActionDropdown = ({
           onMouseDown={(e) => {
             e.stopPropagation();
           }}
-          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700 flex items-center gap-2"
+          disabled={sale.reversed === true}
+          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Edit className="w-4 h-4" />
           Edit Sale
@@ -93,11 +94,11 @@ const SalesActionDropdown = ({
           onMouseDown={(e) => {
             e.stopPropagation();
           }}
-          disabled={deletingId === sale._id}
+          disabled={deletingId === sale._id || sale.reversed === true}
           className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-neutral-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <Trash2 className="w-4 h-4" />
-          {deletingId === sale._id ? "Deleting..." : "Delete Sale"}
+          <RotateCcw className="w-4 h-4" />
+          {deletingId === sale._id ? "Reversing..." : "Reverse Sale"}
         </button>
       </div>
     </div>,
@@ -129,7 +130,7 @@ export const useDropdownPortal = (
     const buttonRect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     setDropdownPosition({
       top: buttonRect.bottom + 4,
-      left: buttonRect.right - 160, // 160 = w-40 (160px)
+      left: buttonRect.right - 176, // 176 = w-44 (176px)
       saleId,
     });
   };

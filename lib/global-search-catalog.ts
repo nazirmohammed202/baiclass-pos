@@ -87,8 +87,8 @@ export const GLOBAL_SEARCH_NAV_ITEMS: GlobalSearchNavItem[] = [
   {
     id: "sales-returns",
     title: "Returns & Refunds",
-    subtitle: "Process returns and refunds from sales history",
-    href: "/menu/sales-history",
+    subtitle: "Edit or reverse past sales for partial or full refunds",
+    href: "/menu/sales-history?mode=returns",
     category: "Sales",
     keywords: ["return", "refund", "reverse"],
   },
