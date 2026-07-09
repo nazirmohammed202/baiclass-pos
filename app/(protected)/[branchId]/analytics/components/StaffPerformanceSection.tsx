@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { UserCheck, AlertTriangle, Info, Loader2 } from "lucide-react";
+import { UserCheck, AlertTriangle, Info } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import type { StaffPerformanceItem } from "@/types";
 import InfoTooltip from "@/components/ui/tooltip";
 
 type StaffPerformanceSectionProps = {
   data: StaffPerformanceItem[] | null;
-  loading?: boolean;
 };
 
 type SortKey = "revenue" | "transactions" | "averageSale" | "itemsSold";
@@ -40,11 +39,8 @@ export function StaffPerformanceFallback() {
 
 export default function StaffPerformanceSection({
   data,
-  loading,
 }: StaffPerformanceSectionProps) {
   const [sortBy, setSortBy] = useState<SortKey>("revenue");
-
-  if (loading && (!data || data.length === 0)) return <StaffPerformanceFallback />;
 
   if (!data || data.length === 0) {
     return (
@@ -59,7 +55,7 @@ export default function StaffPerformanceSection({
         </div>
         <div className="p-8 text-center">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Staff performance data unavailable — backend endpoint needed.
+            No staff performance data for this period.
           </p>
         </div>
       </div>
@@ -82,9 +78,6 @@ export default function StaffPerformanceSection({
           </InfoTooltip>
         </div>
         <div className="flex items-center gap-2">
-          {loading && (
-            <Loader2 className="w-5 h-5 animate-spin text-primary shrink-0" />
-          )}
           <div className="flex items-center gap-1 bg-gray-100 dark:bg-neutral-800 rounded-lg p-0.5">
             {SORT_OPTIONS.map((opt) => (
               <button

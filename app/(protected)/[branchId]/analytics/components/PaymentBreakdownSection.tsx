@@ -1,6 +1,6 @@
 "use client";
 
-import { Wallet, CreditCard, Smartphone, Banknote, Clock, Info, Loader2 } from "lucide-react";
+import { Wallet, CreditCard, Smartphone, Banknote, Clock, Info } from "lucide-react";
 import { formatCurrency, pct } from "@/lib/utils";
 import type { PaymentsBreakdown } from "@/types";
 import type { ReactNode } from "react";
@@ -15,7 +15,6 @@ import InfoTooltip from "@/components/ui/tooltip";
 
 type PaymentBreakdownSectionProps = {
   data: PaymentsBreakdown[] | null;
-  loading?: boolean;
   periodLabel: string;
 };
 
@@ -55,11 +54,8 @@ export function PaymentBreakdownFallback() {
 
 export default function PaymentBreakdownSection({
   data,
-  loading,
   periodLabel,
 }: PaymentBreakdownSectionProps) {
-  if (loading && (!data || data.length === 0)) return <PaymentBreakdownFallback />;
-
   if (!data || data.length === 0) {
     return (
       <div className="bg-white dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 overflow-hidden">
@@ -94,14 +90,9 @@ export default function PaymentBreakdownSection({
             <Info className="w-4 h-4 text-gray-400 cursor-help" />
           </InfoTooltip>
         </div>
-        <div className="flex items-center gap-3">
-          {loading && (
-            <Loader2 className="w-5 h-5 animate-spin text-primary shrink-0" />
-          )}
-          <div className="text-right">
-            <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total</p>
-            <p className="text-lg font-bold text-gray-900 dark:text-gray-100 tabular-nums">{formatCurrency(total)}</p>
-          </div>
+        <div className="text-right">
+          <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total</p>
+          <p className="text-lg font-bold text-gray-900 dark:text-gray-100 tabular-nums">{formatCurrency(total)}</p>
         </div>
       </div>
 

@@ -11,7 +11,7 @@ import {
   Legend,
   CartesianGrid,
 } from "recharts";
-import { TrendingUp, Info, Loader2 } from "lucide-react";
+import { TrendingUp, Info } from "lucide-react";
 import { formatCurrency, compactNumber } from "@/lib/utils";
 import type { SalesTrendPoint } from "@/types";
 import InfoTooltip from "@/components/ui/tooltip";
@@ -19,7 +19,6 @@ import InfoTooltip from "@/components/ui/tooltip";
 type SalesTrendSectionProps = {
   data: SalesTrendPoint[] | null;
   compareEnabled: boolean;
-  loading?: boolean;
   periodLabel: string;
   currentDatesLabel?: string;
   compareDatesLabel?: string;
@@ -52,14 +51,11 @@ export function SalesTrendFallback() {
 export default function SalesTrendSection({
   data,
   compareEnabled,
-  loading,
   periodLabel,
   currentDatesLabel,
   compareDatesLabel,
 }: SalesTrendSectionProps) {
   const [metric, setMetric] = useState<TrendMetric>("revenue");
-
-  if (loading && !data) return <SalesTrendFallback />;
 
   const currentTab = METRIC_TABS.find((t) => t.key === metric)!;
   const currentKey = metric;
@@ -80,7 +76,7 @@ export default function SalesTrendSection({
         </div>
         <div className="p-8 text-center">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Sales trend data unavailable — backend endpoint needed.
+            No sales trend data for this period.
           </p>
         </div>
       </section>
@@ -100,9 +96,6 @@ export default function SalesTrendSection({
             <Info className="w-4 h-4 text-gray-400 cursor-help" />
           </InfoTooltip>
         </div>
-        {loading && (
-          <Loader2 className="w-5 h-5 animate-spin text-primary shrink-0" />
-        )}
 
         <div className="flex items-center gap-1 bg-gray-100 dark:bg-neutral-800 rounded-lg p-0.5">
           {METRIC_TABS.map((tab) => (

@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Clock, Info, Loader2 } from "lucide-react";
+import { Clock, Info } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import type { TimeIntelligenceData, PeakHourData, PeakDayData } from "@/types";
 import InfoTooltip from "@/components/ui/tooltip";
 
 type TimeIntelligenceSectionProps = {
   data: TimeIntelligenceData | null;
-  loading?: boolean;
 };
 
 type TimeTab = "hours" | "days";
@@ -119,11 +118,8 @@ function DayTableView({ days }: { days: PeakDayData[] }) {
 
 export default function TimeIntelligenceSection({
   data,
-  loading,
 }: TimeIntelligenceSectionProps) {
   const [tab, setTab] = useState<TimeTab>("hours");
-
-  if (loading && !data) return <TimeIntelligenceFallback />;
 
   if (!data) {
     return (
@@ -138,7 +134,7 @@ export default function TimeIntelligenceSection({
         </div>
         <div className="p-8 text-center">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Time intelligence data unavailable — backend endpoint needed.
+            No time intelligence data for this period.
           </p>
         </div>
       </div>
@@ -167,9 +163,6 @@ export default function TimeIntelligenceSection({
           </InfoTooltip>
         </div>
         <div className="flex items-center gap-2">
-          {loading && (
-            <Loader2 className="w-5 h-5 animate-spin text-primary shrink-0" />
-          )}
           <div className="flex items-center gap-1 bg-gray-100 dark:bg-neutral-800 rounded-lg p-0.5">
           <button
             onClick={() => setTab("hours")}

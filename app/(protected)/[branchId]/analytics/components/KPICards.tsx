@@ -4,7 +4,6 @@ import {
   TrendingUp,
   TrendingDown,
   Info,
-  Loader2,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import type { AnalyticsKPIs, KPICard } from "@/types";
@@ -12,7 +11,6 @@ import InfoTooltip from "@/components/ui/tooltip";
 
 type KPICardsProps = {
   data: AnalyticsKPIs | null;
-  loading?: boolean;
   comparePeriodLabel?: string;
 };
 
@@ -169,14 +167,12 @@ export function KPICardsFallback() {
   );
 }
 
-export default function KPICards({ data, loading, comparePeriodLabel }: KPICardsProps) {
-  if (loading && !data) return <KPICardsFallback />;
-
+export default function KPICards({ data, comparePeriodLabel }: KPICardsProps) {
   if (!data) {
     return (
       <section className="bg-white dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 p-8 text-center">
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          KPI data unavailable — backend endpoint needed.
+          Unable to load KPI data for this period.
         </p>
       </section>
     );
@@ -184,11 +180,6 @@ export default function KPICards({ data, loading, comparePeriodLabel }: KPICards
 
   return (
     <section className="space-y-4">
-      {loading && (
-        <div className="flex justify-end">
-          <Loader2 className="w-5 h-5 animate-spin text-primary shrink-0" />
-        </div>
-      )}
       {/* Primary KPIs — large cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {PRIMARY_CARDS.map((cfg) => {
