@@ -247,6 +247,8 @@ export type Tab = {
   saleId?: string | null; // ID of the sale being edited
   isEditMode?: boolean; // Whether this tab is in edit mode
   saleDate?: string; // ISO date string (YYYY-MM-DD) for custom date sales
+  discountType?: "percentage" | "fixed" | null;
+  discountValue?: number;
 };
 
 export type ReceiveStockItem = {
@@ -287,6 +289,7 @@ export type CustomDateSalePayload = {
   }>;
   date: string | Date;
   total: number;
+  discount?: number;
   note?: string;
   salesType: "credit" | "cash";
   priceMode: PriceType;

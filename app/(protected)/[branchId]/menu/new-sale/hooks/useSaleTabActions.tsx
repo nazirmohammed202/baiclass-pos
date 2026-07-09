@@ -4,7 +4,9 @@ import { useCallback, useState } from "react";
 import {
   BranchType,
   CartItem,
+  CompanyType,
   CustomerType,
+  AccountType,
   PriceType,
   Product,
   SalePopulatedType,
@@ -19,6 +21,9 @@ import {
 } from "@/lib/sale-actions";
 import { useToast } from "@/context/toastContext";
 import { handleError } from "@/utils/errorHandlers";
+import { SaleDiscountType } from "@/lib/sale-discount";
+import { buildSaleForPrint } from "@/lib/build-sale-for-print";
+import { printSaleInvoice } from "@/lib/print-sale-invoice";
 
 type UseSaleTabsActionsProps = {
   tabs: Tab[];
@@ -26,8 +31,8 @@ type UseSaleTabsActionsProps = {
   activeTabId: string;
   setActiveTabId: (id: string) => void;
   branchId: string;
-  account: { _id: string } | null;
-  company: { _id: string } | null;
+  account: AccountType | null;
+  company: CompanyType | null;
   showEditOnClick: boolean;
   setPendingProduct: (
     product: {
@@ -151,6 +156,8 @@ export const useSaleTabsActions = ({
           saleId: sale._id,
           isEditMode: true,
           products: cartItems,
+          discountType: sale.discount > 0 ? "fixed" : null,
+          discountValue: sale.discount > 0 ? sale.discount : 0,
         };
 
         setTabs((prev) => [...prev, editTab]);
@@ -176,6 +183,8 @@ export const useSaleTabsActions = ({
         products: [],
         priceType: defaultPriceType,
         salesType: customer ? "credit" : defaultSalesType,
+        discountType: null,
+        discountValue: 0,
       };
       setTabs([...tabs, newTab]);
       setActiveTabId(newTab.id);
@@ -357,6 +366,17 @@ export const useSaleTabsActions = ({
     [tabs, activeTabId, setTabs]
   );
 
+  const handleInvoiceDiscountChange = useCallback(
+    (discountType: SaleDiscountType, discountValue: number) => {
+      setTabs(
+        tabs.map((tab) =>
+          tab.id === activeTabId ? { ...tab, discountType, discountValue } : tab
+        )
+      );
+    },
+    [tabs, activeTabId, setTabs]
+  );
+
   const handleSaveSale = useCallback(
     async (
       customer: CustomerType | null,
@@ -366,7 +386,8 @@ export const useSaleTabsActions = ({
       priceType: PriceType,
       shouldPrint: boolean,
       paymentMethod: "cash" | "momo",
-      creditDueDate?: string
+      creditDueDate?: string,
+      discountAmount?: number
     ) => {
       if (activeTab.salesType === "credit" && !customer) {
         toastError("Please select a customer for credit sales");
@@ -381,6 +402,11 @@ export const useSaleTabsActions = ({
         // Check if we have a custom date (and not in edit mode)
         const customDate = activeTab.saleDate;
         const hasCustomDate = customDate && !isEditMode;
+        const saleDiscount = discountAmount ?? 0;
+        const saleNote =
+          activeTab.salesType === "credit" && creditDueDate
+            ? `Due: ${creditDueDate}`
+            : "";
 
         let response;
         if (hasCustomDate && customDate) {
@@ -398,10 +424,8 @@ export const useSaleTabsActions = ({
             })),
             date: customDate, // ISO date string (YYYY-MM-DD)
             total: parseFloat(total.toFixed(2)),
-            note:
-              activeTab.salesType === "credit" && creditDueDate
-                ? `Due: ${creditDueDate}`
-                : "",
+            discount: saleDiscount,
+            note: saleNote,
             salesType: activeTab.salesType,
             priceMode: priceType,
             paymentMethod: paymentMethod,
@@ -421,15 +445,12 @@ export const useSaleTabsActions = ({
               total: item.unitPrice * item.quantity,
             })),
             total: parseFloat(total.toFixed(2)),
-            discount: 0,
+            discount: saleDiscount,
             paid: amountPaid,
             due: total - amountPaid > 0 ? total - amountPaid : 0,
             paymentMethod:
               paymentMethod,
-            note:
-              activeTab.salesType === "credit" && creditDueDate
-                ? `Due: ${creditDueDate}`
-                : "",
+            note: saleNote,
             salesType: activeTab.salesType,
             priceMode: priceType,
             ...(activeTab.saleDate && { createdAt: activeTab.saleDate }),
@@ -460,13 +481,45 @@ export const useSaleTabsActions = ({
                   isEditMode: false,
                   saleId: undefined,
                   saleDate: undefined,
+                  discountType: null,
+                  discountValue: 0,
                 }
                 : tab
             )
           );
 
           if (shouldPrint) {
-            // TODO: Implement print logic
+            let saleToPrint: SalePopulatedType | null = response.sale;
+
+            if (!saleToPrint && isEditMode && activeTab.saleId) {
+              const saleResponse = await getSaleById(
+                activeTab.saleId,
+                branchId
+              );
+              if (saleResponse.success && saleResponse.sale) {
+                saleToPrint = saleResponse.sale;
+              }
+            }
+
+            if (!saleToPrint) {
+              saleToPrint = buildSaleForPrint({
+                cartItems,
+                customer,
+                total: parseFloat(total.toFixed(2)),
+                discount: saleDiscount,
+                amountPaid,
+                paymentMethod,
+                salesType: activeTab.salesType,
+                priceType,
+                note: saleNote,
+                seller: account,
+                branch: branchData,
+                createdAt: activeTab.saleDate ?? new Date().toISOString(),
+                saleId: isEditMode ? activeTab.saleId ?? undefined : undefined,
+              });
+            }
+
+            printSaleInvoice(saleToPrint, company, account, branchId);
           }
           return;
         }
@@ -488,6 +541,7 @@ export const useSaleTabsActions = ({
       setTabs,
       toastError,
       toastSuccess,
+      branchData,
     ]
   );
 
@@ -651,6 +705,7 @@ export const useSaleTabsActions = ({
     handleUpdateQuantity,
     handleRemoveProduct,
     handleSaveSale,
+    handleInvoiceDiscountChange,
     handleSalesTypeChange,
     handlePriceTypeChange,
     handleUpdateItem,

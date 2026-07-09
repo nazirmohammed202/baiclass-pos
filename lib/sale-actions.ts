@@ -10,18 +10,28 @@ import { getTodayDate } from "./date-utils";
 export const createNewSale = async (
   sale: SaleType,
   branchId: string
-): Promise<{ success: boolean; error: string | null }> => {
+): Promise<{
+  success: boolean;
+  error: string | null;
+  sale: SalePopulatedType | null;
+}> => {
   try {
     const token = await extractToken();
-    await api.post(`/sales/create/${branchId}`, sale, {
+    const response = await api.post(`/sales/create/${branchId}`, sale, {
       headers: { "x-auth-token": token },
     });
     const today = getTodayDate();
     updateTag(`sale:today:${branchId}:${today}`);
 
+    const createdSale =
+      (response.data?.sale as SalePopulatedType | undefined) ??
+      (response.data as SalePopulatedType | undefined) ??
+      null;
+
     return {
       success: true,
       error: null,
+      sale: createdSale,
     };
   } catch (error: unknown) {
     const errorMessage = handleError(error);
@@ -29,6 +39,7 @@ export const createNewSale = async (
     return {
       error: errorMessage,
       success: false,
+      sale: null,
     };
   }
 };
@@ -36,18 +47,32 @@ export const createNewSale = async (
 export const createCustomDateSale = async (
   sale: CustomDateSalePayload,
   branchId: string
-): Promise<{ success: boolean; error: string | null }> => {
+): Promise<{
+  success: boolean;
+  error: string | null;
+  sale: SalePopulatedType | null;
+}> => {
   try {
     const token = await extractToken();
-    await api.post(`/sales/create/custom-date-sale/${branchId}`, sale, {
-      headers: { "x-auth-token": token },
-    });
+    const response = await api.post(
+      `/sales/create/custom-date-sale/${branchId}`,
+      sale,
+      {
+        headers: { "x-auth-token": token },
+      }
+    );
     const today = getTodayDate();
     updateTag(`sale:today:${branchId}:${today}`);
+
+    const createdSale =
+      (response.data?.sale as SalePopulatedType | undefined) ??
+      (response.data as SalePopulatedType | undefined) ??
+      null;
 
     return {
       success: true,
       error: null,
+      sale: createdSale,
     };
   } catch (error: unknown) {
     const errorMessage = handleError(error);
@@ -55,6 +80,7 @@ export const createCustomDateSale = async (
     return {
       error: errorMessage,
       success: false,
+      sale: null,
     };
   }
 };
@@ -160,10 +186,14 @@ export const updateSale = async (
   saleId: string,
   sale: SaleType,
   branchId: string
-): Promise<{ success: boolean; error: string | null }> => {
+): Promise<{
+  success: boolean;
+  error: string | null;
+  sale: SalePopulatedType | null;
+}> => {
   try {
     const token = await extractToken();
-    await api.put(`/sales/update/${saleId}`, sale, {
+    const response = await api.put(`/sales/update/${saleId}`, sale, {
       headers: { "x-auth-token": token },
     });
 
@@ -171,9 +201,15 @@ export const updateSale = async (
     updateTag("sale:" + saleId);
     updateTag(`sale:today:${branchId}:${today}`);
 
+    const updatedSale =
+      (response.data?.sale as SalePopulatedType | undefined) ??
+      (response.data as SalePopulatedType | undefined) ??
+      null;
+
     return {
       success: true,
       error: null,
+      sale: updatedSale,
     };
   } catch (error: unknown) {
     const errorMessage = handleError(error);
@@ -181,6 +217,7 @@ export const updateSale = async (
     return {
       error: errorMessage,
       success: false,
+      sale: null,
     };
   }
 };

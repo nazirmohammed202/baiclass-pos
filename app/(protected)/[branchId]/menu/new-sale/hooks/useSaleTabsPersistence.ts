@@ -16,6 +16,8 @@ type StoredTab = {
   saleId: string | undefined | null;
   isEditMode: boolean | undefined;
   saleDate?: string;
+  discountType?: "percentage" | "fixed" | null;
+  discountValue?: number;
 };
 
 export const useSaleTabsPersistence = (
@@ -77,6 +79,8 @@ export const useSaleTabsPersistence = (
           saleId: tab.saleId,
           isEditMode: tab.isEditMode,
           saleDate: tab.saleDate,
+          discountType: tab.discountType ?? null,
+          discountValue: tab.discountValue ?? 0,
         }));
 
         if (loadedTabs.length > 0) {
@@ -125,7 +129,8 @@ export const useSaleTabsPersistence = (
         saleId: tab.saleId,
         isEditMode: tab.isEditMode,
         saleDate: tab.saleDate,
-
+        discountType: tab.discountType ?? null,
+        discountValue: tab.discountValue ?? 0,
       }));
 
       localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToStore));

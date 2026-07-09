@@ -6,6 +6,10 @@ import SaveSaleModal from "./SaveSaleModal";
 import { CartItem as CartItemType, CustomerType, PriceType, Product } from "@/types";
 import { Loader2 } from "lucide-react";
 import { formatDateToDisplay } from "@/lib/date-utils";
+import {
+  calculateInvoiceDiscountAmount,
+  SaleDiscountType,
+} from "@/lib/sale-discount";
 
 type SaleTabProps = {
   customer: CustomerType | null;
@@ -40,12 +44,19 @@ type SaleTabProps = {
     priceType: PriceType,
     shouldPrint: boolean,
     paymentMethod: "cash" | "momo",
-    creditDueDate?: string
+    creditDueDate?: string,
+    discountAmount?: number
   ) => void;
   savingSale: boolean;
   isEditMode?: boolean;
   saleId?: string | null;
   saleDate?: string; // ISO date string (YYYY-MM-DD)
+  discountType: SaleDiscountType;
+  discountValue: number;
+  onInvoiceDiscountChange?: (
+    discountType: SaleDiscountType,
+    discountValue: number
+  ) => void;
 };
 
 const SaleTab = ({
@@ -77,6 +88,9 @@ const SaleTab = ({
   savingSale,
   isEditMode = false,
   saleDate,
+  discountType,
+  discountValue,
+  onInvoiceDiscountChange,
 }: SaleTabProps) => {
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerType | null>(
     customer
@@ -122,9 +136,16 @@ const SaleTab = ({
     }
   };
 
-  const total = tabProducts.reduce((sum, item) => {
+  const subtotal = tabProducts.reduce((sum, item) => {
     return sum + item.unitPrice * item.quantity;
   }, 0);
+
+  const invoiceDiscountAmount = calculateInvoiceDiscountAmount(
+    subtotal,
+    discountType,
+    discountValue
+  );
+  const total = parseFloat((subtotal - invoiceDiscountAmount).toFixed(2));
 
   const handleSaveSale = (
     amountPaid: number,
@@ -141,7 +162,8 @@ const SaleTab = ({
         priceType,
         shouldPrint,
         paymentMethod,
-        creditDueDate
+        creditDueDate,
+        invoiceDiscountAmount
       );
       setIsSaveModalOpen(false);
     }
@@ -216,16 +238,69 @@ const SaleTab = ({
                 }
               </span>
             </div>
+            <div className="flex justify-between text-xs sm:text-sm">
+              <span className="text-gray-600 dark:text-gray-400">Subtotal:</span>
+              <span className="font-medium">₵{subtotal.toFixed(2)}</span>
+            </div>
+
+            <div className="border-t border-gray-200 dark:border-neutral-700 pt-2 mt-2">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                Invoice Discount
+              </p>
+              <div className="flex gap-2">
+                <select
+                  value={discountType ?? ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === "") {
+                      onInvoiceDiscountChange?.(null, 0);
+                    } else {
+                      onInvoiceDiscountChange?.(
+                        value as "percentage" | "fixed",
+                        discountValue
+                      );
+                    }
+                  }}
+                  className="flex-1 px-2 py-1.5 text-xs border border-gray-200 dark:border-neutral-700 rounded-md bg-background"
+                >
+                  <option value="">None</option>
+                  <option value="percentage">%</option>
+                  <option value="fixed">Fixed (₵)</option>
+                </select>
+                {discountType && (
+                  <input
+                    type="number"
+                    min="0"
+                    step={discountType === "percentage" ? "0.5" : "0.01"}
+                    max={discountType === "percentage" ? "100" : undefined}
+                    value={discountValue || ""}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value) || 0;
+                      onInvoiceDiscountChange?.(discountType, val);
+                    }}
+                    placeholder={discountType === "percentage" ? "%" : "₵"}
+                    className="w-20 px-2 py-1.5 text-xs border border-gray-200 dark:border-neutral-700 rounded-md bg-background"
+                  />
+                )}
+              </div>
+              {invoiceDiscountAmount > 0 && (
+                <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                  -₵{invoiceDiscountAmount.toFixed(2)} off
+                </p>
+              )}
+            </div>
+
             <div className="border-t border-gray-200 dark:border-neutral-700 pt-2 mt-2">
               <div className="flex justify-between font-semibold text-sm sm:text-base">
                 <span>Total:</span>
-                <span>
-                  ₵
-                  {tabProducts
-                    .reduce((sum, item) => {
-                      return sum + item.unitPrice * item.quantity;
-                    }, 0)
-                    .toFixed(2)}
+                <span
+                  className={
+                    invoiceDiscountAmount > 0
+                      ? "text-green-600 dark:text-green-400"
+                      : ""
+                  }
+                >
+                  ₵{total.toFixed(2)}
                 </span>
               </div>
             </div>
@@ -274,6 +349,10 @@ const SaleTab = ({
           customer={selectedCustomer}
           cartItems={tabProducts}
           total={total}
+          subtotal={subtotal}
+          invoiceDiscountAmount={invoiceDiscountAmount}
+          discountType={discountType}
+          discountValue={discountValue}
           salesType={salesType}
           savingSale={savingSale}
           isEditMode={isEditMode}

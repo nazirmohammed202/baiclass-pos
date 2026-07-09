@@ -5,6 +5,7 @@ import { Printer, X, CreditCard, Calendar } from "lucide-react";
 import { CustomerType } from "@/types";
 import { CartItem } from "@/types";
 import { formatDateToDisplay } from "@/lib/date-utils";
+import { SaleDiscountType } from "@/lib/sale-discount";
 
 function getDefaultCreditDueDate(): string {
   const d = new Date();
@@ -24,6 +25,10 @@ type SaveSaleModalProps = {
   customer: CustomerType | null;
   cartItems: CartItem[];
   total: number;
+  subtotal: number;
+  invoiceDiscountAmount: number;
+  discountType: SaleDiscountType;
+  discountValue: number;
   salesType?: "cash" | "credit";
   savingSale?: boolean;
   isSaving?: boolean;
@@ -38,6 +43,10 @@ const SaveSaleModal = ({
   customer,
   cartItems,
   total,
+  subtotal,
+  invoiceDiscountAmount,
+  discountType,
+  discountValue,
   salesType = "cash",
   savingSale = false,
   isSaving = false,
@@ -46,6 +55,10 @@ const SaveSaleModal = ({
 }: SaveSaleModalProps) => {
   // Normalize total to 2 decimal places
   const normalizedTotal = parseFloat(total.toFixed(2));
+  const normalizedSubtotal = parseFloat(subtotal.toFixed(2));
+  const normalizedInvoiceDiscount = parseFloat(
+    invoiceDiscountAmount.toFixed(2)
+  );
 
   const [amountPaidStr, setAmountPaidStr] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "momo">("cash");
@@ -163,10 +176,39 @@ const SaveSaleModal = ({
                 }
               </span>
             </div>
+
+            {normalizedInvoiceDiscount > 0 && (
+              <>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">
+                    Subtotal:
+                  </span>
+                  <span className="font-medium">
+                    ₵{normalizedSubtotal.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
+                  <span>
+                    Invoice Discount
+                    {discountType === "percentage" && ` (${discountValue}%)`}:
+                  </span>
+                  <span>-₵{normalizedInvoiceDiscount.toFixed(2)}</span>
+                </div>
+              </>
+            )}
+
             <div className="border-t border-gray-200 dark:border-neutral-700 pt-2 mt-2">
               <div className="flex justify-between font-semibold text-lg">
                 <span>Total:</span>
-                <span>₵{normalizedTotal.toFixed(2)}</span>
+                <span
+                  className={
+                    normalizedInvoiceDiscount > 0
+                      ? "text-green-600 dark:text-green-400"
+                      : ""
+                  }
+                >
+                  ₵{normalizedTotal.toFixed(2)}
+                </span>
               </div>
             </div>
           </div>

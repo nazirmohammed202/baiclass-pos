@@ -92,6 +92,7 @@ const SaleTabs = ({
     handleUpdateQuantity,
     handleRemoveProduct,
     handleSaveSale,
+    handleInvoiceDiscountChange,
     handleSalesTypeChange,
     handlePriceTypeChange,
     handleUpdateItem,
@@ -367,7 +368,8 @@ const SaleTabs = ({
               priceType,
               shouldPrint,
               paymentMethod,
-              creditDueDate
+              creditDueDate,
+              discountAmount
             ) =>
               handleSaveSale(
                 customer,
@@ -377,13 +379,17 @@ const SaleTabs = ({
                 priceType,
                 shouldPrint,
                 paymentMethod,
-                creditDueDate
+                creditDueDate,
+                discountAmount
               )
             }
             savingSale={savingSale}
             isEditMode={activeTab.isEditMode || false}
             saleId={activeTab.saleId}
             saleDate={activeTab.saleDate}
+            discountType={activeTab.discountType ?? null}
+            discountValue={activeTab.discountValue ?? 0}
+            onInvoiceDiscountChange={handleInvoiceDiscountChange}
           />
         </StockProvider>
 
