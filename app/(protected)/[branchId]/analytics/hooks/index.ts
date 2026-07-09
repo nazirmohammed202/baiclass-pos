@@ -1,5 +1,3 @@
-export { useAnalyticsData } from "./useAnalyticsData";
-export type { AnalyticsData } from "./useAnalyticsData";
 export {
   computeDateRange,
   computePreviousPeriod,

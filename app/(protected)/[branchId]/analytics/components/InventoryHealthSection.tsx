@@ -8,7 +8,6 @@ import {
   ArrowDownUp,
   Warehouse,
   Info,
-  Loader2,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import type { InventoryHealthData } from "@/types";
@@ -16,7 +15,6 @@ import InfoTooltip from "@/components/ui/tooltip";
 
 type InventoryHealthSectionProps = {
   data: InventoryHealthData | null;
-  loading?: boolean;
 };
 
 export function InventoryHealthFallback() {
@@ -42,10 +40,7 @@ export function InventoryHealthFallback() {
 
 export default function InventoryHealthSection({
   data,
-  loading,
 }: InventoryHealthSectionProps) {
-  if (loading && !data) return <InventoryHealthFallback />;
-
   if (!data) {
     return (
       <div className="bg-white dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 overflow-hidden">
@@ -59,7 +54,7 @@ export default function InventoryHealthSection({
         </div>
         <div className="p-8 text-center">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Inventory health data unavailable — backend endpoint needed.
+            Unable to load inventory health data.
           </p>
         </div>
       </div>
@@ -135,9 +130,6 @@ export default function InventoryHealthSection({
             <Info className="w-4 h-4 text-gray-400 cursor-help" />
           </InfoTooltip>
         </div>
-        {loading && (
-          <Loader2 className="w-5 h-5 animate-spin text-primary shrink-0" />
-        )}
       </div>
 
       <div className="p-5 grid grid-cols-2 md:grid-cols-4 gap-4">

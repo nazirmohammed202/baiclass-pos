@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, ChevronDown, Download, GitCompareArrows } from "lucide-react";
+import { Calendar, ChevronDown, Download, GitCompareArrows, Loader2 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import type { AnalyticsComparePeriod, AnalyticsPeriod } from "@/types";
 
@@ -45,6 +45,7 @@ type AnalyticsHeaderProps = {
   periodLabel: string;
   currentDatesLabel: string;
   compareDatesLabel: string;
+  isRefreshing?: boolean;
 };
 
 export default function AnalyticsHeader({
@@ -66,6 +67,7 @@ export default function AnalyticsHeader({
   periodLabel,
   currentDatesLabel,
   compareDatesLabel,
+  isRefreshing = false,
 }: AnalyticsHeaderProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [compareDropdownOpen, setCompareDropdownOpen] = useState(false);
@@ -98,14 +100,24 @@ export default function AnalyticsHeader({
     <section className=" p-4 sm:p-5 ">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
-            Analytics
-          </h1>
-          {!compareEnabled && (
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
+              Analytics
+            </h1>
+            {isRefreshing && (
+              <Loader2
+                className="w-5 h-5 animate-spin text-primary shrink-0"
+                aria-hidden="true"
+              />
+            )}
+          </div>
+          {isRefreshing ? (
+            <p className="text-sm text-primary mt-1">Updating analytics…</p>
+          ) : !compareEnabled ? (
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 tabular-nums">
               {periodLabel} — {currentDatesLabel}
             </p>
-          )}
+          ) : null}
         </div>
 
         <div className={`${pillGroupClass} flex-wrap justify-end sm:justify-start`}>

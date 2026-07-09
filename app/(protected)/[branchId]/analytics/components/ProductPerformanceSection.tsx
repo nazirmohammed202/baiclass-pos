@@ -16,7 +16,6 @@ type ProductPerformanceSectionProps = {
     worstPerforming: ProductPerformanceItem[];
     deadStock: ProductPerformanceItem[];
   } | null;
-  loading?: boolean;
   branchId: string;
   startDate: string;
   endDate: string;
@@ -51,7 +50,6 @@ export function ProductPerformanceFallback() {
 
 export default function ProductPerformanceSection({
   data,
-  loading,
   branchId,
   startDate,
   endDate,
@@ -100,8 +98,6 @@ export default function ProductPerformanceSection({
     ? products.find((p) => p.details?._id === selectedProductId)
     : null;
 
-  if (loading && !data) return <ProductPerformanceFallback />;
-
   if (!data) {
     return (
       <div className="bg-white dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 overflow-hidden">
@@ -115,7 +111,7 @@ export default function ProductPerformanceSection({
         </div>
         <div className="p-8 text-center">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Product performance data unavailable — backend endpoint needed.
+            Unable to load product performance data for this period.
           </p>
         </div>
       </div>
@@ -138,9 +134,6 @@ export default function ProductPerformanceSection({
             <Info className="w-4 h-4 text-gray-400 cursor-help" />
           </InfoTooltip>
         </div>
-        {loading && (
-          <Loader2 className="w-5 h-5 animate-spin text-primary shrink-0" />
-        )}
       </div>
 
       {/* Product search & summary */}

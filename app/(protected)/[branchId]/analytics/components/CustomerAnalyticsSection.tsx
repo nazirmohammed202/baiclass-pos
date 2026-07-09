@@ -1,13 +1,12 @@
 "use client";
 
-import { Users, UserPlus, UserCheck, ShoppingBag, Heart, Info, Loader2 } from "lucide-react";
+import { Users, UserPlus, UserCheck, ShoppingBag, Heart, Info } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import type { CustomerAnalyticsData } from "@/types";
 import InfoTooltip from "@/components/ui/tooltip";
 
 type CustomerAnalyticsSectionProps = {
   data: CustomerAnalyticsData | null;
-  loading?: boolean;
 };
 
 export function CustomerAnalyticsFallback() {
@@ -33,10 +32,7 @@ export function CustomerAnalyticsFallback() {
 
 export default function CustomerAnalyticsSection({
   data,
-  loading,
 }: CustomerAnalyticsSectionProps) {
-  if (loading && !data) return <CustomerAnalyticsFallback />;
-
   if (!data) {
     return (
       <div className="bg-white dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 overflow-hidden">
@@ -50,7 +46,7 @@ export default function CustomerAnalyticsSection({
         </div>
         <div className="p-8 text-center">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Customer analytics data unavailable — backend endpoint needed.
+            Unable to load customer analytics for this period.
           </p>
         </div>
       </div>
@@ -78,9 +74,6 @@ export default function CustomerAnalyticsSection({
             <Info className="w-4 h-4 text-gray-400 cursor-help" />
           </InfoTooltip>
         </div>
-        {loading && (
-          <Loader2 className="w-5 h-5 animate-spin text-primary shrink-0" />
-        )}
       </div>
 
       {/* Summary cards */}
