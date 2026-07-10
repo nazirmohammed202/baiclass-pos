@@ -73,9 +73,13 @@ export const getCustomerById = async (
     cacheLife("minutes");
     // Keep tag pattern consistent with existing invalidations (see deleteCustomer)
     cacheTag("customer:" + customerId);
-    const response = await api.get(`/customers/read/single/${customerId}`, {
-      headers: { "x-auth-token": token },
-    });
+    const response = await api.get(
+      `/customers/read/single/${customerId}?branch=${branchId}`,
+      {
+        headers: { "x-auth-token": token },
+      }
+    );
+
     return response.data as CustomerType;
   };
 
