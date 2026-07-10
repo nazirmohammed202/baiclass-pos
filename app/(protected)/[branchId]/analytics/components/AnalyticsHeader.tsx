@@ -1,8 +1,18 @@
 "use client";
 
-import { Calendar, ChevronDown, Download, GitCompareArrows, Loader2 } from "lucide-react";
+import {
+  Calendar,
+  ChevronDown,
+  Download,
+  FileSpreadsheet,
+  FileText,
+  GitCompareArrows,
+  Loader2,
+} from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import type { AnalyticsComparePeriod, AnalyticsPeriod } from "@/types";
+
+export type AnalyticsExportFormat = "pdf" | "excel";
 
 const PERIOD_OPTIONS: { value: AnalyticsPeriod; label: string }[] = [
   { value: "today", label: "Today" },
@@ -41,7 +51,8 @@ type AnalyticsHeaderProps = {
   compareCustomEnd: string;
   onCompareCustomStartChange: (v: string) => void;
   onCompareCustomEndChange: (v: string) => void;
-  onExport: () => void;
+  onExport: (format: AnalyticsExportFormat) => void;
+  isExporting?: boolean;
   periodLabel: string;
   currentDatesLabel: string;
   compareDatesLabel: string;
@@ -64,6 +75,7 @@ export default function AnalyticsHeader({
   onCompareCustomStartChange,
   onCompareCustomEndChange,
   onExport,
+  isExporting = false,
   periodLabel,
   currentDatesLabel,
   compareDatesLabel,
@@ -71,8 +83,10 @@ export default function AnalyticsHeader({
 }: AnalyticsHeaderProps) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [compareDropdownOpen, setCompareDropdownOpen] = useState(false);
+  const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const compareDropdownRef = useRef<HTMLDivElement>(null);
+  const exportDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -81,6 +95,9 @@ export default function AnalyticsHeader({
       }
       if (compareDropdownRef.current && !compareDropdownRef.current.contains(e.target as Node)) {
         setCompareDropdownOpen(false);
+      }
+      if (exportDropdownRef.current && !exportDropdownRef.current.contains(e.target as Node)) {
+        setExportDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", handler);
@@ -163,10 +180,58 @@ export default function AnalyticsHeader({
             <span className="hidden sm:inline">{compareEnabled ? "Comparing" : "Compare"}</span>
           </button>
 
-          <button onClick={onExport} className={`${pillBaseClass} ${pillInactiveClass}`}>
-            <Download className="w-4 h-4 shrink-0" />
-            <span className="hidden sm:inline">Export</span>
-          </button>
+          <div className="relative" ref={exportDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setExportDropdownOpen((open) => !open)}
+              disabled={isExporting}
+              className={`${pillBaseClass} ${pillInactiveClass} disabled:opacity-60 disabled:cursor-not-allowed`}
+            >
+              {isExporting ? (
+                <Loader2 className="w-4 h-4 shrink-0 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4 shrink-0" />
+              )}
+              <span className="hidden sm:inline">{isExporting ? "Exporting…" : "Export"}</span>
+              <ChevronDown className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+            </button>
+            {exportDropdownOpen && !isExporting && (
+              <div className={`${periodDropdownClass} right-0 left-auto w-56`}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExportDropdownOpen(false);
+                    onExport("pdf");
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800 flex items-center gap-2.5"
+                >
+                  <FileText className="w-4 h-4 text-primary shrink-0" />
+                  <span>
+                    <span className="block font-medium">PDF report</span>
+                    <span className="block text-xs text-gray-500 dark:text-gray-400">
+                      Print-ready formatted report
+                    </span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExportDropdownOpen(false);
+                    onExport("excel");
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-800 flex items-center gap-2.5"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-primary shrink-0" />
+                  <span>
+                    <span className="block font-medium">Excel spreadsheet</span>
+                    <span className="block text-xs text-gray-500 dark:text-gray-400">
+                      Download all metrics as CSV
+                    </span>
+                  </span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

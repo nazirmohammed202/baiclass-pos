@@ -1,15 +1,20 @@
 "use client";
 
-import { useCallback, useMemo, useTransition, type ReactNode } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useMemo, useState, useTransition, type ReactNode } from "react";
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import AnalyticsHeader from "./AnalyticsHeader";
+import { getAnalyticsDashboard } from "@/lib/analytics-action";
+import { useCompany } from "@/context/companyContext";
+import { useToast } from "@/context/toastContext";
+import AnalyticsHeader, { type AnalyticsExportFormat } from "./AnalyticsHeader";
 import {
   buildAnalyticsSearchParams,
   parseAnalyticsSearchParams,
   resolveAnalyticsRanges,
   type AnalyticsSearchParams,
 } from "../lib/analytics-search-params";
+import { exportAnalyticsToExcel } from "../utils/exportAnalyticsToExcel";
+import { printAnalyticsReport } from "../utils/printAnalyticsReport";
 
 type AnalyticsShellProps = {
   children: ReactNode;
@@ -19,7 +24,12 @@ export default function AnalyticsShell({ children }: AnalyticsShellProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const params = useParams<{ branchId: string }>();
+  const branchId = params.branchId;
+  const { company } = useCompany();
+  const { error: toastError, success: toastSuccess } = useToast();
   const [isPending, startTransition] = useTransition();
+  const [isExporting, setIsExporting] = useState(false);
 
   const query = useMemo(
     () => parseAnalyticsSearchParams(Object.fromEntries(searchParams.entries())),
@@ -27,6 +37,11 @@ export default function AnalyticsShell({ children }: AnalyticsShellProps) {
   );
 
   const ranges = useMemo(() => resolveAnalyticsRanges(query), [query]);
+
+  const branchName = useMemo(() => {
+    if (!company?.branches || !branchId) return undefined;
+    return company.branches.find((b) => b._id === branchId)?.name;
+  }, [branchId, company]);
 
   const updateQuery = useCallback(
     (patch: Partial<AnalyticsSearchParams>) => {
@@ -39,6 +54,60 @@ export default function AnalyticsShell({ children }: AnalyticsShellProps) {
       });
     },
     [pathname, query, router]
+  );
+
+  const handleExport = useCallback(
+    async (format: AnalyticsExportFormat) => {
+      if (!branchId || isExporting) return;
+
+      setIsExporting(true);
+      try {
+        const data = await getAnalyticsDashboard(
+          branchId,
+          ranges.startDate,
+          ranges.endDate,
+          ranges.compareStartDate,
+          ranges.compareEndDate
+        );
+
+        const meta = {
+          companyName: company?.name,
+          branchName,
+          periodLabel: ranges.periodLabel,
+          currentDatesLabel: ranges.currentDatesLabel,
+          compareDatesLabel: ranges.compareDatesLabel,
+          compareEnabled: query.compareEnabled,
+        };
+
+        if (format === "pdf") {
+          printAnalyticsReport(data, meta);
+        } else {
+          exportAnalyticsToExcel(data, meta, () => {
+            toastSuccess("Analytics exported to Excel");
+          });
+        }
+      } catch {
+        toastError("Failed to export analytics. Please try again.");
+      } finally {
+        setIsExporting(false);
+      }
+    },
+    [
+      branchId,
+      branchName,
+      company?.name,
+      isExporting,
+      query.compareEnabled,
+      ranges.compareDatesLabel,
+      ranges.compareEndDate,
+      ranges.compareStartDate,
+      ranges.currentDatesLabel,
+      ranges.endDate,
+      ranges.periodLabel,
+      ranges.startDate,
+      toastError,
+      toastSuccess,
+    ]
   );
 
   return (
@@ -68,7 +137,8 @@ export default function AnalyticsShell({ children }: AnalyticsShellProps) {
         onCompareCustomEndChange={(compareCustomEnd) =>
           updateQuery({ comparePeriod: "custom", compareCustomEnd })
         }
-        onExport={() => window.print()}
+        onExport={handleExport}
+        isExporting={isExporting}
         periodLabel={ranges.periodLabel}
         currentDatesLabel={ranges.currentDatesLabel}
         compareDatesLabel={ranges.compareDatesLabel}
