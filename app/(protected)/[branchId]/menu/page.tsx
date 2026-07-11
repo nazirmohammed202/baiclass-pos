@@ -102,7 +102,7 @@ const MenuPage = async () => {
       name: "End of Day",
       icon: "CircleDollarSign",
       route: "/end-of-day",
-      description: "Close register and view Z-report",
+      description: "Close the register for the day",
     },
   ];
 

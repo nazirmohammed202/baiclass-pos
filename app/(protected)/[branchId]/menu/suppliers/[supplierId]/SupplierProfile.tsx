@@ -87,6 +87,7 @@ export default function SupplierProfile({ branchId, supplierPromise, branchPromi
   const selectedProcurement = procurements.find((p) => p._id === openProcurementDropdownId) ?? null;
 
   const handleEditProcurement = (proc: InventoryHistoryType) => {
+    if (proc.reversed) return;
     router.push(`/${bid}/menu/receive-stock?inventoryId=${proc._id}`);
   };
 
@@ -337,6 +338,7 @@ export default function SupplierProfile({ branchId, supplierPromise, branchPromi
         onView={setViewingProcurement}
         onEdit={handleEditProcurement}
         onDelete={(proc) => {
+          if (proc.reversed) return;
           setDeleteProcurementModal(proc);
           setOpenProcurementDropdownId(null);
         }}

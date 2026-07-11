@@ -4,6 +4,7 @@ import { useState } from "react";
 import { X, Loader2, Printer } from "lucide-react";
 import { recordSupplierPayment, RecordSupplierPaymentPayload } from "@/lib/suppliers-actions";
 import { formatCurrency } from "@/lib/utils";
+import { printHtml } from "@/lib/print-html";
 
 type RecordPaymentModalProps = {
   isOpen: boolean;
@@ -151,15 +152,7 @@ export default function RecordPaymentModal({
         </body>
       </html>
     `;
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
-    printWindow.document.write(content);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
-    }, 250);
+    printHtml(content);
   };
 
   return (

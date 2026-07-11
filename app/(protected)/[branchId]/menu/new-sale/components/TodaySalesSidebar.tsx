@@ -2,12 +2,13 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { SalePopulatedType } from "@/types";
-import { getSalesHistoryCached, getTodaySales } from "@/lib/sale-actions";
+import { getTodaySales } from "@/lib/sale-actions";
 import { formatCurrency } from "@/lib/utils";
 import { X, Eye, Edit, Printer, Loader2 } from "lucide-react";
 import { useParams } from "next/navigation";
 import ViewSaleModal from "@/app/(protected)/[branchId]/menu/sales-history/components/viewSaleModal";
-import { getTodayDate } from "@/lib/date-utils";
+import { useCompany } from "@/context/companyContext";
+import { printSaleInvoice } from "@/lib/print-sale-invoice";
 
 type TodaySalesSidebarProps = {
   isOpen: boolean;
@@ -22,6 +23,7 @@ const TodaySalesSidebar = ({
 }: TodaySalesSidebarProps) => {
   const params = useParams();
   const branchId = params.branchId as string;
+  const { company, account } = useCompany();
   const [sales, setSales] = useState<SalePopulatedType[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewingSale, setViewingSale] = useState<SalePopulatedType | null>(
@@ -54,7 +56,7 @@ const TodaySalesSidebar = ({
   };
 
   const handlePrint = (sale: SalePopulatedType) => {
-    setViewingSale(sale);
+    printSaleInvoice(sale, company, account, branchId);
   };
 
   const formatTime = (dateString: string | Date | undefined): string => {

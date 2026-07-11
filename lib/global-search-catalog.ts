@@ -159,7 +159,7 @@ export const GLOBAL_SEARCH_NAV_ITEMS: GlobalSearchNavItem[] = [
   {
     id: "reg-eod",
     title: "End of Day",
-    subtitle: "Close register and view Z-report",
+    subtitle: "Close the register for the day",
     href: "/menu/end-of-day",
     category: "Register",
     keywords: ["close shift", "z-report", "cash at hand", "register"],

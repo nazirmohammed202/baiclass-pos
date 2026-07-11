@@ -12,6 +12,7 @@ import DeleteCustomerModal from "./DeleteCustomerModal";
 import { useToast } from "@/context/toastContext";
 import CustomersTableSkeleton from "./CustomersTableSkeleton";
 import { formatCurrency } from "@/lib/utils";
+import { printHtml } from "@/lib/print-html";
 
 export type CustomersTableRef = {
   print: () => void;
@@ -95,12 +96,7 @@ const CustomersTable = forwardRef<CustomersTableRef, CustomersTableProps>(functi
     const escapeCSV = (v: string) => (v.includes(",") || v.includes('"') || v.includes("\n") ? `"${v.replace(/"/g, '""')}"` : v);
     const csv = [headers.map(escapeCSV).join(","), ...rows.map((r) => r.map(escapeCSV).join(","))].join("\n");
     const html = `<!DOCTYPE html><html><head><title>Customers</title></head><body style="font-family:system-ui;padding:24px"><h1>Customers</h1><table border="1" cellpadding="8" style="border-collapse:collapse"><thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table><p style="margin-top:24px;font-size:12px;color:#666">Generated ${new Date().toLocaleString()}</p></body></html>`;
-    const w = window.open("", "_blank");
-    if (!w) return;
-    w.document.write(html);
-    w.document.close();
-    w.focus();
-    setTimeout(() => { w.print(); w.close(); }, 250);
+    printHtml(html);
   };
 
   const handleExport = () => {

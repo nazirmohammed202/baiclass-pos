@@ -412,8 +412,8 @@ const StockTable = ({ branchId, products: productsPromise, stockData: stockDataP
           isOpen={stockModalProduct != null}
           onClose={() => setStockModalProduct(null)}
           product={stockModalProduct}
-          onSave={async (value) => {
-            if (stockModalProduct) await handleSaveStock(stockModalProduct, value);
+          onSave={async (payload) => {
+            if (stockModalProduct) await handleSaveStock(stockModalProduct, payload);
           }}
           saving={saving}
         />

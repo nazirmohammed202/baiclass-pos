@@ -4,6 +4,7 @@ import { useState } from "react";
 import { X, Loader2, Printer } from "lucide-react";
 import { recordCustomerPayment, RecordCustomerPaymentPayload } from "@/lib/customer-actions";
 import { formatCurrency } from "@/lib/utils";
+import { printHtml } from "@/lib/print-html";
 
 export type PaymentAllocation = { sale: string; amount: number };
 
@@ -178,15 +179,7 @@ export default function RecordPaymentModal({
         </body>
       </html>
     `;
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
-    printWindow.document.write(content);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
-    }, 250);
+    printHtml(content);
   };
 
   return (
