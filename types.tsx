@@ -2,6 +2,7 @@ export type AccountType = {
   _id: string;
   name: string;
   phoneNumber: string;
+  branches: string[];
 };
 
 export type AuthState = {
