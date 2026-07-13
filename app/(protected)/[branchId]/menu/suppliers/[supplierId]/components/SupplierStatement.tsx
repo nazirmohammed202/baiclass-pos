@@ -5,6 +5,7 @@ import { Printer } from "lucide-react";
 import { BranchType, InventoryHistoryType, PaymentType, SupplierType } from "@/types";
 import { formatCurrency } from "@/lib/utils";
 import Image from "next/image";
+import { printHtml } from "@/lib/print-html";
 
 function formatDate(date: Date | string | undefined): string {
   if (!date) return "—";
@@ -38,9 +39,7 @@ const SupplierStatement = forwardRef<SupplierStatementRef, SupplierStatementProp
     const handlePrint = () => {
       if (!printRef.current) return;
       const printContent = printRef.current.innerHTML;
-      const printWindow = window.open("", "_blank");
-      if (!printWindow) return;
-      printWindow.document.write(`
+      printHtml(`
         <!DOCTYPE html>
         <html>
           <head><title>Statement - ${supplier.name}</title></head>
@@ -49,12 +48,6 @@ const SupplierStatement = forwardRef<SupplierStatementRef, SupplierStatementProp
           </body>
         </html>
       `);
-      printWindow.document.close();
-      printWindow.focus();
-      setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-      }, 250);
     };
 
     useImperativeHandle(ref, () => ({

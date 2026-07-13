@@ -1,7 +1,7 @@
 "use server";
 
 import api from "@/config/api";
-import { Product } from "@/types";
+import { Product, StockAdjustmentReason } from "@/types";
 import { cacheLife, cacheTag, revalidatePath, updateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { handleError } from "@/utils/errorHandlers";
@@ -108,6 +108,9 @@ export type UpdateBranchProductPayload = {
   wholesalePrice?: number;
   creditPrice?: number;
   lowStockThreshold?: number;
+  /** Required when updating stock qty — for audit trail on the backend. */
+  adjustmentReason?: StockAdjustmentReason;
+  adjustmentNote?: string;
 };
 
 export const updateBranchProductStock = async (

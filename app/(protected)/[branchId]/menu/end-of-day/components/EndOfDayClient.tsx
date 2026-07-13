@@ -60,7 +60,7 @@ export default function EndOfDayClient({ branchId }: { branchId: string }) {
             </p>
           </div>
           <Link
-            href=".."
+            href="."
             className="px-3 py-2 rounded-md border border-gray-200 dark:border-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-800"
           >
             Back

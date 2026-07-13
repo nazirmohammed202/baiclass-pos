@@ -2,7 +2,7 @@
 
 import React, { useEffect, useCallback, useState } from "react";
 import { createPortal } from "react-dom";
-import { Eye, Edit, Trash2, Loader2 } from "lucide-react";
+import { Eye, Edit, RotateCcw, Loader2 } from "lucide-react";
 import { InventoryHistoryType } from "@/types";
 
 type StockHistoryActionDropdownProps = {
@@ -36,7 +36,7 @@ export const useDropdownPortal = (
       const rect = button.getBoundingClientRect();
       setDropdownPosition({
         top: rect.bottom + window.scrollY + 4,
-        left: rect.right - 160, // Dropdown width is roughly 160px
+        left: rect.right - 176,
       });
     },
     [openDropdownId, onClose]
@@ -60,7 +60,6 @@ const StockHistoryActionDropdown = ({
   onDelete,
   onClose,
 }: StockHistoryActionDropdownProps) => {
-  // Handle click outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
@@ -83,18 +82,26 @@ const StockHistoryActionDropdown = ({
   }
 
   const isDeleting = deletingId === inventory._id;
+  const isReversed = inventory.reversed === true;
+  const canEdit = !isReversed;
+  const canReverse = !isReversed;
+
+  const disabledClass =
+    "disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none";
 
   return createPortal(
     <div
       data-dropdown-portal
-      className="fixed z-50 w-40 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-gray-200 dark:border-neutral-700 py-1"
+      className="fixed z-50 w-44 bg-white dark:bg-neutral-800 rounded-lg shadow-lg border border-gray-200 dark:border-neutral-700 py-1"
       style={{
         top: dropdownPosition.top,
         left: dropdownPosition.left,
       }}
+      onClick={(e) => e.stopPropagation()}
     >
       <button
-        onClick={() => {
+        onClick={(e) => {
+          e.stopPropagation();
           onView(inventory);
           onClose();
         }}
@@ -104,31 +111,36 @@ const StockHistoryActionDropdown = ({
         View Details
       </button>
       <button
-        onClick={() => {
+        onClick={(e) => {
+          e.stopPropagation();
+          if (!canEdit) return;
           onEdit(inventory);
           onClose();
         }}
-        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors"
+        disabled={!canEdit}
+        className={`w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors ${disabledClass}`}
       >
         <Edit className="w-4 h-4" />
-        Edit Receipt
+        {isReversed ? "Already reversed" : "Edit Receipt"}
       </button>
       <button
-        onClick={() => {
+        onClick={(e) => {
+          e.stopPropagation();
+          if (!canReverse || isDeleting) return;
           onDelete(inventory);
         }}
-        disabled={isDeleting}
-        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
+        disabled={isDeleting || !canReverse}
+        className={`w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors ${disabledClass}`}
       >
         {isDeleting ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
-            Deleting...
+            Reversing...
           </>
         ) : (
           <>
-            <Trash2 className="w-4 h-4" />
-            Delete
+            <RotateCcw className="w-4 h-4" />
+            {canReverse ? "Reverse Receipt" : "Already reversed"}
           </>
         )}
       </button>

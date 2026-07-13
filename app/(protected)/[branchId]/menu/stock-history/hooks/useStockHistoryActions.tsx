@@ -100,6 +100,7 @@ export const useStockHistoryActions = ({
 
   const handleEditInventory = useCallback(
     (inventory: InventoryHistoryType) => {
+      if (inventory.reversed) return;
       router.push(`/${branchId}/menu/receive-stock?inventoryId=${inventory._id}`);
     },
     [router, branchId]
@@ -107,6 +108,7 @@ export const useStockHistoryActions = ({
 
   const handleDeleteInventory = useCallback(
     (inventory: InventoryHistoryType) => {
+      if (inventory.reversed) return;
       onDeleteRequest(inventory);
     },
     [onDeleteRequest]

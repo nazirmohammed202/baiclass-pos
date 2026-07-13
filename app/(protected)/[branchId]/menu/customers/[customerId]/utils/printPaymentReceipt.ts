@@ -1,5 +1,6 @@
 import { PaymentType } from "@/types";
 import { formatCurrency } from "@/lib/utils";
+import { printHtml } from "@/lib/print-html";
 
 export function printPaymentReceipt(payment: PaymentType, customerName: string): void {
   const methodLabel = payment.paymentMethod === "momo" ? "Mobile Money" : payment.paymentMethod === "cheque" ? "Cheque" : "Cash";
@@ -35,13 +36,5 @@ export function printPaymentReceipt(payment: PaymentType, customerName: string):
   <p style="margin: 24px 0 0; font-size: 12px; color: #666;">Generated on ${new Date().toLocaleString()}</p>
 </body></html>`;
 
-  const printWindow = window.open("", "_blank");
-  if (!printWindow) return;
-  printWindow.document.write(content);
-  printWindow.document.close();
-  printWindow.focus();
-  setTimeout(() => {
-    printWindow.print();
-    printWindow.close();
-  }, 250);
+  printHtml(content);
 }

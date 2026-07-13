@@ -9,6 +9,7 @@ import { updateBranchProductStock, removeProductFromBranch } from "@/lib/branch-
 import { updateProductDetails, UpdateProductDetailsPayload } from "@/lib/product-actions";
 import { StockFilterType } from "../components/StockHeader";
 import { PriceFieldType } from "../components/EditPriceModal";
+import type { StockAdjustmentSavePayload } from "../components/EditStockValueModal";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -328,14 +329,14 @@ export const useStockTable = ({
   // CRUD Handlers
   // ─────────────────────────────────────────────────────────────────────────
   const handleSaveStock = useCallback(
-    async (product: Product, stock: number) => {
+    async (product: Product, payload: StockAdjustmentSavePayload) => {
       setSaving(true);
-
-      console.log(product)
       try {
         const result = await updateBranchProductStock(branchId, {
           productId: product.details._id,
-          stock,
+          stock: payload.stock,
+          adjustmentReason: payload.reason,
+          ...(payload.note ? { adjustmentNote: payload.note } : {}),
         });
         setSaving(false);
         if (result.success) {

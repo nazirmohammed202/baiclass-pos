@@ -7,7 +7,7 @@ import { X, Printer, RotateCcw } from "lucide-react";
 import { useCompany } from "@/context/companyContext";
 import { useParams } from "next/navigation";
 import Image from "next/image";
-import { generateInvoiceHTML } from "../utils/generateInvoiceHTML";
+import { printSaleInvoice } from "@/lib/print-sale-invoice";
 
 type ViewSaleModalProps = {
   sale: SalePopulatedType | null;
@@ -97,18 +97,8 @@ const ViewSaleModal = ({ sale, isOpen, onClose }: ViewSaleModalProps) => {
     (branch) => branch._id === branchId || branch._id === sale.branch?._id
   );
 
-  // Print handler - opens new window with invoice
   const handlePrint = () => {
-    const invoiceHTML = generateInvoiceHTML(sale, company, account, branchId);
-    const printWindow = window.open("", "_blank");
-
-    if (!printWindow) {
-      alert("Please allow popups to print invoices");
-      return;
-    }
-
-    printWindow.document.write(invoiceHTML);
-    printWindow.document.close();
+    printSaleInvoice(sale, company, account, branchId);
   };
 
   const modalContent = (
