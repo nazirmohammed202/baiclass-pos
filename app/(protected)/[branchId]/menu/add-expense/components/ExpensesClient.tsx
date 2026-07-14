@@ -11,6 +11,7 @@ import DeleteExpenseModal from "./DeleteExpenseModal";
 import { useToast } from "@/context/toastContext";
 import { deleteExpense } from "@/lib/expense-actions";
 import { ExpenseType } from "@/types";
+import { usePermissions } from "@/hooks/usePermissions";
 
 function getExpenseId(expense: ExpenseType): string {
   return expense.id ?? expense._id ?? "";
@@ -34,6 +35,9 @@ export default function ExpensesClient({
   const [deleteModalExpense, setDeleteModalExpense] = useState<ExpenseType | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const { error: toastError, success: toastSuccess } = useToast();
+  const { canPerform } = usePermissions();
+  const canAdd = canPerform("expenseAdd");
+  const canRemove = canPerform("expenseRemove");
 
   const total = useMemo(
     () => expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0),
@@ -99,14 +103,16 @@ export default function ExpensesClient({
             >
               Back
             </Link>
-            <button
-              type="button"
-              onClick={openCreate}
-              className="px-3 py-2 rounded-md bg-primary text-white hover:opacity-90 flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Add expense
-            </button>
+            {canAdd && (
+              <button
+                type="button"
+                onClick={openCreate}
+                className="px-3 py-2 rounded-md bg-primary text-white hover:opacity-90 flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Add expense
+              </button>
+            )}
           </div>
         </div>
 
@@ -131,16 +137,24 @@ export default function ExpensesClient({
           <div className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-lg p-4">
             <div className="text-sm font-medium text-gray-900 dark:text-gray-100">Actions</div>
             <div className="mt-2 space-y-2">
-              <button
-                type="button"
-                onClick={openCreate}
-                className="w-full px-3 py-2 rounded-md bg-primary text-white hover:opacity-90"
-              >
-                Add new expense
-              </button>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Tip: use row menu for Edit/Delete.
-              </p>
+              {canAdd ? (
+                <button
+                  type="button"
+                  onClick={openCreate}
+                  className="w-full px-3 py-2 rounded-md bg-primary text-white hover:opacity-90"
+                >
+                  Add new expense
+                </button>
+              ) : (
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  You don&apos;t have permission to add expenses.
+                </p>
+              )}
+              {(canAdd || canRemove) && (
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Tip: use row menu for Edit/Delete.
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -164,13 +178,15 @@ export default function ExpensesClient({
               <div className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                 Add your first expense to start tracking.
               </div>
-              <button
-                type="button"
-                onClick={openCreate}
-                className="mt-4 px-4 py-2 rounded-md bg-primary text-white hover:opacity-90"
-              >
-                Add expense
-              </button>
+              {canAdd && (
+                <button
+                  type="button"
+                  onClick={openCreate}
+                  className="mt-4 px-4 py-2 rounded-md bg-primary text-white hover:opacity-90"
+                >
+                  Add expense
+                </button>
+              )}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -205,6 +221,7 @@ export default function ExpensesClient({
                           {formatTimestampToDisplay(getExpenseDateIso(e))}
                         </td>
                         <td className="px-4 py-3 text-right">
+                          {(canAdd || canRemove) && (
                           <DropdownMenu.Root>
                             <DropdownMenu.Trigger asChild>
                               <button
@@ -220,23 +237,28 @@ export default function ExpensesClient({
                                 sideOffset={6}
                                 align="end"
                               >
-                                <DropdownMenu.Item
-                                  className="px-3 py-2 text-sm text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-neutral-800 cursor-pointer outline-none focus:bg-gray-100 dark:focus:bg-neutral-800 flex items-center gap-2"
-                                  onSelect={() => openEdit(e)}
-                                >
-                                  <Pencil className="w-4 h-4" />
-                                  Edit
-                                </DropdownMenu.Item>
-                                <DropdownMenu.Item
-                                  className="px-3 py-2 text-sm text-red-600 dark:text-red-400 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer outline-none focus:bg-red-50 dark:focus:bg-red-900/20 flex items-center gap-2"
-                                  onSelect={() => setDeleteModalExpense(e)}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                  Delete
-                                </DropdownMenu.Item>
+                                {canAdd && (
+                                  <DropdownMenu.Item
+                                    className="px-3 py-2 text-sm text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-neutral-800 cursor-pointer outline-none focus:bg-gray-100 dark:focus:bg-neutral-800 flex items-center gap-2"
+                                    onSelect={() => openEdit(e)}
+                                  >
+                                    <Pencil className="w-4 h-4" />
+                                    Edit
+                                  </DropdownMenu.Item>
+                                )}
+                                {canRemove && (
+                                  <DropdownMenu.Item
+                                    className="px-3 py-2 text-sm text-red-600 dark:text-red-400 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer outline-none focus:bg-red-50 dark:focus:bg-red-900/20 flex items-center gap-2"
+                                    onSelect={() => setDeleteModalExpense(e)}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                    Delete
+                                  </DropdownMenu.Item>
+                                )}
                               </DropdownMenu.Content>
                             </DropdownMenu.Portal>
                           </DropdownMenu.Root>
+                          )}
                         </td>
                       </tr>
                     );

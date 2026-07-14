@@ -23,6 +23,7 @@ type StockEmptyStateProps = {
   setIsSystemProductModalOpen: (open: boolean) => void;
   allSystemProducts: Product["details"][] | null;
   products: Product[];
+  canAddProducts?: boolean;
   onSuccess: () => void;
 };
 
@@ -42,6 +43,7 @@ const StockEmptyState = ({
   setIsSystemProductModalOpen,
   allSystemProducts,
   products,
+  canAddProducts = true,
   onSuccess,
 }: StockEmptyStateProps) => {
   return (
@@ -61,6 +63,7 @@ const StockEmptyState = ({
         stockFilter={stockFilter}
         onStockFilterChange={setStockFilter}
         onExportToExcel={handleExportToExcel}
+        canAddProducts={canAddProducts}
         stockCounts={{ all: 0, outOfStock: 0, lowStock: 0, inStock: 0 }}
       />
 
@@ -70,7 +73,9 @@ const StockEmptyState = ({
             <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
             <p className="text-lg font-medium">No products in stock</p>
             <p className="text-sm mt-2">
-              Use &quot;Add products&quot; to add system products or create a new product.
+              {canAddProducts
+                ? 'Use "Add products" to add system products or create a new product.'
+                : "You don't have permission to add products."}
             </p>
           </div>
         </div>

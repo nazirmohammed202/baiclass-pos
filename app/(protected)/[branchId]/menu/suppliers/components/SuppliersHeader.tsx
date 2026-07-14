@@ -3,6 +3,7 @@
 import { Search, UserPlus, Printer, Download } from "lucide-react";
 import { useState } from "react";
 import AddSupplierModal from "./AddSupplierModal";
+import { usePermissions } from "@/hooks/usePermissions";
 
 type SuppliersHeaderProps = {
   searchQuery: string;
@@ -26,6 +27,8 @@ export default function SuppliersHeader({
   onExport,
 }: SuppliersHeaderProps) {
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const { canPerform } = usePermissions();
+  const canCreate = canPerform("supplierCreate");
 
   return (
     <div className="bg-white dark:bg-neutral-900 rounded-lg p-3 sm:p-4 mb-4 border border-gray-200 dark:border-neutral-800">
@@ -50,13 +53,15 @@ export default function SuppliersHeader({
             <Download className="w-4 h-4" />
             Export
           </button>
-          <button
-            onClick={() => setAddModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-md hover:opacity-90 transition-opacity text-sm font-medium"
-          >
-            <UserPlus className="w-4 h-4" />
-            Add Supplier
-          </button>
+          {canCreate && (
+            <button
+              onClick={() => setAddModalOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-md hover:opacity-90 transition-opacity text-sm font-medium"
+            >
+              <UserPlus className="w-4 h-4" />
+              Add Supplier
+            </button>
+          )}
         </div>
       </div>
       <div className="mt-4 flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center">
@@ -82,15 +87,17 @@ export default function SuppliersHeader({
           <span className="text-sm text-gray-700 dark:text-gray-300">Show only debtors</span>
         </label>
       </div>
-      <AddSupplierModal
-        branchId={branchId}
-        isOpen={addModalOpen}
-        onClose={() => setAddModalOpen(false)}
-        onSuccess={() => {
-          setAddModalOpen(false);
-          onAddSupplier();
-        }}
-      />
+      {canCreate && (
+        <AddSupplierModal
+          branchId={branchId}
+          isOpen={addModalOpen}
+          onClose={() => setAddModalOpen(false)}
+          onSuccess={() => {
+            setAddModalOpen(false);
+            onAddSupplier();
+          }}
+        />
+      )}
     </div>
   );
 }

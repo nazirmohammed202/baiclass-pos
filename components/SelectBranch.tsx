@@ -1,5 +1,8 @@
 "use client";
 import { AccountType, CompanyType } from "@/types";
+import { canAccessGeneral } from "@/lib/permissions";
+import { Building2 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -10,6 +13,7 @@ type SelectBranchProps = {
 const SelectBranch = ({ account, company }: SelectBranchProps) => {
   const [selected, setSelected] = useState<string>("");
   const router = useRouter();
+  const showGeneral = canAccessGeneral(account, company);
 
   return (
     <>
@@ -46,6 +50,16 @@ const SelectBranch = ({ account, company }: SelectBranchProps) => {
         >
           Continue
         </button>
+
+        {showGeneral ? (
+          <Link
+            href="/general"
+            className="mt-4 flex items-center justify-center gap-2 text-sm font-medium text-primary hover:underline"
+          >
+            <Building2 className="w-4 h-4" />
+            Company admin
+          </Link>
+        ) : null}
       </div>
     </>
   );

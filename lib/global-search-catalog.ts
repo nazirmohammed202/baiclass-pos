@@ -206,11 +206,20 @@ export const GLOBAL_SEARCH_NAV_ITEMS: GlobalSearchNavItem[] = [
   },
 ];
 
-export function filterNavItems(query: string): GlobalSearchNavItem[] {
-  const q = query.trim().toLowerCase();
-  if (!q) return GLOBAL_SEARCH_NAV_ITEMS;
+export function filterNavItems(
+  query: string,
+  options?: {
+    canAccessItem?: (itemId: string) => boolean;
+  }
+): GlobalSearchNavItem[] {
+  const allowed = GLOBAL_SEARCH_NAV_ITEMS.filter((item) =>
+    options?.canAccessItem ? options.canAccessItem(item.id) : true
+  );
 
-  return GLOBAL_SEARCH_NAV_ITEMS.filter((item) => {
+  const q = query.trim().toLowerCase();
+  if (!q) return allowed;
+
+  return allowed.filter((item) => {
     const haystack = [
       item.title,
       item.subtitle,

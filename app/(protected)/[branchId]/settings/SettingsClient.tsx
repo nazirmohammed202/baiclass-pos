@@ -7,6 +7,7 @@ import { useToast } from "@/context/toastContext";
 import { updateBranch } from "@/lib/branch-actions";
 import { updateAccount } from "@/lib/auth-actions";
 import type { AccountType, BranchType } from "@/types";
+import { usePermissions } from "@/hooks/usePermissions";
 
 type TabId = "branch" | "account";
 
@@ -33,7 +34,12 @@ const defaultBranchSettings = () => ({
 const SettingsClient = ({ branchId, branch, account }: SettingsClientProps) => {
   const router = useRouter();
   const { success: toastSuccess, error: toastError } = useToast();
-  const [activeTab, setActiveTab] = useState<TabId>("branch");
+  const { canPerform } = usePermissions();
+  const canEditBranch = canPerform("branchSettings");
+  const canEditAccount = canPerform("accountSettings");
+  const [activeTab, setActiveTab] = useState<TabId>(
+    canEditBranch ? "branch" : "account"
+  );
 
   // Branch form state
   const [branchName, setBranchName] = useState("");
@@ -140,9 +146,41 @@ const SettingsClient = ({ branchId, branch, account }: SettingsClientProps) => {
   };
 
   const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
-    { id: "branch", label: "Branch settings", icon: <Building2 className="w-4 h-4" /> },
-    { id: "account", label: "Account settings", icon: <User className="w-4 h-4" /> },
+    ...(canEditBranch
+      ? [
+          {
+            id: "branch" as const,
+            label: "Branch settings",
+            icon: <Building2 className="w-4 h-4" />,
+          },
+        ]
+      : []),
+    ...(canEditAccount
+      ? [
+          {
+            id: "account" as const,
+            label: "Account settings",
+            icon: <User className="w-4 h-4" />,
+          },
+        ]
+      : []),
   ];
+
+  useEffect(() => {
+    if (activeTab === "branch" && !canEditBranch && canEditAccount) {
+      setActiveTab("account");
+    }
+  }, [activeTab, canEditBranch, canEditAccount]);
+
+  if (tabs.length === 0) {
+    return (
+      <main className="p-4 sm:p-6 max-w-4xl mx-auto">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          You don&apos;t have permission to change settings.
+        </p>
+      </main>
+    );
+  }
 
   const inputClass =
     "w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent";

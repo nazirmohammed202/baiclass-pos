@@ -16,6 +16,7 @@ import {
   type GlobalSearchNavItem,
 } from "@/lib/global-search-catalog";
 import { fetchGlobalSearchEntities } from "@/lib/global-search-actions";
+import { usePermissions } from "@/hooks/usePermissions";
 
 type ResultItem =
   | { kind: "nav"; item: GlobalSearchNavItem }
@@ -26,6 +27,7 @@ type ResultItem =
 const GlobalSearch = () => {
   const { branchId } = useParams();
   const router = useRouter();
+  const { canAccessSearchNavItem } = usePermissions();
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -51,8 +53,11 @@ const GlobalSearch = () => {
   }, [branchId, entities, loadingEntities]);
 
   const navResults = useMemo(
-    () => filterNavItems(query).slice(0, 10),
-    [query]
+    () =>
+      filterNavItems(query, {
+        canAccessItem: canAccessSearchNavItem,
+      }).slice(0, 10),
+    [query, canAccessSearchNavItem]
   );
 
   const entityResults = useMemo(() => {

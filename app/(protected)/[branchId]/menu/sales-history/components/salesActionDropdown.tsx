@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { SalePopulatedType } from "@/types";
 import { Eye, Edit, RotateCcw } from "lucide-react";
+import { usePermissions } from "@/hooks/usePermissions";
 
 type DropdownPosition = {
   top: number;
@@ -32,6 +33,10 @@ const SalesActionDropdown = ({
   onDelete,
   onClose,
 }: SalesActionDropdownProps) => {
+  const { canPerform } = usePermissions();
+  const canEdit = canPerform("saleEdit");
+  const canVoid = canPerform("saleVoid");
+
   if (
     typeof document === "undefined" ||
     !openDropdownId ||
@@ -69,37 +74,41 @@ const SalesActionDropdown = ({
           <Eye className="w-4 h-4" />
           View Sale
         </button>
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onEdit(sale);
-            onClose();
-          }}
-          onMouseDown={(e) => {
-            e.stopPropagation();
-          }}
-          disabled={sale.reversed === true}
-          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Edit className="w-4 h-4" />
-          Edit Sale
-        </button>
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onDelete(sale);
-          }}
-          onMouseDown={(e) => {
-            e.stopPropagation();
-          }}
-          disabled={deletingId === sale._id || sale.reversed === true}
-          className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-neutral-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <RotateCcw className="w-4 h-4" />
-          {deletingId === sale._id ? "Reversing..." : "Reverse Sale"}
-        </button>
+        {canEdit && (
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onEdit(sale);
+              onClose();
+            }}
+            onMouseDown={(e) => {
+              e.stopPropagation();
+            }}
+            disabled={sale.reversed === true}
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Edit className="w-4 h-4" />
+            Edit Sale
+          </button>
+        )}
+        {canVoid && (
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onDelete(sale);
+            }}
+            onMouseDown={(e) => {
+              e.stopPropagation();
+            }}
+            disabled={deletingId === sale._id || sale.reversed === true}
+            className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-neutral-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <RotateCcw className="w-4 h-4" />
+            {deletingId === sale._id ? "Reversing..." : "Reverse Sale"}
+          </button>
+        )}
       </div>
     </div>,
     document.body

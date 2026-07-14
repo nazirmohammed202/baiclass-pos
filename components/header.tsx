@@ -7,10 +7,12 @@ import { Suspense, use, useEffect } from "react";
 import GlobalSearch from "./GlobalSearch";
 import { useCompany } from "@/context/companyContext";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { LogOut, Settings } from "lucide-react";
+import { Building2, LogOut, Settings } from "lucide-react";
 import { logout } from "@/lib/auth-actions";
+import { canAccessGeneral } from "@/lib/permissions";
+import { canAccessHeaderChip } from "@/lib/permission-gates";
 
-const chips = ["overview", "menu", "analytics", "settings"];
+const chips = ["overview", "menu", "analytics", "settings"] as const;
 
 type HeaderProps = {
   branch: Promise<BranchType>;
@@ -40,7 +42,10 @@ const Header = ({ branch, company, account }: HeaderProps) => {
   const router = useRouter();
   const withoutBranch = pathname?.split("/").filter(Boolean).slice(1).join("/");
   const current = withoutBranch.split("/").pop();
-  const { setAccount } = useCompany();
+  const { setAccount, company: companyFromContext } = useCompany();
+
+  // Prefer hydrated context; permissions alone may also unlock General
+  const showGeneral = canAccessGeneral(account, companyFromContext);
 
   useEffect(() => {
     setAccount(account);
@@ -62,7 +67,17 @@ const Header = ({ branch, company, account }: HeaderProps) => {
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 flex-nowrap shrink-0">
-            {chips.map((chip: string) => {
+            {chips
+              .filter((chip) =>
+                canAccessHeaderChip(
+                  account,
+                  chip,
+                  typeof params.branchId === "string"
+                    ? params.branchId
+                    : undefined
+                )
+              )
+              .map((chip) => {
               const match = withoutBranch.split("/").includes(chip);
               return (
                 <Link
@@ -123,6 +138,16 @@ const Header = ({ branch, company, account }: HeaderProps) => {
                   <Settings className="h-4 w-4 opacity-80" />
                   Account settings
                 </DropdownMenu.Item>
+
+                {showGeneral ? (
+                  <DropdownMenu.Item
+                    onSelect={() => router.push("/general")}
+                    className="flex cursor-pointer select-none items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-200 outline-none hover:bg-gray-50 dark:hover:bg-neutral-800 focus:bg-gray-50 dark:focus:bg-neutral-800"
+                  >
+                    <Building2 className="h-4 w-4 opacity-80" />
+                    Company admin
+                  </DropdownMenu.Item>
+                ) : null}
 
                 <DropdownMenu.Separator className="my-1 h-px bg-gray-200 dark:bg-neutral-800" />
 
