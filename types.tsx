@@ -1,66 +1,14 @@
-import type { Permission } from "@/lib/generated/permissions";
 
-/** One branch-scoped permission grant, as returned by GET /accounts/read */
-export type AccountBranchPermissions = {
-  _id?: string;
-  branch: string | { _id: string };
-  permissions?: Permission[] | string[];
-};
 
 export type AccountType = {
   _id: string;
   name: string;
   phoneNumber: string;
   branches: string[];
-  /** Populated by /accounts/read — used for company-scoped loads */
-  company?: {
-    _id: string;
-    name?: string;
-  };
-  /**
-   * Branch-scoped grants from /accounts/read:
-   * `[{ branch, permissions: ["sale:create", ...] }, ...]`.
-   * A flat string array is also accepted for forwards-compat.
-   * Resolve via `getAccountPermissions(account, branchId)` — never read directly.
-   */
-  permissions?: AccountBranchPermissions[] | Permission[] | string[];
-  /** Optional display role for the current branch */
-  role?: string;
-};
-
-/** One role assignment for a team member on a specific branch */
-export type BranchRoleAssignment = {
-  branchId: string;
-  branchName?: string;
-  role: string;
-  /** Optional: server may include expanded permissions for this branch */
-  permissions?: Permission[] | string[];
-};
-
-/** Enriched company team member (for /general Team UI) */
-export type TeamMember = {
-  _id: string;
-  name: string;
-  phoneNumber: string;
-  branchAccess: BranchRoleAssignment[];
-  status?: "active" | "invited" | "disabled";
-  /** Legacy company-wide role from older /company/read members[], if still returned */
-  legacyRole?: string;
-};
-
-/** Reason codes for stock qty adjustments (audit trail). */
-export type StockAdjustmentReason =
-  | "count_correction"
-  | "damage"
-  | "expired"
-  | "shrinkage"
-  | "found"
-  | "other";
-
-export type StockAdjustmentSavePayload = {
-  stock: number;
-  reason: StockAdjustmentReason;
-  note?: string;
+  permissions: Array<{
+    branch: string;
+    permissions: string[];
+  }>
 };
 
 export type AuthState = {
@@ -79,25 +27,13 @@ export type AuthAction =
   | { type: "REQUEST_ACCOUNT_SUCCESS"; payload: AccountType }
   | { type: "REQUEST_ACCOUNT_FAILURE"; payload: string };
 
-/** Company member as returned by /company/read (account may be populated) */
-export type CompanyMember = {
-  _id?: string;
-  /** Newer API shape: populated account object or account id */
-  account?: string | { _id: string; name?: string; phoneNumber?: string };
-  /** Legacy shape */
-  userId?: string;
-  role: string;
-  branch?: string[] | Array<{ _id: string }>;
-  permissions?: string[];
-  enabled?: boolean;
-};
-
 export type CompanyType = {
   _id: string;
   name: string;
-  /** Account id of the company owner (always an admin) */
-  owner?: string;
-  members: CompanyMember[];
+  members: Array<{
+    userId: string;
+    role: string;
+  }>;
   branches: Array<{
     _id: string;
     name: string;

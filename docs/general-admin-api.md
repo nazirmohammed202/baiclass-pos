@@ -197,5 +197,6 @@ Optional later: `GET /accounts/read?branchId=` for explicit branch grants.
 ## Out of scope (later)
 
 - Custom per-permission role editor
-- Company-wide analytics endpoints (Overview placeholder mentions this)
 - Approval workflows
+
+Company-wide Overview analytics routes: see `docs/backend.md`.
