@@ -1,8 +1,28 @@
+
+
 export type AccountType = {
   _id: string;
   name: string;
   phoneNumber: string;
   branches: string[];
+  /**
+   * Permission grants. Branch-scoped shape from the API
+   * (`[{ branch, permissions }]`); a flat `string[]` is also tolerated by the
+   * permission helpers for legacy/derived cases.
+   */
+  permissions:
+    | Array<{
+        branch: string;
+        permissions: string[];
+      }>
+    | string[];
+  /** Populated by /accounts/read — used for company-scoped loads (e.g. /general). */
+  company?: {
+    _id: string;
+    name?: string;
+  };
+  /** Optional display role for the current branch. */
+  role?: string;
 };
 
 export type AuthState = {
@@ -21,13 +41,24 @@ export type AuthAction =
   | { type: "REQUEST_ACCOUNT_SUCCESS"; payload: AccountType }
   | { type: "REQUEST_ACCOUNT_FAILURE"; payload: string };
 
+export type CompanyMember = {
+  _id?: string;
+  /** Newer API shape: populated account object or account id. */
+  account?: string | { _id: string; name?: string; phoneNumber?: string };
+  /** Legacy shape: raw account id. */
+  userId?: string;
+  role: string;
+  branch?: string[] | Array<{ _id: string }>;
+  permissions?: string[];
+  enabled?: boolean;
+};
+
 export type CompanyType = {
   _id: string;
   name: string;
-  members: Array<{
-    userId: string;
-    role: string;
-  }>;
+  /** Account id of the company owner (always treated as admin). */
+  owner?: string;
+  members: CompanyMember[];
   branches: Array<{
     _id: string;
     name: string;
@@ -629,6 +660,127 @@ export type AlertRisk = {
 
 export type AnalyticsAlertsData = {
   alerts: AlertRisk[];
+};
+
+// ── Stock adjustments ────────────────────────────────────────────────
+
+export type StockAdjustmentReason =
+  | "count_correction"
+  | "damage"
+  | "expired"
+  | "shrinkage"
+  | "found"
+  | "other";
+
+export type StockAdjustmentSavePayload = {
+  stock: number;
+  reason: StockAdjustmentReason;
+  note?: string;
+};
+
+// ── Team management (/general) ───────────────────────────────────────
+
+/** One role assignment for a team member on a specific branch. */
+export type BranchRoleAssignment = {
+  branchId: string;
+  branchName?: string;
+  role: string;
+  /** Optional: server may include expanded permissions for this branch. */
+  permissions?: string[];
+};
+
+/** Enriched company team member for the /general Team UI. */
+export type TeamMember = {
+  _id: string;
+  name: string;
+  phoneNumber: string;
+  branchAccess: BranchRoleAssignment[];
+  status?: "active" | "invited" | "disabled";
+  /** Legacy company-wide role from older members[], if still returned. */
+  legacyRole?: string;
+};
+
+// ── Company admin (/general) analytics ───────────────────────────────
+
+/** Aggregated KPIs across all company branches for a date range. */
+export type CompanyAnalyticsSummary = {
+  grossRevenue: number;
+  netRevenue: number;
+  totalTransactions: number;
+  averageOrderValue: number;
+  totalProfit?: number;
+  profitMargin?: number;
+  totalExpenses?: number;
+  previousGrossRevenue?: number;
+  previousNetRevenue?: number;
+  previousTotalTransactions?: number;
+  branchesWithSales: number;
+  totalBranches: number;
+};
+
+/** One row in the cross-branch comparison table. */
+export type CompanyBranchPerformance = {
+  branchId: string;
+  branchName: string;
+  revenue: number;
+  transactions: number;
+  averageOrderValue: number;
+  profit?: number;
+  expenses?: number;
+  /** 0–100 share of company gross revenue; frontend recomputes if omitted. */
+  shareOfRevenue?: number;
+  isWarehouse?: boolean;
+  suspended?: boolean;
+};
+
+export type CompanySalesTrendPoint = {
+  label: string;
+  date: string;
+  revenue: number;
+  transactions: number;
+};
+
+export type CompanyAlertItem = {
+  id: string;
+  severity: "info" | "warning" | "critical";
+  title: string;
+  detail: string;
+  branchId?: string;
+  branchName?: string;
+  category?: "stock" | "credit" | "ops" | "team";
+};
+
+export type CompanyTopItem = {
+  id: string;
+  name: string;
+  subtitle?: string;
+  value: number;
+  valueLabel: string;
+};
+
+export type CompanyAnalyticsTops = {
+  products: CompanyTopItem[];
+  employees: CompanyTopItem[];
+};
+
+/** Bundle for the Overview tab (UI may receive partial nulls). */
+export type CompanyAnalyticsBundle = {
+  summary: CompanyAnalyticsSummary | null;
+  branchPerformance: CompanyBranchPerformance[] | null;
+  salesTrend: CompanySalesTrendPoint[] | null;
+  paymentBreakdown: PaymentsBreakdown[] | null;
+  alerts: CompanyAlertItem[] | null;
+  tops: CompanyAnalyticsTops | null;
+  /** True when at least one analytics endpoint succeeded. */
+  anyLoaded: boolean;
+  errors: Partial<{
+    summary: string;
+    branchPerformance: string;
+    salesTrend: string;
+    paymentBreakdown: string;
+    alerts: string;
+    tops: string;
+  }>;
 };
 
 

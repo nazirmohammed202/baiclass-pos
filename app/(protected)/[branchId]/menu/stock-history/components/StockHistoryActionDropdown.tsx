@@ -4,6 +4,7 @@ import React, { useEffect, useCallback, useState } from "react";
 import { createPortal } from "react-dom";
 import { Eye, Edit, RotateCcw, Loader2 } from "lucide-react";
 import { InventoryHistoryType } from "@/types";
+import { usePermissions } from "@/hooks/usePermissions";
 
 type StockHistoryActionDropdownProps = {
   openDropdownId: string | null;
@@ -60,6 +61,10 @@ const StockHistoryActionDropdown = ({
   onDelete,
   onClose,
 }: StockHistoryActionDropdownProps) => {
+  const { canPerform } = usePermissions();
+  const canUpdateReceipt = canPerform("inventoryReceiptUpdate");
+  const canVoidReceipt = canPerform("inventoryReceiptVoid");
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
@@ -83,8 +88,8 @@ const StockHistoryActionDropdown = ({
 
   const isDeleting = deletingId === inventory._id;
   const isReversed = inventory.reversed === true;
-  const canEdit = !isReversed;
-  const canReverse = !isReversed;
+  const canEdit = !isReversed && canUpdateReceipt;
+  const canReverse = !isReversed && canVoidReceipt;
 
   const disabledClass =
     "disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none";
@@ -110,40 +115,44 @@ const StockHistoryActionDropdown = ({
         <Eye className="w-4 h-4" />
         View Details
       </button>
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          if (!canEdit) return;
-          onEdit(inventory);
-          onClose();
-        }}
-        disabled={!canEdit}
-        className={`w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors ${disabledClass}`}
-      >
-        <Edit className="w-4 h-4" />
-        {isReversed ? "Already reversed" : "Edit Receipt"}
-      </button>
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          if (!canReverse || isDeleting) return;
-          onDelete(inventory);
-        }}
-        disabled={isDeleting || !canReverse}
-        className={`w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors ${disabledClass}`}
-      >
-        {isDeleting ? (
-          <>
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Reversing...
-          </>
-        ) : (
-          <>
-            <RotateCcw className="w-4 h-4" />
-            {canReverse ? "Reverse Receipt" : "Already reversed"}
-          </>
-        )}
-      </button>
+      {canUpdateReceipt && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!canEdit) return;
+            onEdit(inventory);
+            onClose();
+          }}
+          disabled={!canEdit}
+          className={`w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors ${disabledClass}`}
+        >
+          <Edit className="w-4 h-4" />
+          {isReversed ? "Already reversed" : "Edit Receipt"}
+        </button>
+      )}
+      {canVoidReceipt && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!canReverse || isDeleting) return;
+            onDelete(inventory);
+          }}
+          disabled={isDeleting || !canReverse}
+          className={`w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors ${disabledClass}`}
+        >
+          {isDeleting ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Reversing...
+            </>
+          ) : (
+            <>
+              <RotateCcw className="w-4 h-4" />
+              {canReverse ? "Reverse Receipt" : "Already reversed"}
+            </>
+          )}
+        </button>
+      )}
     </div>,
     document.body
   );

@@ -20,6 +20,7 @@ type StockHeaderProps = {
   stockFilter: StockFilterType;
   onStockFilterChange: (filter: StockFilterType) => void;
   onExportToExcel: () => void;
+  canAddProducts?: boolean;
   stockCounts: {
     all: number;
     outOfStock: number;
@@ -75,6 +76,7 @@ const StockHeader = ({
   stockFilter,
   onStockFilterChange,
   onExportToExcel,
+  canAddProducts = true,
   stockCounts,
 }: StockHeaderProps) => {
   const getFilterCount = (filterId: StockFilterType) => {
@@ -131,6 +133,8 @@ const StockHeader = ({
         </button>
 
         <DropdownMenu.Root open={isAddDropdownOpen} onOpenChange={setIsAddDropdownOpen}>
+          {canAddProducts && (
+            <>
           <DropdownMenu.Trigger asChild>
             <button
               type="button"
@@ -161,6 +165,8 @@ const StockHeader = ({
               </DropdownMenu.Item>
             </DropdownMenu.Content>
           </DropdownMenu.Portal>
+            </>
+          )}
         </DropdownMenu.Root>
       </div>
 

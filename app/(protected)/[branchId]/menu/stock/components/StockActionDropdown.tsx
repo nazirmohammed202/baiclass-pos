@@ -17,6 +17,8 @@ type StockActionDropdownProps = {
   product: Product | null;
   onEditDetails: (product: Product) => void;
   onRemove: (product: Product) => void;
+  canEditDetails?: boolean;
+  canRemove?: boolean;
   onClose: () => void;
 };
 
@@ -26,6 +28,8 @@ const StockActionDropdown = ({
   product,
   onEditDetails,
   onRemove,
+  canEditDetails = true,
+  canRemove = true,
   onClose,
 }: StockActionDropdownProps) => {
   if (
@@ -35,6 +39,10 @@ const StockActionDropdown = ({
     dropdownPosition.productId !== openDropdownId ||
     !product
   ) {
+    return null;
+  }
+
+  if (!canEditDetails && !canRemove) {
     return null;
   }
 
@@ -50,32 +58,36 @@ const StockActionDropdown = ({
       onMouseDown={(e) => e.stopPropagation()}
     >
       <div className="py-1">
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onEditDetails(product);
-            onClose();
-          }}
-          onMouseDown={(e) => e.stopPropagation()}
-          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700 flex items-center gap-2"
-        >
-          <Edit className="w-4 h-4" />
-          Edit product details
-        </button>
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onRemove(product);
-            onClose();
-          }}
-          onMouseDown={(e) => e.stopPropagation()}
-          className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-neutral-700 flex items-center gap-2"
-        >
-          <Trash2 className="w-4 h-4" />
-          Remove product
-        </button>
+        {canEditDetails && (
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onEditDetails(product);
+              onClose();
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700 flex items-center gap-2"
+          >
+            <Edit className="w-4 h-4" />
+            Edit product details
+          </button>
+        )}
+        {canRemove && (
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onRemove(product);
+              onClose();
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-neutral-700 flex items-center gap-2"
+          >
+            <Trash2 className="w-4 h-4" />
+            Remove product
+          </button>
+        )}
       </div>
     </div>,
     document.body

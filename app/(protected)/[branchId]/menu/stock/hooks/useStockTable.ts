@@ -9,7 +9,7 @@ import { updateBranchProductStock, removeProductFromBranch } from "@/lib/branch-
 import { updateProductDetails, UpdateProductDetailsPayload } from "@/lib/product-actions";
 import { StockFilterType } from "../components/StockHeader";
 import { PriceFieldType } from "../components/EditPriceModal";
-import type { StockAdjustmentSavePayload } from "../components/EditStockValueModal";
+import type { StockAdjustmentSavePayload } from "@/types";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types

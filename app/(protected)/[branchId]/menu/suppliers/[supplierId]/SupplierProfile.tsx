@@ -31,6 +31,7 @@ import ProcurementActionDropdown, { useDropdownPortal } from "./components/Procu
 import ViewInventoryModal from "@/app/(protected)/[branchId]/menu/stock-history/components/ViewInventoryModal";
 import DeleteInventoryModal from "@/app/(protected)/[branchId]/menu/stock-history/components/DeleteInventoryModal";
 import { deleteInventory } from "@/lib/inventory-actions";
+import { usePermissions } from "@/hooks/usePermissions";
 
 type SupplierProfileProps = {
   branchId: string;
@@ -56,6 +57,9 @@ export default function SupplierProfile({ branchId, supplierPromise, branchPromi
   const bid = (params?.branchId as string) || branchId;
   const { success: toastSuccess, error: toastError } = useToast();
   const statementRef = useRef<SupplierStatementRef>(null);
+  const { canPerform } = usePermissions();
+  const canRecordPayment = canPerform("paymentCreate");
+  const canReceiveStock = canPerform("receiveStock");
 
   const {
     procurements,
@@ -184,21 +188,25 @@ export default function SupplierProfile({ branchId, supplierPromise, branchPromi
               </span>
             </div>
             <div className="flex flex-wrap gap-2 mt-4">
-              <button
-                type="button"
-                onClick={() => setRecordPaymentOpen(true)}
-                className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-white hover:opacity-90"
-              >
-                <Wallet className="w-4 h-4" />
-                Record Payment
-              </button>
-              <Link
-                href={`/${bid}/menu/receive-stock?supplierId=${supplier._id}`}
-                className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 dark:border-neutral-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-800"
-              >
-                <Package className="w-4 h-4" />
-                Receive Stock
-              </Link>
+              {canRecordPayment && (
+                <button
+                  type="button"
+                  onClick={() => setRecordPaymentOpen(true)}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-white hover:opacity-90"
+                >
+                  <Wallet className="w-4 h-4" />
+                  Record Payment
+                </button>
+              )}
+              {canReceiveStock && (
+                <Link
+                  href={`/${bid}/menu/receive-stock?supplierId=${supplier._id}`}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 dark:border-neutral-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-800"
+                >
+                  <Package className="w-4 h-4" />
+                  Receive Stock
+                </Link>
+              )}
               <button
                 type="button"
                 onClick={() => setStatementOpen(true)}

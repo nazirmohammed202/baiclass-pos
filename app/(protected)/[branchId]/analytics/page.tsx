@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import {
   getAnalyticsAlerts,
   getAnalyticsKPIs,
@@ -10,6 +11,8 @@ import {
   getStaffPerformance,
   getTimeIntelligence,
 } from "@/lib/analytics-action";
+import { getAccount } from "@/lib/auth-actions";
+import { canPerform } from "@/lib/permission-gates";
 import AnalyticsShell from "./components/AnalyticsShell";
 import {
   AlertsRiskSectionWrapper,
@@ -45,6 +48,12 @@ export default async function AnalyticsPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { branchId } = await params;
+  const account = await getAccount();
+
+  if (!canPerform(account, "analytics", branchId)) {
+    redirect(`/${branchId}/menu`);
+  }
+
   const query = parseAnalyticsSearchParams(await searchParams);
   const ranges = resolveAnalyticsRanges(query);
   const { startDate, endDate, compareStartDate, compareEndDate } = ranges;
@@ -92,62 +101,62 @@ export default async function AnalyticsPage({
   return (
     <Suspense fallback={<AnalyticsLoading />}>
       <AnalyticsShell>
-      <Suspense fallback={<KPICardsFallback />}>
-        <KPICardsSection
-          data={kpis}
-          comparePeriodLabel={ranges.compareDatesLabel}
-        />
-      </Suspense>
-
-      <Suspense fallback={<SalesTrendFallback />}>
-        <SalesTrendSectionWrapper
-          data={salesTrend}
-          compareEnabled={query.compareEnabled}
-          periodLabel={ranges.periodLabel}
-          currentDatesLabel={ranges.currentDatesLabel}
-          compareDatesLabel={ranges.compareDatesLabel}
-        />
-      </Suspense>
-
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        <Suspense fallback={<PaymentBreakdownFallback />}>
-          <PaymentBreakdownSectionWrapper
-            data={paymentsBreakdown}
-            periodLabel={ranges.periodLabel}
+        <Suspense fallback={<KPICardsFallback />}>
+          <KPICardsSection
+            data={kpis}
+            comparePeriodLabel={ranges.compareDatesLabel}
           />
         </Suspense>
 
-        <Suspense fallback={<TimeIntelligenceFallback />}>
-          <TimeIntelligenceSectionWrapper data={timeIntelligence} />
-        </Suspense>
-      </div>
-
-      <Suspense fallback={<ProductPerformanceFallback />}>
-        <ProductPerformanceSectionWrapper
-          data={productPerformance}
-          branchId={branchId}
-          startDate={startDate}
-          endDate={endDate}
-        />
-      </Suspense>
-
-      <Suspense fallback={<StaffPerformanceFallback />}>
-        <StaffPerformanceSectionWrapper data={staffPerformance} />
-      </Suspense>
-
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        <Suspense fallback={<InventoryHealthFallback />}>
-          <InventoryHealthSectionWrapper data={inventoryHealth} />
+        <Suspense fallback={<SalesTrendFallback />}>
+          <SalesTrendSectionWrapper
+            data={salesTrend}
+            compareEnabled={query.compareEnabled}
+            periodLabel={ranges.periodLabel}
+            currentDatesLabel={ranges.currentDatesLabel}
+            compareDatesLabel={ranges.compareDatesLabel}
+          />
         </Suspense>
 
-        <Suspense fallback={<CustomerAnalyticsFallback />}>
-          <CustomerAnalyticsSectionWrapper data={customerAnalytics} />
-        </Suspense>
-      </div>
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          <Suspense fallback={<PaymentBreakdownFallback />}>
+            <PaymentBreakdownSectionWrapper
+              data={paymentsBreakdown}
+              periodLabel={ranges.periodLabel}
+            />
+          </Suspense>
 
-      <Suspense fallback={<AlertsRiskFallback />}>
-        <AlertsRiskSectionWrapper data={alertsRisks} />
-      </Suspense>
+          <Suspense fallback={<TimeIntelligenceFallback />}>
+            <TimeIntelligenceSectionWrapper data={timeIntelligence} />
+          </Suspense>
+        </div>
+
+        <Suspense fallback={<ProductPerformanceFallback />}>
+          <ProductPerformanceSectionWrapper
+            data={productPerformance}
+            branchId={branchId}
+            startDate={startDate}
+            endDate={endDate}
+          />
+        </Suspense>
+
+        <Suspense fallback={<StaffPerformanceFallback />}>
+          <StaffPerformanceSectionWrapper data={staffPerformance} />
+        </Suspense>
+
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+          <Suspense fallback={<InventoryHealthFallback />}>
+            <InventoryHealthSectionWrapper data={inventoryHealth} />
+          </Suspense>
+
+          <Suspense fallback={<CustomerAnalyticsFallback />}>
+            <CustomerAnalyticsSectionWrapper data={customerAnalytics} />
+          </Suspense>
+        </div>
+
+        <Suspense fallback={<AlertsRiskFallback />}>
+          <AlertsRiskSectionWrapper data={alertsRisks} />
+        </Suspense>
       </AnalyticsShell>
     </Suspense>
   );

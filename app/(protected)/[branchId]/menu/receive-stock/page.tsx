@@ -4,6 +4,7 @@ import {
   getBranchProductsMetadata,
   getBranchProductsStockData,
 } from "@/lib/branch-actions";
+import { requireMenuAccess } from "@/lib/require-menu-access";
 import { getSuppliers } from "@/lib/suppliers-actions";
 import React from "react";
 
@@ -13,6 +14,7 @@ const ReceiveStock = async ({
   params: Promise<{ branchId: string }>;
 }) => {
   const { branchId } = await params;
+  await requireMenuAccess(branchId, "/receive-stock");
   const products = getBranchProductsMetadata(branchId);
   const stockData = getBranchProductsStockData(branchId);
   const suppliers = getSuppliers(branchId);

@@ -4,6 +4,7 @@ import { useEffect, useCallback, useState } from "react";
 import { createPortal } from "react-dom";
 import { Eye, Edit, Trash2, Loader2 } from "lucide-react";
 import { CustomerType } from "@/types";
+import { usePermissions } from "@/hooks/usePermissions";
 
 type CustomerActionDropdownProps = {
   openDropdownId: string | null;
@@ -60,6 +61,10 @@ export default function CustomerActionDropdown({
   onDelete,
   onClose,
 }: CustomerActionDropdownProps) {
+  const { canPerform } = usePermissions();
+  const canEdit = canPerform("customerUpdate");
+  const canDelete = canPerform("customerDelete");
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
@@ -86,30 +91,34 @@ export default function CustomerActionDropdown({
         <Eye className="w-4 h-4" />
         View Profile
       </button>
-      <button
-        onClick={() => { onEdit(customer); onClose(); }}
-        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors"
-      >
-        <Edit className="w-4 h-4" />
-        Edit
-      </button>
-      <button
-        onClick={() => onDelete(customer)}
-        disabled={isDeleting}
-        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
-      >
-        {isDeleting ? (
-          <>
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Deleting...
-          </>
-        ) : (
-          <>
-            <Trash2 className="w-4 h-4" />
-            Delete
-          </>
-        )}
-      </button>
+      {canEdit && (
+        <button
+          onClick={() => { onEdit(customer); onClose(); }}
+          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors"
+        >
+          <Edit className="w-4 h-4" />
+          Edit
+        </button>
+      )}
+      {canDelete && (
+        <button
+          onClick={() => onDelete(customer)}
+          disabled={isDeleting}
+          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
+        >
+          {isDeleting ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Deleting...
+            </>
+          ) : (
+            <>
+              <Trash2 className="w-4 h-4" />
+              Delete
+            </>
+          )}
+        </button>
+      )}
     </div>,
     document.body
   );

@@ -17,6 +17,7 @@ import { useCompany } from "@/context/companyContext";
 import AddNewProductModal from "@/components/AddNewProductModal";
 import AddSystemProductModal from "@/components/AddSystemProductModal";
 import { useStockTable } from "../hooks/useStockTable";
+import { usePermissions } from "@/hooks/usePermissions";
 
 type StockTableProps = {
   branchId: string;
@@ -26,6 +27,13 @@ type StockTableProps = {
 
 const StockTable = ({ branchId, products: productsPromise, stockData: stockDataPromise }: StockTableProps) => {
   const { allSystemProducts } = useCompany();
+  const { canPerform } = usePermissions();
+  const canAdjustStock = canPerform("stockAdjust");
+  const canEditThreshold = canPerform("stockEditThreshold");
+  const canEditPrice = canPerform("stockEditPrice");
+  const canEditDetails = canPerform("stockEditDetails");
+  const canRemoveProduct = canPerform("stockRemove");
+  const canAddProduct = canPerform("stockAddProduct");
   const products = use(productsPromise);
 
   const {
@@ -120,6 +128,7 @@ const StockTable = ({ branchId, products: productsPromise, stockData: stockDataP
         setIsSystemProductModalOpen={setIsSystemProductModalOpen}
         allSystemProducts={allSystemProducts}
         products={products}
+        canAddProducts={canAddProduct}
         onSuccess={() => router.refresh()}
       />
     );
@@ -145,6 +154,7 @@ const StockTable = ({ branchId, products: productsPromise, stockData: stockDataP
         stockFilter={stockFilter}
         onStockFilterChange={setStockFilter}
         onExportToExcel={handleExportToExcel}
+        canAddProducts={canAddProduct}
         stockCounts={stockCounts}
       />
 
@@ -233,12 +243,19 @@ const StockTable = ({ branchId, products: productsPromise, stockData: stockDataP
 
                     {/* Stock Column */}
                     <td
-                      className={`px-4 py-3 text-sm text-right rounded transition-colors ${isStockLoading ? "" : "cursor-pointer hover:bg-primary/10 dark:hover:bg-primary/20"
-                        }`}
-                      onClick={() => !isStockLoading && setStockModalProduct({
-                        ...product,
-                        stock
-                      })}
+                      className={`px-4 py-3 text-sm text-right rounded transition-colors ${
+                        isStockLoading || !canAdjustStock
+                          ? ""
+                          : "cursor-pointer hover:bg-primary/10 dark:hover:bg-primary/20"
+                      }`}
+                      onClick={() =>
+                        !isStockLoading &&
+                        canAdjustStock &&
+                        setStockModalProduct({
+                          ...product,
+                          stock,
+                        })
+                      }
                     >
                       {isStockLoading ? (
                         <div className="h-4 w-10 bg-gray-200 dark:bg-neutral-700 rounded animate-pulse ml-auto" />
@@ -260,12 +277,22 @@ const StockTable = ({ branchId, products: productsPromise, stockData: stockDataP
 
                     {/* Threshold Column */}
                     <td
-                      className={`px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400 rounded transition-colors ${isStockLoading ? "" : "cursor-pointer hover:bg-primary/10 dark:hover:bg-primary/20"
-                        }`}
-                      onClick={() => !isStockLoading && setThresholdModalProduct({
-                        ...product,
-                        lowStockThreshold: stockItem?.lowStockThreshold ?? product.lowStockThreshold ?? 5
-                      })}
+                      className={`px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400 rounded transition-colors ${
+                        isStockLoading || !canEditThreshold
+                          ? ""
+                          : "cursor-pointer hover:bg-primary/10 dark:hover:bg-primary/20"
+                      }`}
+                      onClick={() =>
+                        !isStockLoading &&
+                        canEditThreshold &&
+                        setThresholdModalProduct({
+                          ...product,
+                          lowStockThreshold:
+                            stockItem?.lowStockThreshold ??
+                            product.lowStockThreshold ??
+                            5,
+                        })
+                      }
                     >
                       {isStockLoading ? (
                         <div className="h-4 w-8 bg-gray-200 dark:bg-neutral-700 rounded animate-pulse ml-auto" />
@@ -276,10 +303,14 @@ const StockTable = ({ branchId, products: productsPromise, stockData: stockDataP
 
                     {/* Base Price Column */}
                     <td
-                      className={`px-4 py-3 text-sm text-right text-gray-700 dark:text-gray-300 rounded transition-colors ${isStockLoading ? "" : "cursor-pointer hover:bg-primary/10 dark:hover:bg-primary/20"
-                        }`}
+                      className={`px-4 py-3 text-sm text-right text-gray-700 dark:text-gray-300 rounded transition-colors ${
+                        isStockLoading || !canEditPrice
+                          ? ""
+                          : "cursor-pointer hover:bg-primary/10 dark:hover:bg-primary/20"
+                      }`}
                       onClick={() =>
                         !isStockLoading &&
+                        canEditPrice &&
                         openPriceModal(
                           {
                             ...product,
@@ -300,10 +331,14 @@ const StockTable = ({ branchId, products: productsPromise, stockData: stockDataP
 
                     {/* Wholesale Column */}
                     <td
-                      className={`px-4 py-3 text-sm text-right text-gray-700 dark:text-gray-300 rounded transition-colors ${isStockLoading ? "" : "cursor-pointer hover:bg-primary/10 dark:hover:bg-primary/20"
-                        }`}
+                      className={`px-4 py-3 text-sm text-right text-gray-700 dark:text-gray-300 rounded transition-colors ${
+                        isStockLoading || !canEditPrice
+                          ? ""
+                          : "cursor-pointer hover:bg-primary/10 dark:hover:bg-primary/20"
+                      }`}
                       onClick={() =>
                         !isStockLoading &&
+                        canEditPrice &&
                         openPriceModal(
                           {
                             ...product,
@@ -324,10 +359,14 @@ const StockTable = ({ branchId, products: productsPromise, stockData: stockDataP
 
                     {/* Retail Column */}
                     <td
-                      className={`px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-gray-100 rounded transition-colors ${isStockLoading ? "" : "cursor-pointer hover:bg-primary/10 dark:hover:bg-primary/20"
-                        }`}
+                      className={`px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-gray-100 rounded transition-colors ${
+                        isStockLoading || !canEditPrice
+                          ? ""
+                          : "cursor-pointer hover:bg-primary/10 dark:hover:bg-primary/20"
+                      }`}
                       onClick={() =>
                         !isStockLoading &&
+                        canEditPrice &&
                         openPriceModal(
                           {
                             ...product,
@@ -349,10 +388,14 @@ const StockTable = ({ branchId, products: productsPromise, stockData: stockDataP
 
                     {/* Credit Column */}
                     <td
-                      className={`px-4 py-3 text-sm text-right text-gray-700 dark:text-gray-300 rounded transition-colors ${isStockLoading ? "" : "cursor-pointer hover:bg-primary/10 dark:hover:bg-primary/20"
-                        }`}
+                      className={`px-4 py-3 text-sm text-right text-gray-700 dark:text-gray-300 rounded transition-colors ${
+                        isStockLoading || !canEditPrice
+                          ? ""
+                          : "cursor-pointer hover:bg-primary/10 dark:hover:bg-primary/20"
+                      }`}
                       onClick={() =>
                         !isStockLoading &&
+                        canEditPrice &&
                         openPriceModal(
                           {
                             ...product,
@@ -374,6 +417,7 @@ const StockTable = ({ branchId, products: productsPromise, stockData: stockDataP
 
                     {/* Actions Column */}
                     <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                      {(canEditDetails || canRemoveProduct) && (
                       <button
                         onClick={(e) => {
                           const id = product.details._id;
@@ -385,6 +429,7 @@ const StockTable = ({ branchId, products: productsPromise, stockData: stockDataP
                       >
                         <MoreVertical className="w-4 h-4" />
                       </button>
+                      )}
                     </td>
                   </tr>
                 );
@@ -405,6 +450,8 @@ const StockTable = ({ branchId, products: productsPromise, stockData: stockDataP
           product={selectedProduct}
           onEditDetails={setDetailsModalProduct}
           onRemove={setRemoveModalProduct}
+          canEditDetails={canEditDetails}
+          canRemove={canRemoveProduct}
           onClose={handleClose}
         />
 
@@ -412,8 +459,13 @@ const StockTable = ({ branchId, products: productsPromise, stockData: stockDataP
           isOpen={stockModalProduct != null}
           onClose={() => setStockModalProduct(null)}
           product={stockModalProduct}
-          onSave={async (payload) => {
-            if (stockModalProduct) await handleSaveStock(stockModalProduct, payload);
+          onSave={async (stock) => {
+            if (stockModalProduct) {
+              await handleSaveStock(stockModalProduct, {
+                stock,
+                reason: "count_correction",
+              });
+            }
           }}
           saving={saving}
         />

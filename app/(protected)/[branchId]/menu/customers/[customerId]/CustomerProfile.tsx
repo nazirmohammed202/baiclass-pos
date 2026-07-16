@@ -31,6 +31,7 @@ import ViewSaleModal from "@/app/(protected)/[branchId]/menu/sales-history/compo
 import { printPaymentReceipt } from "./utils/printPaymentReceipt";
 import { use } from "react";
 import { useToast } from "@/context/toastContext";
+import { usePermissions } from "@/hooks/usePermissions";
 
 type CustomerProfileProps = {
   branchId: string;
@@ -56,6 +57,10 @@ export default function CustomerProfile({ branchId, customerPromise, branchPromi
   const bid = (params?.branchId as string) || branchId;
   const { success: toastSuccess } = useToast();
   const statementRef = useRef<CustomerStatementRef>(null);
+  const { canPerform } = usePermissions();
+  const canRecordPayment = canPerform("paymentCreate");
+  const canCreateSale = canPerform("saleCreate");
+  const canEditCustomer = canPerform("customerUpdate");
 
   const {
     sales,
@@ -157,29 +162,35 @@ export default function CustomerProfile({ branchId, customerPromise, branchPromi
               </span>
             </div>
             <div className="flex flex-wrap gap-2 mt-4">
-              <button
-                type="button"
-                onClick={() => setRecordPaymentOpen(true)}
-                className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-white hover:opacity-90"
-              >
-                <Wallet className="w-4 h-4" />
-                Record Payment
-              </button>
-              <Link
-                href={`/${bid}/menu/new-sale?customerId=${customer._id}`}
-                className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 dark:border-neutral-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-800"
-              >
-                <Plus className="w-4 h-4" />
-                New Sale
-              </Link>
-              <button
-                type="button"
-                onClick={() => setEditLimitOpen(true)}
-                className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 dark:border-neutral-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-800"
-              >
-                <Pencil className="w-4 h-4" />
-                Edit Limit
-              </button>
+              {canRecordPayment && (
+                <button
+                  type="button"
+                  onClick={() => setRecordPaymentOpen(true)}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-white hover:opacity-90"
+                >
+                  <Wallet className="w-4 h-4" />
+                  Record Payment
+                </button>
+              )}
+              {canCreateSale && (
+                <Link
+                  href={`/${bid}/menu/new-sale?customerId=${customer._id}`}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 dark:border-neutral-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-800"
+                >
+                  <Plus className="w-4 h-4" />
+                  New Sale
+                </Link>
+              )}
+              {canEditCustomer && (
+                <button
+                  type="button"
+                  onClick={() => setEditLimitOpen(true)}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-gray-300 dark:border-neutral-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-800"
+                >
+                  <Pencil className="w-4 h-4" />
+                  Edit Limit
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setStatementOpen(true)}
@@ -312,6 +323,7 @@ export default function CustomerProfile({ branchId, customerPromise, branchPromi
                           </span>
                         </td>
                         <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                          {isCreditWithDue && canRecordPayment && (
                           <div className="relative inline-block">
                             <button
                               type="button"
@@ -325,7 +337,6 @@ export default function CustomerProfile({ branchId, customerPromise, branchPromi
                               <>
                                 <div className="fixed inset-0 z-10" aria-hidden onClick={() => setSaleDropdownId(null)} />
                                 <div className="absolute right-0 top-full mt-1 z-20 min-w-[160px] py-1 rounded-md border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-lg">
-                                  {isCreditWithDue && (
                                     <button
                                       type="button"
                                       onClick={() => {
@@ -338,11 +349,11 @@ export default function CustomerProfile({ branchId, customerPromise, branchPromi
                                       <Wallet className="w-4 h-4" />
                                       Record payment
                                     </button>
-                                  )}
                                 </div>
                               </>
                             )}
                           </div>
+                          )}
                         </td>
                       </tr>
                     );
