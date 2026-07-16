@@ -28,6 +28,55 @@ export type UpdateBranchPayload = {
   }>;
 };
 
+/** Percentages are sent as 0-100 from the client; backend converts to 0-1 for the API. */
+export type CreateBranchPayload = {
+  name: string;
+  address?: string;
+  phoneNumber?: string;
+  settings?: UpdateBranchPayload["settings"];
+};
+
+/**
+ * Create a new branch under a company (company-admin / /general).
+ * Backend: POST /branches/create
+ */
+export const createBranch = async (
+  companyId: string,
+  payload: CreateBranchPayload
+): Promise<{ success: boolean; error: string | null; branchId: string | null }> => {
+  const token = (await cookies()).get("__baiclass")?.value;
+  if (!token) {
+    return { success: false, error: "Not authenticated", branchId: null };
+  }
+  try {
+    const body: CreateBranchPayload & { company: string } = {
+      company: companyId,
+      ...payload,
+    };
+    if (body.settings) {
+      body.settings = { ...body.settings };
+      if (typeof body.settings.retailPricePercentage === "number") {
+        body.settings.retailPricePercentage =
+          body.settings.retailPricePercentage / 100;
+      }
+      if (typeof body.settings.wholesalePricePercentage === "number") {
+        body.settings.wholesalePricePercentage =
+          body.settings.wholesalePricePercentage / 100;
+      }
+    }
+    const response = await api.post(`/branches/create`, body, {
+      headers: { "x-auth-token": token },
+    });
+    revalidatePath("/general");
+    revalidatePath("/select-branch");
+    const branchId: string | null =
+      response.data?._id ?? response.data?.branch?._id ?? null;
+    return { success: true, error: null, branchId };
+  } catch (error: unknown) {
+    return { success: false, error: handleError(error), branchId: null };
+  }
+};
+
 export const getBranch = async (branchId: string) => {
   const token = (await cookies()).get("__baiclass")?.value;
   if (!token) throw new Error("No token found");
@@ -179,6 +228,7 @@ export const updateBranch = async (
     });
     updateTag("branch:" + branchId);
     revalidatePath(`/${branchId}/settings`);
+    revalidatePath("/general");
     return { success: true, error: null };
   } catch (error: unknown) {
     return { success: false, error: handleError(error) };

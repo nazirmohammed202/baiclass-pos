@@ -3,12 +3,14 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import type {
   AccountType,
+  BranchType,
   CompanyAnalyticsBundle,
   CompanyType,
   TeamMember,
 } from "@/types";
 import OverviewSection from "./OverviewSection";
 import TeamSection from "./TeamSection";
+import BranchesSection from "./BranchesSection";
 
 type GeneralClientProps = {
   account: AccountType;
@@ -18,6 +20,8 @@ type GeneralClientProps = {
   membersError: string | null;
   periodLabel: string;
   analytics: CompanyAnalyticsBundle;
+  branches: BranchType[];
+  branchesFromApi: boolean;
 };
 
 export default function GeneralClient({
@@ -28,10 +32,14 @@ export default function GeneralClient({
   membersError,
   periodLabel,
   analytics,
+  branches,
+  branchesFromApi,
 }: GeneralClientProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const tab = searchParams.get("tab") === "team" ? "team" : "overview";
+  const tabParam = searchParams.get("tab");
+  const tab =
+    tabParam === "team" || tabParam === "branches" ? tabParam : "overview";
 
   return (
     <main
@@ -47,6 +55,12 @@ export default function GeneralClient({
           membersError={membersError}
           currentAccountId={account._id}
           onRefresh={() => router.refresh()}
+        />
+      ) : tab === "branches" ? (
+        <BranchesSection
+          company={company}
+          branches={branches}
+          branchesFromApi={branchesFromApi}
         />
       ) : (
         <OverviewSection

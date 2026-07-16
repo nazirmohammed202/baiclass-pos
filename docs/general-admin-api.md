@@ -25,6 +25,7 @@ Align `companyMemberRoles` with presets (`salesperson` vs `salesPerson`; include
 |-------|------|
 | `/general` | Overview — branch list, jump into a branch |
 | `/general?tab=team` | Team table + invite + member drawer (per-branch roles / permission preview) |
+| `/general?tab=branches` | Branch list (cards) + add branch + edit branch info/settings |
 | Access | `canAccessGeneral`: `account:create|update|delete` **or** company member `role === "admin"` |
 | Entry | Select branch → “Company admin”; branch header account menu → “Company admin” |
 
@@ -153,6 +154,67 @@ Frontend: `removeMemberBranchAccess`.
 Revoke all branch access. Block removing self / last admin.
 
 Frontend: `removeTeamMember`.
+
+---
+
+## Branch management (Branches tab)
+
+Frontend: `/general?tab=branches`. The tab lists every company branch as a card
+(name, address, phone, currency, margins, sale types, warehouse/suspended flags)
+with **Add branch** and per-card **Edit**.
+
+Branch data is loaded server-side by fetching each branch via the **existing**
+`GET /branches/read/:branchId` (`getBranch`) for the ids in `company.branches`.
+
+### 7. Create branch — **NEW (implement)**
+
+`POST /branches/create`
+
+**Body:**
+
+```json
+{
+  "company": "companyObjectId",
+  "name": "Kumasi Branch",
+  "address": "Adum, Kumasi",
+  "phoneNumber": "0244123456",
+  "settings": {
+    "currency": "₵",
+    "dailySalesTarget": 5000,
+    "retailPricePercentage": 0.25,
+    "wholesalePricePercentage": 0.1,
+    "retailEnabled": true,
+    "wholesaleEnabled": true,
+    "creditEnabled": false,
+    "roundRetailPrices": false,
+    "roundWholesalePrices": false,
+    "isWarehouse": false,
+    "suspended": false
+  }
+}
+```
+
+**Behavior:**
+
+- Require company admin (403 otherwise). `name` required; the rest optional.
+- Percentages arrive **0–1** (frontend already divides its 0–100 inputs by 100),
+  consistent with `PATCH /branches/update/:branchId`.
+- Create the branch, attach it to the company's `branches`, and (recommended)
+  grant the creating admin `admin` access on the new branch so it shows in
+  select-branch immediately.
+- Apply sensible defaults for any omitted `settings`.
+
+**Response:** the created branch (`{ _id, name, address, phoneNumber, settings }`)
+or `{ branch: { ... } }`. Frontend reads `_id` (or `branch._id`) if present.
+
+Frontend: `lib/branch-actions.ts` → `createBranch`.
+
+### 8. Update branch — **already exists**
+
+`PATCH /branches/update/:branchId` (`updateBranch`) is reused unchanged for the
+Edit modal. Percentages are sent 0–1 (converted from 0–100 inputs). No changes
+needed beyond ensuring company admins are authorized to edit any company branch,
+not only branches they operate a till at.
 
 ---
 

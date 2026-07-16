@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { Building2, LogOut, MapPin, Users } from "lucide-react";
+import { Building2, LogOut, MapPin, Store, Users } from "lucide-react";
 import { logout } from "@/lib/auth-actions";
 import type { AccountType, CompanyType } from "@/types";
 
@@ -16,7 +16,9 @@ type GeneralHeaderProps = {
 export default function GeneralHeader({ account, company }: GeneralHeaderProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const activeTab = searchParams.get("tab") === "team" ? "team" : "overview";
+  const tabParam = searchParams.get("tab");
+  const activeTab =
+    tabParam === "team" || tabParam === "branches" ? tabParam : "overview";
 
   const tabs = [
     { id: "overview" as const, label: "Overview", href: "/general", icon: Building2 },
@@ -25,6 +27,12 @@ export default function GeneralHeader({ account, company }: GeneralHeaderProps) 
       label: "Team",
       href: "/general?tab=team",
       icon: Users,
+    },
+    {
+      id: "branches" as const,
+      label: "Branches",
+      href: "/general?tab=branches",
+      icon: Store,
     },
   ];
 

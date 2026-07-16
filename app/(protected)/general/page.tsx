@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { getAccount, getCompany } from "@/lib/auth-actions";
+import { getBranch } from "@/lib/branch-actions";
 import { getTeamMembers } from "@/lib/company-actions";
 import {
   getCompanyAnalyticsAlerts,
@@ -14,11 +15,32 @@ import { getTodayDate } from "@/lib/date-utils";
 import type {
   AccountType,
   AnalyticsPeriod,
+  BranchType,
   CompanyAnalyticsBundle,
   CompanyType,
   TeamMember,
 } from "@/types";
 import GeneralClient from "./components/GeneralClient";
+
+async function loadBranches(
+  company: CompanyType
+): Promise<{ branches: BranchType[]; fromApi: boolean }> {
+  const ids = (company.branches ?? []).map((b) => b._id).filter(Boolean);
+  if (ids.length === 0) return { branches: [], fromApi: true };
+
+  const results = await Promise.all(
+    ids.map(async (id) => {
+      try {
+        return (await getBranch(id)) as BranchType;
+      } catch {
+        return null;
+      }
+    })
+  );
+
+  const branches = results.filter((b): b is BranchType => b !== null);
+  return { branches, fromApi: branches.length === ids.length };
+}
 
 function provisionalMembers(
   company: CompanyType,
@@ -154,9 +176,10 @@ export default async function GeneralPage({
       : range.label;
 
   const company = await getCompany(companyId);
-  const [membersResult, analytics] = await Promise.all([
+  const [membersResult, analytics, branchData] = await Promise.all([
     getTeamMembers(companyId),
     loadCompanyAnalytics(companyId, range.startDate, range.endDate),
+    loadBranches(company),
   ]);
 
   const membersFromApi = membersResult.success;
@@ -181,6 +204,8 @@ export default async function GeneralPage({
         membersError={membersFromApi ? null : membersResult.error}
         periodLabel={periodLabel}
         analytics={analytics}
+        branches={branchData.branches}
+        branchesFromApi={branchData.fromApi}
       />
     </Suspense>
   );
