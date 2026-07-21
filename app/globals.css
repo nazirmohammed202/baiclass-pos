@@ -280,3 +280,197 @@ body {
 .react-datepicker__navigation:hover *::before {
   border-color: var(--primary);
 }
+
+/* ---------- Landing page animations ---------- */
+
+/* Scroll-reveal (driven by IntersectionObserver in app/page.tsx) */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.reveal-left {
+  transform: translateX(-36px);
+}
+
+.reveal-right {
+  transform: translateX(36px);
+}
+
+.reveal-scale {
+  transform: scale(0.94);
+}
+
+.reveal-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* Floating aurora blobs */
+@keyframes float-blob {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -40px) scale(1.08);
+  }
+  66% {
+    transform: translate(-25px, 25px) scale(0.95);
+  }
+}
+
+.animate-blob {
+  animation: float-blob 14s ease-in-out infinite;
+}
+
+.animate-blob-slow {
+  animation: float-blob 20s ease-in-out infinite reverse;
+}
+
+/* Gentle vertical float */
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+.animate-float {
+  animation: float-y 6s ease-in-out infinite;
+}
+
+/* Animated gradient text */
+@keyframes gradient-pan {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+.gradient-text {
+  background: linear-gradient(
+    90deg,
+    var(--primary) 0%,
+    #2dd4bf 25%,
+    var(--primary) 50%,
+    #0ea5e9 75%,
+    var(--primary) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gradient-pan 5s linear infinite;
+}
+
+/* Animated gradient surface (CTA banner) */
+.animated-gradient-bg {
+  background: linear-gradient(120deg, #006666, #008080, #0d9488, #008080, #006666);
+  background-size: 300% 300%;
+  animation: gradient-pan 10s ease infinite;
+}
+
+/* Button shine sweep */
+.btn-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.35) 50%,
+    transparent 60%
+  );
+  transform: translateX(-120%);
+  transition: transform 0.7s ease;
+  pointer-events: none;
+}
+
+.btn-shine:hover::after {
+  transform: translateX(120%);
+}
+
+/* Card glow border on hover */
+.glow-card {
+  position: relative;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.35s ease, border-color 0.35s ease;
+}
+
+.glow-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 18px 40px -14px color-mix(in srgb, var(--primary) 35%, transparent);
+}
+
+/* Scrolling marquee */
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 28s linear infinite;
+}
+
+/* Slow ping for hero ornaments */
+@keyframes ping-slow {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  80%,
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+.animate-ping-slow {
+  animation: ping-slow 3.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* Subtle dot-grid backdrop */
+.bg-dot-grid {
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--foreground) 9%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 26px 26px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .reveal-visible {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .animate-blob,
+  .animate-blob-slow,
+  .animate-float,
+  .animate-marquee,
+  .animate-ping-slow,
+  .gradient-text,
+  .animated-gradient-bg {
+    animation: none;
+  }
+}

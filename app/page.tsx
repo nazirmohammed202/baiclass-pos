@@ -1,6 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import Link from "next/link";
 import {
   ShoppingCartIcon,
@@ -20,7 +26,75 @@ import {
   CloudIcon,
   SmartphoneIcon,
   TrendingUpIcon,
+  SparklesIcon,
 } from "lucide-react";
+
+/* ------------------------------------------------------------------ */
+/* Scroll-reveal helper                                                */
+/* ------------------------------------------------------------------ */
+
+type RevealProps = {
+  children: ReactNode;
+  className?: string;
+  /** Extra transition delay in ms, used for stagger effects. */
+  delay?: number;
+  direction?: "up" | "left" | "right" | "scale";
+  as?: "div" | "section" | "li";
+};
+
+function Reveal({
+  children,
+  className = "",
+  delay = 0,
+  direction = "up",
+  as: Tag = "div",
+}: RevealProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const directionClass =
+    direction === "left"
+      ? "reveal reveal-left"
+      : direction === "right"
+      ? "reveal reveal-right"
+      : direction === "scale"
+      ? "reveal reveal-scale"
+      : "reveal";
+
+  const style: CSSProperties | undefined = delay
+    ? { transitionDelay: `${delay}ms` }
+    : undefined;
+
+  return (
+    <Tag
+      ref={ref as never}
+      style={style}
+      className={`${directionClass} ${visible ? "reveal-visible" : ""} ${className}`}
+    >
+      {children}
+    </Tag>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Content                                                             */
+/* ------------------------------------------------------------------ */
 
 const features = [
   {
@@ -122,22 +196,53 @@ const steps = [
   },
 ];
 
+const marqueeItems = [
+  "Point of Sale",
+  "Inventory",
+  "Analytics",
+  "Multi-Branch",
+  "Customers",
+  "Suppliers",
+  "Expenses",
+  "End of Day",
+  "Returns",
+  "Permissions",
+];
+
 const NAV_LINKS = [
   { label: "Features", href: "#features" },
   { label: "Why Baiclass", href: "#why" },
   { label: "How it works", href: "#how" },
 ];
 
+/* ------------------------------------------------------------------ */
+/* Page                                                                */
+/* ------------------------------------------------------------------ */
+
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen overflow-x-clip bg-background text-foreground">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-black/5 bg-background/80 backdrop-blur-md dark:border-white/10">
+      <header
+        className={`sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md transition-all duration-300 ${
+          scrolled
+            ? "border-black/5 shadow-md shadow-black/5 dark:border-white/10"
+            : "border-transparent"
+        }`}
+      >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          <Link href="/" className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-white shadow-sm">
+          <Link href="/" className="group flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-white shadow-sm transition-transform duration-300 group-hover:rotate-6 group-hover:scale-105">
               <StoreIcon className="h-5 w-5" />
             </span>
             <span className="text-lg font-bold tracking-tight">Baiclass POS</span>
@@ -148,7 +253,7 @@ export default function LandingPage() {
               <a
                 key={link.href}
                 href={link.href}
-                className="text-sm font-medium text-foreground/70 transition-colors hover:text-primary"
+                className="relative text-sm font-medium text-foreground/70 transition-colors after:absolute after:-bottom-1 after:left-0 after:h-0.5 after:w-0 after:rounded-full after:bg-primary after:transition-all after:duration-300 hover:text-primary hover:after:w-full"
               >
                 {link.label}
               </a>
@@ -164,7 +269,7 @@ export default function LandingPage() {
             </Link>
             <Link
               href="/login"
-              className="group inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:brightness-95 hover:shadow-md"
+              className="btn-shine group inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-lg hover:shadow-primary/30"
             >
               Get started
               <ArrowRightIcon className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -221,64 +326,98 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section className="relative overflow-hidden">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 -z-10"
-          style={{
-            background:
-              "radial-gradient(60% 60% at 50% 0%, color-mix(in srgb, var(--primary) 18%, transparent) 0%, transparent 70%)",
-          }}
-        />
+        {/* Animated backdrop */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+          <div className="bg-dot-grid absolute inset-0 [mask-image:radial-gradient(70%_60%_at_50%_30%,black,transparent)]" />
+          <div className="animate-blob absolute -top-32 left-1/2 h-[480px] w-[480px] -translate-x-[80%] rounded-full bg-primary/20 blur-3xl" />
+          <div className="animate-blob-slow absolute -top-20 left-1/2 h-[420px] w-[420px] translate-x-[10%] rounded-full bg-teal-400/15 blur-3xl" />
+          <div className="animate-blob absolute top-64 left-1/2 h-[360px] w-[360px] -translate-x-1/2 rounded-full bg-sky-400/10 blur-3xl [animation-delay:4s]" />
+        </div>
+
         <div className="mx-auto max-w-7xl px-4 pb-16 pt-16 sm:px-6 sm:pt-24 lg:px-8 lg:pb-24">
           <div className="mx-auto max-w-3xl text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-xs font-semibold text-primary">
-              <TrendingUpIcon className="h-3.5 w-3.5" />
-              The all-in-one POS for growing businesses
-            </span>
-            <h1 className="mt-6 text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
-              Run your shop,
-              <br />
-              <span className="text-primary">not your paperwork.</span>
-            </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-base text-foreground/70 sm:text-lg">
-              Baiclass POS brings sales, inventory, customers, and reporting
-              together in one fast, reliable system — across every branch you
-              run.
-            </p>
-            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Link
-                href="/login"
-                className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-7 py-3.5 text-base font-semibold text-white shadow-sm transition-all hover:brightness-95 hover:shadow-md sm:w-auto"
-              >
-                Get started free
-                <ArrowRightIcon className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
-              </Link>
-              <a
-                href="#features"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-black/10 bg-white px-7 py-3.5 text-base font-semibold text-foreground transition-all hover:border-primary/40 hover:text-primary sm:w-auto dark:border-white/15 dark:bg-neutral-900"
-              >
-                Explore features
-              </a>
-            </div>
+            <Reveal>
+              <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-xs font-semibold text-primary shadow-sm shadow-primary/10">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping-slow absolute inline-flex h-full w-full rounded-full bg-primary" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+                </span>
+                The all-in-one POS for growing businesses
+              </span>
+            </Reveal>
+
+            <Reveal delay={120}>
+              <h1 className="mt-6 text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
+                Run your shop,
+                <br />
+                <span className="gradient-text">not your paperwork.</span>
+              </h1>
+            </Reveal>
+
+            <Reveal delay={240}>
+              <p className="mx-auto mt-6 max-w-2xl text-base text-foreground/70 sm:text-lg">
+                Baiclass POS brings sales, inventory, customers, and reporting
+                together in one fast, reliable system — across every branch you
+                run.
+              </p>
+            </Reveal>
+
+            <Reveal delay={360}>
+              <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                <Link
+                  href="/login"
+                  className="btn-shine group inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-7 py-3.5 text-base font-semibold text-white shadow-lg shadow-primary/25 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/35 sm:w-auto"
+                >
+                  Get started free
+                  <ArrowRightIcon className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+                <a
+                  href="#features"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-black/10 bg-white px-7 py-3.5 text-base font-semibold text-foreground transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:text-primary hover:shadow-md sm:w-auto dark:border-white/15 dark:bg-neutral-900"
+                >
+                  <SparklesIcon className="h-4 w-4" />
+                  Explore features
+                </a>
+              </div>
+            </Reveal>
           </div>
 
           {/* Hero preview / stat panel */}
-          <div className="mx-auto mt-14 max-w-5xl">
-            <div className="rounded-2xl border border-black/5 bg-white p-1.5 shadow-2xl shadow-primary/5 dark:border-white/10 dark:bg-neutral-900">
-              <div className="rounded-xl bg-gradient-to-br from-primary/5 to-transparent p-6 sm:p-10">
+          <Reveal delay={480} direction="scale" className="mx-auto mt-14 max-w-5xl">
+            <div className="animate-float rounded-2xl border border-black/5 bg-white/90 p-1.5 shadow-2xl shadow-primary/10 backdrop-blur-sm dark:border-white/10 dark:bg-neutral-900/90">
+              <div className="rounded-xl bg-gradient-to-br from-primary/10 via-transparent to-teal-400/5 p-6 sm:p-10">
                 <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
-                  {stats.map((stat) => (
-                    <div key={stat.label} className="text-center">
+                  {stats.map((stat, i) => (
+                    <Reveal key={stat.label} delay={600 + i * 100} className="text-center">
                       <p className="text-2xl font-extrabold text-primary sm:text-4xl">
                         {stat.value}
                       </p>
                       <p className="mt-1 text-xs font-medium text-foreground/60 sm:text-sm">
                         {stat.label}
                       </p>
-                    </div>
+                    </Reveal>
                   ))}
                 </div>
               </div>
+            </div>
+          </Reveal>
+        </div>
+
+        {/* Marquee */}
+        <div className="relative border-y border-black/5 bg-white/60 py-4 backdrop-blur-sm dark:border-white/10 dark:bg-neutral-900/60">
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-24 bg-gradient-to-r from-background to-transparent" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-24 bg-gradient-to-l from-background to-transparent" />
+          <div className="overflow-hidden">
+            <div className="animate-marquee flex w-max items-center gap-10">
+              {[...marqueeItems, ...marqueeItems].map((item, i) => (
+                <span
+                  key={`${item}-${i}`}
+                  className="flex items-center gap-10 text-sm font-semibold uppercase tracking-widest text-foreground/40"
+                >
+                  {item}
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary/40" />
+                </span>
+              ))}
             </div>
           </div>
         </div>
@@ -287,7 +426,7 @@ export default function LandingPage() {
       {/* Features */}
       <section id="features" className="scroll-mt-20 py-16 sm:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center">
+          <Reveal className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
               Everything your business needs
             </h2>
@@ -295,32 +434,41 @@ export default function LandingPage() {
               One connected system that replaces the spreadsheets, notebooks, and
               guesswork.
             </p>
-          </div>
+          </Reveal>
 
           <div className="mt-14 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {features.map((feature) => (
-              <div
-                key={feature.title}
-                className="group rounded-2xl border border-black/5 bg-white p-6 transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg dark:border-white/10 dark:bg-neutral-900"
-              >
-                <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-white">
-                  <feature.icon className="h-6 w-6" />
-                </span>
-                <h3 className="mt-5 text-lg font-bold">{feature.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-foreground/70">
-                  {feature.description}
-                </p>
-              </div>
+            {features.map((feature, i) => (
+              <Reveal key={feature.title} delay={(i % 4) * 100}>
+                <div className="glow-card group h-full rounded-2xl border border-black/5 bg-white p-6 hover:border-primary/30 dark:border-white/10 dark:bg-neutral-900">
+                  <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-all duration-300 group-hover:-rotate-6 group-hover:scale-110 group-hover:bg-primary group-hover:text-white group-hover:shadow-lg group-hover:shadow-primary/30">
+                    <feature.icon className="h-6 w-6" />
+                  </span>
+                  <h3 className="mt-5 text-lg font-bold transition-colors group-hover:text-primary">
+                    {feature.title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-foreground/70">
+                    {feature.description}
+                  </p>
+                </div>
+              </Reveal>
             ))}
           </div>
         </div>
       </section>
 
       {/* Why Baiclass */}
-      <section id="why" className="scroll-mt-20 py-16 sm:py-24">
+      <section id="why" className="relative scroll-mt-20 overflow-hidden py-16 sm:py-24">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-10"
+          style={{
+            background:
+              "radial-gradient(45% 45% at 0% 50%, color-mix(in srgb, var(--primary) 10%, transparent) 0%, transparent 70%)",
+          }}
+        />
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid items-center gap-12 lg:grid-cols-2">
-            <div>
+            <Reveal direction="left">
               <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
                 Built for the way you actually work
               </h2>
@@ -330,43 +478,52 @@ export default function LandingPage() {
               </p>
 
               <div className="mt-8 space-y-6">
-                {highlights.map((item) => (
-                  <div key={item.title} className="flex gap-4">
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                      <item.icon className="h-5 w-5" />
-                    </span>
-                    <div>
-                      <h3 className="font-bold">{item.title}</h3>
-                      <p className="mt-1 text-sm text-foreground/70">
-                        {item.description}
-                      </p>
+                {highlights.map((item, i) => (
+                  <Reveal key={item.title} delay={150 + i * 120} direction="left">
+                    <div className="group flex gap-4">
+                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-all duration-300 group-hover:scale-110 group-hover:bg-primary group-hover:text-white">
+                        <item.icon className="h-5 w-5" />
+                      </span>
+                      <div>
+                        <h3 className="font-bold">{item.title}</h3>
+                        <p className="mt-1 text-sm text-foreground/70">
+                          {item.description}
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  </Reveal>
                 ))}
               </div>
-            </div>
+            </Reveal>
 
-            <div className="rounded-2xl border border-black/5 bg-white p-8 shadow-xl shadow-primary/5 dark:border-white/10 dark:bg-neutral-900">
-              <h3 className="text-lg font-bold">What you get out of the box</h3>
-              <ul className="mt-6 space-y-4">
-                {[
-                  "Real-time sales and stock tracking",
-                  "Detailed sales and inventory reports",
-                  "Customer and supplier management",
-                  "Expense tracking and end-of-day closing",
-                  "Returns, refunds, and sale corrections",
-                  "Role-based access for every staff member",
-                  "Centralized control across all branches",
-                ].map((point) => (
-                  <li key={point} className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-white">
-                      <CheckIcon className="h-3.5 w-3.5" />
-                    </span>
-                    <span className="text-sm text-foreground/80">{point}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <Reveal direction="right" delay={200}>
+              <div className="glow-card rounded-2xl border border-black/5 bg-white p-8 shadow-xl shadow-primary/5 dark:border-white/10 dark:bg-neutral-900">
+                <h3 className="text-lg font-bold">What you get out of the box</h3>
+                <ul className="mt-6 space-y-4">
+                  {[
+                    "Real-time sales and stock tracking",
+                    "Detailed sales and inventory reports",
+                    "Customer and supplier management",
+                    "Expense tracking and end-of-day closing",
+                    "Returns, refunds, and sale corrections",
+                    "Role-based access for every staff member",
+                    "Centralized control across all branches",
+                  ].map((point, i) => (
+                    <Reveal
+                      key={point}
+                      as="li"
+                      delay={300 + i * 80}
+                      className="flex items-start gap-3"
+                    >
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-white shadow-sm shadow-primary/40">
+                        <CheckIcon className="h-3.5 w-3.5" />
+                      </span>
+                      <span className="text-sm text-foreground/80">{point}</span>
+                    </Reveal>
+                  ))}
+                </ul>
+              </div>
+            </Reveal>
           </div>
         </div>
       </section>
@@ -374,29 +531,33 @@ export default function LandingPage() {
       {/* How it works */}
       <section id="how" className="scroll-mt-20 py-16 sm:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center">
+          <Reveal className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
               Up and running in three steps
             </h2>
             <p className="mt-4 text-base text-foreground/70 sm:text-lg">
               No lengthy setup. Get your business online and selling in no time.
             </p>
-          </div>
+          </Reveal>
 
-          <div className="mt-14 grid gap-6 md:grid-cols-3">
-            {steps.map((step) => (
-              <div
-                key={step.step}
-                className="relative rounded-2xl border border-black/5 bg-white p-8 dark:border-white/10 dark:bg-neutral-900"
-              >
-                <span className="text-5xl font-extrabold text-primary/15">
-                  {step.step}
-                </span>
-                <h3 className="mt-4 text-lg font-bold">{step.title}</h3>
-                <p className="mt-2 text-sm text-foreground/70">
-                  {step.description}
-                </p>
-              </div>
+          <div className="relative mt-14 grid gap-6 md:grid-cols-3">
+            {/* Connecting line on desktop */}
+            <div
+              aria-hidden
+              className="absolute left-[16%] right-[16%] top-12 hidden border-t-2 border-dashed border-primary/20 md:block"
+            />
+            {steps.map((step, i) => (
+              <Reveal key={step.step} delay={i * 160}>
+                <div className="glow-card relative h-full rounded-2xl border border-black/5 bg-white p-8 hover:border-primary/30 dark:border-white/10 dark:bg-neutral-900">
+                  <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-xl font-extrabold text-primary">
+                    {step.step}
+                  </span>
+                  <h3 className="mt-5 text-lg font-bold">{step.title}</h3>
+                  <p className="mt-2 text-sm text-foreground/70">
+                    {step.description}
+                  </p>
+                </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -405,40 +566,46 @@ export default function LandingPage() {
       {/* CTA */}
       <section className="py-16 sm:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="relative overflow-hidden rounded-3xl bg-primary px-6 py-14 text-center shadow-xl sm:px-12 sm:py-20">
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-0"
-              style={{
-                background:
-                  "radial-gradient(50% 80% at 100% 0%, rgba(255,255,255,0.18) 0%, transparent 60%)",
-              }}
-            />
-            <h2 className="relative text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-              Ready to modernize your shop?
-            </h2>
-            <p className="relative mx-auto mt-4 max-w-xl text-base text-white/90 sm:text-lg">
-              Join businesses running smarter with Baiclass POS. Set up in
-              minutes and start selling today.
-            </p>
-            <div className="relative mt-8 flex justify-center">
-              <Link
-                href="/login"
-                className="group inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-3.5 text-base font-semibold text-primary shadow-sm transition-all hover:shadow-md"
-              >
-                Get started now
-                <ArrowRightIcon className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
-              </Link>
+          <Reveal direction="scale">
+            <div className="animated-gradient-bg relative overflow-hidden rounded-3xl px-6 py-14 text-center shadow-2xl shadow-primary/25 sm:px-12 sm:py-20">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  background:
+                    "radial-gradient(50% 80% at 100% 0%, rgba(255,255,255,0.18) 0%, transparent 60%)",
+                }}
+              />
+              <div
+                aria-hidden
+                className="animate-blob-slow pointer-events-none absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-white/10 blur-2xl"
+              />
+              <h2 className="relative text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+                Ready to modernize your shop?
+              </h2>
+              <p className="relative mx-auto mt-4 max-w-xl text-base text-white/90 sm:text-lg">
+                Join businesses running smarter with Baiclass POS. Set up in
+                minutes and start selling today.
+              </p>
+              <div className="relative mt-8 flex justify-center">
+                <Link
+                  href="/login"
+                  className="btn-shine group inline-flex items-center justify-center gap-2 rounded-full bg-white px-8 py-3.5 text-base font-semibold text-primary shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl"
+                >
+                  Get started now
+                  <ArrowRightIcon className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              </div>
             </div>
-          </div>
+          </Reveal>
         </div>
       </section>
 
       {/* Footer */}
       <footer className="border-t border-black/5 py-10 dark:border-white/10">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6 lg:px-8">
-          <Link href="/" className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white">
+          <Link href="/" className="group flex items-center gap-2.5">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white transition-transform duration-300 group-hover:rotate-6">
               <StoreIcon className="h-4 w-4" />
             </span>
             <span className="font-bold tracking-tight">Baiclass POS</span>
