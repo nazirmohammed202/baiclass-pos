@@ -79,6 +79,14 @@ describe("computeDateRange (frozen at Friday 2026-07-03)", () => {
       label: "Custom Range",
     });
   });
+
+  it("falls back to today for unknown periods", () => {
+    expect(computeDateRange("unknown" as "today", "", "")).toEqual({
+      startDate: "2026-07-03",
+      endDate: "2026-07-03",
+      label: "Today",
+    });
+  });
 });
 
 describe("computePreviousPeriod", () => {
@@ -168,6 +176,45 @@ describe("computeCompareDateRange", () => {
       compareStartDate: "2026-06-27",
       compareEndDate: "2026-07-03",
     });
+  });
+
+  it("supports preset compare windows", () => {
+    expect(computeCompareDateRange("today", "", "", "", "")).toMatchObject({
+      compareStartDate: "2026-07-03",
+      compareEndDate: "2026-07-03",
+      compareLabel: "Today",
+    });
+    expect(computeCompareDateRange("yesterday", "", "", "", "")).toMatchObject({
+      compareStartDate: "2026-07-02",
+      compareEndDate: "2026-07-02",
+      compareLabel: "Yesterday",
+    });
+    expect(computeCompareDateRange("last5", "", "", "", "")).toMatchObject({
+      compareStartDate: "2026-06-29",
+      compareEndDate: "2026-07-03",
+      compareLabel: "Last 5 Days",
+    });
+    expect(computeCompareDateRange("last30", "", "", "", "")).toMatchObject({
+      compareStartDate: "2026-06-04",
+      compareEndDate: "2026-07-03",
+      compareLabel: "Last 30 Days",
+    });
+    expect(computeCompareDateRange("thisMonth", "", "", "", "")).toMatchObject({
+      compareStartDate: "2026-07-01",
+      compareEndDate: "2026-07-31",
+      compareLabel: "This Month",
+    });
+    expect(computeCompareDateRange("lastMonth", "", "", "", "")).toMatchObject({
+      compareStartDate: "2026-06-01",
+      compareEndDate: "2026-06-30",
+      compareLabel: "Last Month",
+    });
+  });
+
+  it("returns null for unknown compare periods", () => {
+    expect(
+      computeCompareDateRange("unknown" as "today", "", "", "", "")
+    ).toBeNull();
   });
 });
 
