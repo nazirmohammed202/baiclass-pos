@@ -1,5 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { compactNumber, fmt, formatCurrency, num, pct } from "./utils";
+import {
+  cn,
+  compactNumber,
+  fmt,
+  formatCurrency,
+  formatCurrencyToDisplay,
+  num,
+  pct,
+} from "./utils";
 
 describe("formatCurrency", () => {
   it("formats with the cedi symbol and two decimals", () => {
@@ -9,6 +17,18 @@ describe("formatCurrency", () => {
 
   it("keeps negative amounts negative", () => {
     expect(formatCurrency(-50)).toBe("₵ -50.00");
+  });
+});
+
+describe("formatCurrencyToDisplay", () => {
+  it("formats without a space after the cedi symbol", () => {
+    expect(formatCurrencyToDisplay(12.5)).toBe("₵12.50");
+  });
+});
+
+describe("cn", () => {
+  it("merges conditional class names", () => {
+    expect(cn("px-2", false && "hidden", "text-sm")).toBe("px-2 text-sm");
   });
 });
 
