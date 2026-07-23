@@ -602,23 +602,95 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-black/5 py-10 dark:border-white/10">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6 lg:px-8">
-          <Link href="/" className="group flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white transition-transform duration-300 group-hover:rotate-6">
-              <StoreIcon className="h-4 w-4" />
-            </span>
-            <span className="font-bold tracking-tight">Baiclass POS</span>
-          </Link>
-          <p className="text-sm text-foreground/60">
-            &copy; {new Date().getFullYear()} Baiclass POS. All rights reserved.
-          </p>
-          <Link
-            href="/login"
-            className="text-sm font-semibold text-primary transition-colors hover:brightness-90"
-          >
-            Login
-          </Link>
+      <footer className="border-t border-black/5 bg-white/50 dark:border-white/10 dark:bg-neutral-950/40">
+        <div className="mx-auto max-w-7xl px-4 pt-14 pb-8 sm:px-6 lg:px-8">
+          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+            {/* Brand */}
+            <div className="sm:col-span-2 lg:col-span-1">
+              <Link href="/" className="group inline-flex items-center gap-2.5">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-white transition-transform duration-300 group-hover:rotate-6">
+                  <StoreIcon className="h-4 w-4" />
+                </span>
+                <span className="text-lg font-bold tracking-tight">
+                  Baiclass POS
+                </span>
+              </Link>
+              <p className="mt-4 max-w-xs text-sm leading-relaxed text-foreground/60">
+                The all-in-one point of sale for sales, inventory, and
+                multi-branch operations.
+              </p>
+            </div>
+
+            {/* Product */}
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-foreground/40">
+                Product
+              </p>
+              <ul className="mt-4 space-y-3">
+                {NAV_LINKS.map((link) => (
+                  <li key={link.href}>
+                    <a
+                      href={link.href}
+                      className="text-sm text-foreground/70 transition-colors hover:text-primary"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Account */}
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-foreground/40">
+                Account
+              </p>
+              <ul className="mt-4 space-y-3">
+                <li>
+                  <Link
+                    href="/login"
+                    className="text-sm text-foreground/70 transition-colors hover:text-primary"
+                  >
+                    Login
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/login"
+                    className="text-sm text-foreground/70 transition-colors hover:text-primary"
+                  >
+                    Get started
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Contact / CTA */}
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-foreground/40">
+                Get started
+              </p>
+              <p className="mt-4 text-sm leading-relaxed text-foreground/60">
+                Set up your shop in minutes and start selling today.
+              </p>
+              <Link
+                href="/login"
+                className="btn-shine mt-5 inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md hover:shadow-primary/30"
+              >
+                Open POS
+                <ArrowRightIcon className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Bottom bar */}
+          <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-black/5 pt-6 text-sm text-foreground/50 sm:flex-row dark:border-white/10">
+            <p>
+              &copy; {new Date().getFullYear()} Baiclass POS. All rights
+              reserved.
+            </p>
+            <p className="text-xs">Built for modern retail businesses.</p>
+          </div>
         </div>
       </footer>
     </div>
